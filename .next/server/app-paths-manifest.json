@@ -1,10 +1,1 @@
-{
-  "/account/login/page": "app/account/login/page.js",
-  "/(public)/page": "app/(public)/page.js",
-  "/(public)/vip-lounge/page": "app/(public)/vip-lounge/page.js",
-  "/(public)/dining/page": "app/(public)/dining/page.js",
-  "/(public)/rooms/page": "app/(public)/rooms/page.js",
-  "/(public)/gallery/page": "app/(public)/gallery/page.js",
-  "/(public)/contact/page": "app/(public)/contact/page.js",
-  "/(public)/booking/page": "app/(public)/booking/page.js"
-}
+{}
