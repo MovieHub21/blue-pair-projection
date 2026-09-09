@@ -1,4 +1,4 @@
-// File: C:\Users\marve\Downloads\blue-pair-nextjs\app\(public)\page.tsx
+// File: /dev-server/app/(public)/page.tsx
 import * as entry from '../../../../app/(public)/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
