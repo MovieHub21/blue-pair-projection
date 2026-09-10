@@ -1,7 +1,7 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
 import JsonLd from '../../../components/JsonLd'
-import { events } from '../../../data/mock'
+import { getEvents } from '../../../lib/data'
 import { formatDate, naira } from '../../../lib/format'
 
 export const metadata = buildMetadata({
@@ -11,8 +11,8 @@ export const metadata = buildMetadata({
   path: '/club',
 })
 
-export default function ClubPage() {
-  const upcoming = events.filter(e => e.published)
+export default async function ClubPage() {
+  const upcoming = await getEvents(true)
   const eventsJsonLd = upcoming.map(e => ({
     '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image,
     location: { '@type': 'Place', name: 'The Club at Blue Pair Hotel', address: 'Auchi Road, Uromi, Edo State' },

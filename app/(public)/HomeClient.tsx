@@ -5,9 +5,9 @@ import { useState } from 'react'
 import { Calendar, Users, BedDouble, ArrowRight, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
-import { roomTypes, offers, galleryImages } from '../../data/mock'
+import { galleryImages, type RoomType, type Offer } from '../../data/mock'
 
-export default function HomeClient() {
+export default function HomeClient({ roomTypes, offers }: { roomTypes: RoomType[]; offers: Offer[] }) {
   const router = useRouter()
   const [checkIn, setCheckIn] = useState('2026-08-14')
   const [checkOut, setCheckOut] = useState('2026-08-16')
@@ -116,7 +116,7 @@ export default function HomeClient() {
         <div className="container-w">
           <SectionHeading eyebrow="Limited-time" title="Current offers" />
           <div className="grid md:grid-cols-3 gap-6">
-            {offers.filter(o => o.active).map(o => (
+            {offers.map(o => (
               <div key={o.id} className="card p-6 flex flex-col gap-3">
                 <span className="pill-gold w-fit">{o.discount}</span>
                 <h4 className="text-lg font-semibold">{o.title}</h4>

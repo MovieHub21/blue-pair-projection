@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
-import PrototypeSwitcher from '../components/PrototypeSwitcher'
 import ToastHost from '../components/ui/Toast'
 
 export const viewport: Viewport = { themeColor: '#0A1229' }
@@ -25,7 +24,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
-        <PrototypeSwitcher />
         <ToastHost />
       </body>
     </html>

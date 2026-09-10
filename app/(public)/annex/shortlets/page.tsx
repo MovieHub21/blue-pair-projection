@@ -4,7 +4,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
 import PageHero from '../../../../components/layout/PageHero'
 import SectionHeading from '../../../../components/ui/SectionHeading'
-import { shortLets } from '../../../../data/mock'
+import { getShortLets } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
 import { BedDouble } from 'lucide-react'
 
@@ -17,7 +17,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Short-lets',path:'/annex/shortlets'}]
 
-export default function ShortLetsPage() {
+export default async function ShortLetsPage() {
+  const shortLets = await getShortLets()
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />

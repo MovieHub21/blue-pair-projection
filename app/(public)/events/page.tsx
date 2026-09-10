@@ -3,7 +3,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { events } from '../../../data/mock'
+import { getEvents } from '../../../lib/data'
 import { naira, formatDate } from '../../../lib/format'
 import { Users, Calendar } from 'lucide-react'
 
@@ -16,8 +16,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Events',path:'/events'}]
 
-export default function EventsPage() {
-  const published = events.filter(e => e.published)
+export default async function EventsPage() {
+  const published = await getEvents(true)
   const eventsJsonLd = published.map(e => ({
     '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image,
     location: { '@type': 'Place', name: 'Blue Pair Hotel', address: 'Auchi Road, Uromi, Edo State' },

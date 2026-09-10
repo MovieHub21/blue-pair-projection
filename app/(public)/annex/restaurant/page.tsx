@@ -1,7 +1,7 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { menuItems } from '../../../../data/mock'
+import { getMenuItems } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
 import PageHero from '../../../../components/layout/PageHero'
 import SectionHeading from '../../../../components/ui/SectionHeading'
@@ -15,7 +15,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Restaurant',path:'/annex/restaurant'}]
 
-export default function AnnexRestaurantPage() {
+export default async function AnnexRestaurantPage() {
+  const menuItems = await getMenuItems()
   const items = menuItems.filter(m => m.outlet === 'Annex Restaurant')
   return (
     <div>

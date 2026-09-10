@@ -1,7 +1,7 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { drinks } from '../../../../data/mock'
+import { getDrinks } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
 import PageHero from '../../../../components/layout/PageHero'
 import SectionHeading from '../../../../components/ui/SectionHeading'
@@ -15,7 +15,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Bar',path:'/annex/bar'}]
 
-export default function AnnexBarPage() {
+export default async function AnnexBarPage() {
+  const drinks = await getDrinks()
   const items = drinks.filter(d => d.bar === 'Annex Bar')
   const categories = Array.from(new Set(items.map(i => i.category)))
   return (

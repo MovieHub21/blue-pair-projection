@@ -1,11 +1,11 @@
 'use client'
 import { useState } from 'react'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { menuItems } from '../../../data/mock'
+import type { MenuItem } from '../../../data/mock'
 import { naira } from '../../../lib/format'
 import { Clock } from 'lucide-react'
 
-export default function DiningClient() {
+export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
   const [outlet, setOutlet] = useState<'Blue Pair Restaurant' | 'Outdoor Bar & Eatery'>('Blue Pair Restaurant')
   const items = menuItems.filter(m => m.outlet === outlet)
   const categories = Array.from(new Set(items.map(i => i.category)))

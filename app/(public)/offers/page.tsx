@@ -3,7 +3,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { offers } from '../../../data/mock'
+import { getOffers } from '../../../lib/data'
 
 export const metadata = buildMetadata({
   title: 'Hotel Deals & Discounts in Uromi, Edo State | Blue Pair Hotel Offers',
@@ -14,7 +14,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Offers',path:'/offers'}]
 
-export default function OffersPage() {
+export default async function OffersPage() {
+  const offers = await getOffers(true)
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
@@ -24,7 +25,7 @@ export default function OffersPage() {
         <div className="container-w">
           <SectionHeading eyebrow="Current" title="Live offers" />
           <div className="grid md:grid-cols-2 gap-6">
-            {offers.filter(o => o.active).map(o => (
+            {offers.map(o => (
               <div key={o.id} className="card p-7 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="tag">{o.category}</span>

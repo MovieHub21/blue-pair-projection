@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useStore } from '../../../store/useStore'
+import { useAuth, ensureCustomer } from '../../../lib/useAuth'
 import { naira, nightsBetween, formatDate } from '../../../lib/format'
 import { Check, Calendar, Users, CreditCard, Landmark, Wallet, Download } from 'lucide-react'
 
@@ -10,7 +11,9 @@ const STEPS = ['Room', 'Dates & Guests', 'Guest Info', 'Summary', 'Payment', 'Co
 
 export default function BookingFlowClient() {
   const params = useSearchParams()
-  const { roomTypes, createBooking, confirmBookingPayment, customers } = useStore()
+  const pathname = usePathname()
+  const auth = useAuth()
+  const { roomTypes, createBooking } = useStore()
   const [step, setStep] = useState(0)
   const [roomId, setRoomId] = useState(roomTypes.find(r => r.slug === params.get('room'))?.id ?? roomTypes[0].id)
   const [checkIn, setCheckIn] = useState(params.get('checkin') || '2026-08-14')
@@ -20,6 +23,19 @@ export default function BookingFlowClient() {
   const [guest, setGuest] = useState({ name: '', email: '', phone: '', requests: '' })
   const [payMethod, setPayMethod] = useState<'card'|'transfer'|'paystack'>('paystack')
   const [booking, setBooking] = useState<ReturnType<typeof createBooking> | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (auth.customer || auth.profile) {
+      setGuest(g => ({
+        ...g,
+        name: g.name || auth.customer?.name || auth.profile?.name || '',
+        email: g.email || auth.customer?.email || auth.profile?.email || auth.email || '',
+        phone: g.phone || auth.customer?.phone || auth.profile?.phone || '',
+      }))
+    }
+  }, [auth.customer, auth.profile, auth.email])
 
   const room = roomTypes.find(r => r.id === roomId)!
   const nights = nightsBetween(checkIn, checkOut)
@@ -30,13 +46,37 @@ export default function BookingFlowClient() {
   function next() { setStep(s => Math.min(s + 1, STEPS.length - 1)) }
   function back() { setStep(s => Math.max(s - 1, 0)) }
 
-  function pay() {
-    const b = createBooking({
-      customerId: customers[0].id, roomTypeId: room.id, checkIn, checkOut, adults, children,
-      amount: total, specialRequests: guest.requests || undefined,
-    })
-    setBooking(b)
-    setTimeout(() => { confirmBookingPayment(b.id); setStep(5) }, 900)
+  async function pay() {
+    if (!auth.userId) return
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const customerId = await ensureCustomer(auth.userId, guest.name, guest.email, guest.phone)
+      const b = createBooking({
+        customerId, roomTypeId: room.id, checkIn, checkOut, adults, children,
+        amount: total, specialRequests: guest.requests || undefined,
+      })
+      setBooking(b)
+      setStep(5)
+    } catch (e: any) {
+      setSubmitError(e?.message || 'Something went wrong creating your booking.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (!auth.loading && !auth.userId) {
+    const redirect = `${pathname}?${params.toString()}`
+    return (
+      <div className="container-w px-6 md:px-10 py-16 max-w-md mx-auto text-center">
+        <h2 className="text-2xl font-semibold mb-3">Sign in to book</h2>
+        <p className="text-sm text-navy-500 mb-8">Create a free account or sign in so we can attach this booking to you and keep it in "My Bookings".</p>
+        <div className="flex gap-3 justify-center">
+          <Link href={`/account/login?redirect=${encodeURIComponent(redirect)}`} className="btn-primary">Sign in</Link>
+          <Link href={`/account/register?redirect=${encodeURIComponent(redirect)}`} className="btn-outline">Create account</Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -147,27 +187,28 @@ export default function BookingFlowClient() {
             <label className="field-label">Card number</label><input className="field-input mb-4" placeholder="5060 6666 6666 6666" />
             <div className="grid grid-cols-2 gap-4"><div><label className="field-label">Expiry</label><input className="field-input" placeholder="09/28" /></div><div><label className="field-label">CVV</label><input className="field-input" placeholder="123" /></div></div>
           </>)}
-          {payMethod === 'transfer' && <div className="card p-5 text-sm text-navy-600">Transfer {naira(total)} to <b>Blue Pair Hotel Ltd</b> — GTBank, 0123456789. Booking confirms automatically once payment reflects.</div>}
-          {payMethod === 'paystack' && <div className="card p-5 text-sm text-navy-600">You'll be redirected to Paystack to complete payment of <b>{naira(total)}</b> securely.</div>}
+          {payMethod === 'transfer' && <div className="card p-5 text-sm text-navy-600">Transfer {naira(total)} to <b>Blue Pair Hotel Ltd</b> — GTBank, 0123456789, then bring your reference to the front desk. Your booking is held as <b>pending</b> until payment is confirmed by our team.</div>}
+          {payMethod === 'paystack' && <div className="card p-5 text-sm text-navy-600">Online card/Paystack payment isn't live yet — we'll hold your room and mark this booking as <b>pending payment</b>. Our team will follow up to collect payment of <b>{naira(total)}</b>.</div>}
+          {submitError && <div className="mt-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{submitError}</div>}
           <div className="flex justify-between items-center mt-6 text-sm"><span className="text-navy-500">Amount due</span><b className="font-display text-lg">{naira(total)}</b></div>
-          <div className="flex gap-3 mt-6"><button onClick={back} className="btn-outline">Back</button><button onClick={pay} className="btn-gold flex-1 justify-center">Pay {naira(total)}</button></div>
+          <div className="flex gap-3 mt-6"><button onClick={back} className="btn-outline">Back</button><button onClick={pay} disabled={submitting} className="btn-gold flex-1 justify-center disabled:opacity-60">{submitting ? 'Booking…' : `Reserve — ${naira(total)} due`}</button></div>
         </div>
       )}
 
       {step === 5 && booking && (
         <div className="max-w-lg mx-auto text-center py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-5 text-3xl">✓</div>
-          <span className="eyebrow">Confirmed</span>
+          <span className="eyebrow">Booking received</span>
           <h2 className="text-2xl font-semibold mt-2 mb-2">You're booked, {guest.name || 'guest'}</h2>
-          <p className="text-sm text-navy-500">A confirmation has been sent to {guest.email || 'your email'}. We look forward to hosting you at Blue Pair, Uromi.</p>
+          <p className="text-sm text-navy-500">A confirmation has been sent to {guest.email || 'your email'}. Payment is <b>pending</b> — our front desk will reach out to confirm it. We look forward to hosting you at Blue Pair, Uromi.</p>
           <div className="card text-left mt-8 p-6 flex flex-col gap-0.5">
             {[
               ['Booking reference', booking.reference],
-              ['Guest name', guest.name || 'Efosa Aigbe'],
+              ['Guest name', guest.name || 'Guest'],
               ['Room', room.name],
               ['Dates', `${formatDate(checkIn)} → ${formatDate(checkOut)}`],
               ['Amount', naira(total)],
-              ['Payment status', 'Paid'],
+              ['Payment status', 'Pending'],
               ['Hotel', 'Blue Pair Hotel, Auchi Road, Uromi, Edo State'],
             ].map(([l,v]) => (
               <div key={l} className="flex justify-between text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium">{v}</span></div>

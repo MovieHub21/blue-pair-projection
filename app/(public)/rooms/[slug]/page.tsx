@@ -3,15 +3,16 @@ import type { Metadata } from 'next'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { roomTypes } from '../../../../data/mock'
+import { getRoomTypes, getRoomTypeBySlug } from '../../../../lib/data'
 import RoomDetailsClient from './RoomDetailsClient'
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const roomTypes = await getRoomTypes()
   return roomTypes.map(r => ({ slug: r.slug }))
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const room = roomTypes.find(r => r.slug === params.slug)
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const room = await getRoomTypeBySlug(params.slug)
   if (!room) return buildMetadata({ title: 'Room Not Found', description: 'This room could not be found.', path: `/rooms/${params.slug}`, noindex: true })
   return buildMetadata({
     title: `${room.name} in Uromi, Edo State — ₦${room.price.toLocaleString()}/night | Blue Pair Hotel`,
@@ -22,10 +23,10 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   })
 }
 
-export default function RoomDetailsPage({ params }: { params: { slug: string } }) {
-  const room = roomTypes.find(r => r.slug === params.slug)
+export default async function RoomDetailsPage({ params }: { params: { slug: string } }) {
+  const room = await getRoomTypeBySlug(params.slug)
   if (!room) notFound()
-  const others = roomTypes.filter(r => r.id !== room.id).slice(0, 3)
+  const others = (await getRoomTypes()).filter(r => r.id !== room.id).slice(0, 3)
 
   const breadcrumbs = [{name:'Home',path:'/'},{name:'Rooms & Suites',path:'/rooms'},{name:room.name,path:`/rooms/${room.slug}`}]
   const productJsonLd = {

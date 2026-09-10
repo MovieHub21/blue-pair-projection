@@ -3,15 +3,17 @@ import type { Metadata } from 'next'
 import { buildMetadata } from '../../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../../components/JsonLd'
 import { SITE_URL } from '../../../../../lib/siteConfig'
-import { shortLets } from '../../../../../data/mock'
+import { getShortLets } from '../../../../../lib/data'
 import { naira } from '../../../../../lib/format'
 import { CheckCircle2, BedDouble } from 'lucide-react'
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const shortLets = await getShortLets()
   return shortLets.map(sl => ({ id: sl.id }))
 }
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const shortLets = await getShortLets()
   const sl = shortLets.find(s => s.id === params.id)
   if (!sl) return buildMetadata({ title: 'Short-let Not Found', description: 'This property could not be found.', path: `/annex/shortlets/${params.id}`, noindex: true })
   return buildMetadata({
@@ -23,7 +25,8 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
   })
 }
 
-export default function ShortLetDetailsPage({ params }: { params: { id: string } }) {
+export default async function ShortLetDetailsPage({ params }: { params: { id: string } }) {
+  const shortLets = await getShortLets()
   const sl = shortLets.find(s => s.id === params.id)
   if (!sl) notFound()
 

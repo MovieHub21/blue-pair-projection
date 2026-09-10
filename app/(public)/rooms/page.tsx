@@ -3,6 +3,7 @@ import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
+import { getRoomTypes } from '../../../lib/data'
 import RoomsClient from './RoomsClient'
 
 export const metadata = buildMetadata({
@@ -14,14 +15,15 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Rooms & Suites',path:'/rooms'}]
 
-export default function RoomsPage() {
+export default async function RoomsPage() {
+  const roomTypes = await getRoomTypes()
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
       <PageHero image="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=80"
         eyebrow="Accommodation" title="Rooms & Suites" crumbs="Home / Rooms & Suites" />
       <Suspense>
-        <RoomsClient />
+        <RoomsClient roomTypes={roomTypes} />
       </Suspense>
     </div>
   )

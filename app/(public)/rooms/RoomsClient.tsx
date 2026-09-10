@@ -2,10 +2,10 @@
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import RoomCard from '../../../components/ui/RoomCard'
-import { roomTypes } from '../../../data/mock'
+import type { RoomType } from '../../../data/mock'
 import { ChevronDown } from 'lucide-react'
 
-export default function RoomsClient() {
+export default function RoomsClient({ roomTypes }: { roomTypes: RoomType[] }) {
   const params = useSearchParams()
   const [category, setCategory] = useState('All')
   const cats = ['All', ...Array.from(new Set(roomTypes.map(r => r.category)))]

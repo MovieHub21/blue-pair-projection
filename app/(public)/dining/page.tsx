@@ -2,6 +2,7 @@ import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
+import { getMenuItems } from '../../../lib/data'
 import DiningClient from './DiningClient'
 
 export const metadata = buildMetadata({
@@ -19,13 +20,14 @@ const restaurantJsonLd = {
   openingHours: 'Mo-Su 07:00-23:00',
 }
 
-export default function DiningPage() {
+export default async function DiningPage() {
+  const menuItems = await getMenuItems()
   return (
     <div>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
       <PageHero image="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80"
         eyebrow="Food & drink" title="Dining at Blue Pair" crumbs="Home / Dining" height="h-80" />
-      <DiningClient />
+      <DiningClient menuItems={menuItems} />
     </div>
   )
 }
