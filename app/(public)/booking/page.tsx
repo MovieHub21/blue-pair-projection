@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { buildMetadata } from '../../../lib/buildMetadata'
+import { getRoomTypes } from '../../../lib/data'
 import BookingFlowClient from './BookingFlowClient'
 
 export const metadata = buildMetadata({
@@ -9,10 +10,11 @@ export const metadata = buildMetadata({
   path: '/booking',
 })
 
-export default function BookingPage() {
+export default async function BookingPage() {
+  const roomTypes = await getRoomTypes()
   return (
     <Suspense>
-      <BookingFlowClient />
+      <BookingFlowClient roomTypes={roomTypes} />
     </Suspense>
   )
 }

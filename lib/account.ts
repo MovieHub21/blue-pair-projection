@@ -1,31 +1,36 @@
+import { cache } from 'react'
 import { createSupabaseServerClient } from './supabase/server'
 import { mapBooking, mapPayment, mapGuestRequest, mapRoomType } from './mappers'
 
-/** Signed-in user + their profile row, or null if not authenticated. Uncached — reads the session cookie each call. */
-export async function getCurrentUser() {
+/**
+ * Signed-in user + their profile row, or null if not authenticated.
+ * Wrapped in React's cache() so repeated calls within the same request
+ * (dashboard fetching bookings + payments + requests in parallel) share
+ * one auth check + one profile query instead of firing it every time.
+ */
+export const getCurrentUser = cache(async () => {
   const db = createSupabaseServerClient()
   const { data: { user } } = await db.auth.getUser()
   if (!user) return { user: null, profile: null }
   const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle()
   return { user, profile: profile ?? null }
-}
+})
 
-/** The `customers` row linked to the signed-in user, creating one if it doesn't exist yet. */
-export async function getMyCustomer() {
-  const db = createSupabaseServerClient()
-  const { data: { user } } = await db.auth.getUser()
+/** The `customers` row linked to the signed-in user, creating one if it doesn't exist yet. Request-memoized. */
+export const getMyCustomer = cache(async () => {
+  const { user, profile } = await getCurrentUser()
   if (!user) return null
+  const db = createSupabaseServerClient()
   const { data: existing } = await db.from('customers').select('*').eq('user_id', user.id).maybeSingle()
   if (existing) return existing as any
 
-  const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).maybeSingle()
   const id = `c_${Date.now()}`
   const { data: created } = await db.from('customers').insert({
-    id, user_id: user.id, name: (profile as any)?.name || user.email || 'Guest',
-    email: (profile as any)?.email || user.email || '', phone: (profile as any)?.phone || '',
+    id, user_id: user.id, name: profile?.name || user.email || 'Guest',
+    email: profile?.email || user.email || '', phone: profile?.phone || '',
   }).select('*').maybeSingle()
   return created as any
-}
+})
 
 export async function getMyBookings() {
   const customer = await getMyCustomer()

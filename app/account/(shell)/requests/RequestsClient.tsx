@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Shirt, UtensilsCrossed, Sparkles, Wrench, MessageCircle } from 'lucide-react'
+import { Shirt, UtensilsCrossed, Sparkles, Wrench, MessageCircle, Loader2 } from 'lucide-react'
 import { supabase } from '../../../../lib/supabase/client'
 import { useStore } from '../../../../store/useStore'
 import type { GuestRequest } from '../../../../lib/mappers'
@@ -49,7 +49,7 @@ export default function RequestsClient({ initialRequests, customerId, guestName 
         </div>
         <label className="field-label">Details</label>
         <textarea value={note} onChange={e => setNote(e.target.value)} rows={4} className="field-input !h-auto py-2.5 mb-5" placeholder="Let us know more..." />
-        <button onClick={submit} disabled={submitting} className="btn-primary w-full justify-center disabled:opacity-60">{submitting ? 'Submitting…' : 'Submit request'}</button>
+        <button onClick={submit} disabled={submitting} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{submitting && <Loader2 size={15} className="animate-spin" />}{submitting ? 'Submitting…' : 'Submit request'}</button>
       </div>
       <div>
         <h4 className="font-semibold mb-3 text-sm">Your requests</h4>

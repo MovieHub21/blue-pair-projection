@@ -2,7 +2,7 @@
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Loader2 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase/client'
 
 function StaffLoginForm() {
@@ -36,7 +36,7 @@ function StaffLoginForm() {
         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@bluepairhotel.com" />
         <label className="field-label">Password</label>
         <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60">{loading ? 'Signing in…' : 'Sign in'}</button>
+        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-[11px] text-navy-400 text-center mt-6">Staff accounts are created by an administrator. Contact HR/IT if you need access.</p>
         <p className="text-[11px] text-navy-300 text-center mt-4">Guest? <Link href="/account/login" className="underline">Sign in to your booking account</Link></p>
       </form>

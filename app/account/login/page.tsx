@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase/client'
+import { Loader2 } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
@@ -33,7 +34,7 @@ function LoginForm() {
         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
         <label className="field-label">Password</label>
         <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60">{loading ? 'Signing in…' : 'Sign in'}</button>
+        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-xs text-navy-400 text-center mt-5">Don't have an account? <Link href="/account/register" className="text-navy-900 font-semibold">Register</Link></p>
         <p className="text-[11px] text-navy-300 text-center mt-6">Staff member? <Link href="/staff/login" className="underline">Sign in here</Link></p>
       </form>

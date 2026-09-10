@@ -5,17 +5,18 @@ import Link from 'next/link'
 import { useStore } from '../../../store/useStore'
 import { useAuth, ensureCustomer } from '../../../lib/useAuth'
 import { naira, nightsBetween, formatDate } from '../../../lib/format'
-import { Check, Calendar, Users, CreditCard, Landmark, Wallet, Download } from 'lucide-react'
+import { Check, Calendar, Users, CreditCard, Landmark, Wallet, Download, Loader2 } from 'lucide-react'
+import type { RoomType } from '../../../data/mock'
 
 const STEPS = ['Room', 'Dates & Guests', 'Guest Info', 'Summary', 'Payment', 'Confirmation']
 
-export default function BookingFlowClient() {
+export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[] }) {
   const params = useSearchParams()
   const pathname = usePathname()
   const auth = useAuth()
-  const { roomTypes, createBooking } = useStore()
+  const { createBooking } = useStore()
   const [step, setStep] = useState(0)
-  const [roomId, setRoomId] = useState(roomTypes.find(r => r.slug === params.get('room'))?.id ?? roomTypes[0].id)
+  const [roomId, setRoomId] = useState(roomTypes.find(r => r.slug === params.get('room'))?.id ?? roomTypes[0]?.id ?? '')
   const [checkIn, setCheckIn] = useState(params.get('checkin') || '2026-08-14')
   const [checkOut, setCheckOut] = useState(params.get('checkout') || '2026-08-16')
   const [adults, setAdults] = useState(2)
@@ -37,9 +38,9 @@ export default function BookingFlowClient() {
     }
   }, [auth.customer, auth.profile, auth.email])
 
-  const room = roomTypes.find(r => r.id === roomId)!
+  const room = roomTypes.find(r => r.id === roomId)
   const nights = nightsBetween(checkIn, checkOut)
-  const subtotal = room.price * nights
+  const subtotal = (room?.price ?? 0) * nights
   const tax = Math.round(subtotal * 0.075)
   const total = subtotal + tax
 
@@ -47,7 +48,7 @@ export default function BookingFlowClient() {
   function back() { setStep(s => Math.max(s - 1, 0)) }
 
   async function pay() {
-    if (!auth.userId) return
+    if (!auth.userId || !room) return
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -63,6 +64,16 @@ export default function BookingFlowClient() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (roomTypes.length === 0 || !room) {
+    return (
+      <div className="container-w px-6 md:px-10 py-16 max-w-md mx-auto text-center">
+        <h2 className="text-2xl font-semibold mb-3">No rooms available right now</h2>
+        <p className="text-sm text-navy-500 mb-8">Please check back shortly, or get in touch and we'll help you book directly.</p>
+        <Link href="/contact" className="btn-primary">Contact us</Link>
+      </div>
+    )
   }
 
   if (!auth.loading && !auth.userId) {
@@ -191,7 +202,7 @@ export default function BookingFlowClient() {
           {payMethod === 'paystack' && <div className="card p-5 text-sm text-navy-600">Online card/Paystack payment isn't live yet — we'll hold your room and mark this booking as <b>pending payment</b>. Our team will follow up to collect payment of <b>{naira(total)}</b>.</div>}
           {submitError && <div className="mt-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{submitError}</div>}
           <div className="flex justify-between items-center mt-6 text-sm"><span className="text-navy-500">Amount due</span><b className="font-display text-lg">{naira(total)}</b></div>
-          <div className="flex gap-3 mt-6"><button onClick={back} className="btn-outline">Back</button><button onClick={pay} disabled={submitting} className="btn-gold flex-1 justify-center disabled:opacity-60">{submitting ? 'Booking…' : `Reserve — ${naira(total)} due`}</button></div>
+          <div className="flex gap-3 mt-6"><button onClick={back} className="btn-outline">Back</button><button onClick={pay} disabled={submitting} className="btn-gold flex-1 justify-center disabled:opacity-60 flex items-center gap-2">{submitting && <Loader2 size={15} className="animate-spin" />}{submitting ? 'Booking…' : `Reserve — ${naira(total)} due`}</button></div>
         </div>
       )}
 

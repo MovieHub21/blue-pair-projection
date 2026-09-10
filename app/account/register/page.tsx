@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase/client'
 import { ensureCustomer } from '../../../lib/useAuth'
+import { Loader2 } from 'lucide-react'
 
 function RegisterForm() {
   const router = useRouter()
@@ -64,7 +65,7 @@ function RegisterForm() {
         <label className="field-label">Email</label><input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
         <label className="field-label">Phone</label><input required value={phone} onChange={e => setPhone(e.target.value)} className="field-input mb-4" placeholder="+234 800 000 0000" />
         <label className="field-label">Password</label><input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60">{loading ? 'Creating account…' : 'Create account'}</button>
+        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Creating account…' : 'Create account'}</button>
         <p className="text-xs text-navy-400 text-center mt-5">Already registered? <Link href="/account/login" className="text-navy-900 font-semibold">Sign in</Link></p>
       </form>
     </div>

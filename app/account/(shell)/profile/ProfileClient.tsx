@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 import { supabase } from '../../../../lib/supabase/client'
 import { initials } from '../../../../lib/format'
 
@@ -10,6 +11,8 @@ export default function ProfileClient({ name, email, phone }: { name: string; em
   const [country, setCountry] = useState('Nigeria')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const loading = saving || isPending
 
   async function save() {
     setSaving(true)
@@ -20,7 +23,7 @@ export default function ProfileClient({ name, email, phone }: { name: string; em
     await supabase.from('customers').update({ name: form.name, phone: form.phone }).eq('user_id', user.id)
     setSaving(false)
     setSaved(true)
-    router.refresh()
+    startTransition(() => router.refresh())
   }
 
   return (
@@ -36,8 +39,11 @@ export default function ProfileClient({ name, email, phone }: { name: string; em
         <div><label className="field-label">Country</label><input className="field-input" value={country} onChange={e => setCountry(e.target.value)} /></div>
       </div>
       <div className="flex items-center gap-3 mt-6">
-        <button onClick={save} disabled={saving} className="btn-outline disabled:opacity-60">{saving ? 'Saving…' : 'Save changes'}</button>
-        {saved && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+        <button onClick={save} disabled={loading} className="btn-outline disabled:opacity-60 flex items-center gap-1.5">
+          {loading && <Loader2 size={14} className="animate-spin" />}
+          {loading ? 'Saving…' : 'Save changes'}
+        </button>
+        {saved && !loading && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
       </div>
     </div>
   )
