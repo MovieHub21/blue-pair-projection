@@ -1,0 +1,10 @@
+// Publishable Supabase config — safe to ship to the browser.
+export const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  process.env.VITE_SUPABASE_URL ??
+  'https://jyllymseodyvuzkatdzp.supabase.co'
+
+export const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5bGx5bXNlb2R5dnV6a2F0ZHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NTgzMTgsImV4cCI6MjEwMjAzNDMxOH0.h6FXht7veA4HYjgm-UvaCc5-B69OWA3qz6mHcDB1mRM'
