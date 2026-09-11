@@ -530,6 +530,39 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          id: string
+          label: string
+          role: Database["public"]["Enums"]["app_role"]
+          section: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          role: Database["public"]["Enums"]["app_role"]
+          section: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       room_types: {
         Row: {
           active: boolean
