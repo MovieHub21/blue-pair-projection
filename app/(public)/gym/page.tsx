@@ -10,7 +10,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function GymPage() {
-  const config = await resolveAmenityConfig('gym', {{
+  const config = await resolveAmenityConfig('gym', {
     name: 'Fitness Gym', eyebrow: 'Stay on routine',
     heroImage: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1600&q=80',
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',

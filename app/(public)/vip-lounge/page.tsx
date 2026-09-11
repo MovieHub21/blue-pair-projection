@@ -10,7 +10,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function VipLoungePage() {
-  const config = await resolveAmenityConfig('vip-lounge', {{
+  const config = await resolveAmenityConfig('vip-lounge', {
     name: 'VIP Lounge', eyebrow: 'Exclusive access',
     heroImage: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80',
     description: 'A members-style lounge for hotel guests and VIP cardholders — private seating, a curated drinks list, and a dedicated host from check-in to last call.',

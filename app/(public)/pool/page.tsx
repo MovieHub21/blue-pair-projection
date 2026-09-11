@@ -10,7 +10,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function PoolPage() {
-  const config = await resolveAmenityConfig('pool', {{
+  const config = await resolveAmenityConfig('pool', {
     name: 'Indoor Pool', eyebrow: 'Swim year-round',
     heroImage: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1600&q=80',
     description: 'A temperature-controlled indoor pool with a dedicated kids\u2019 section and poolside service from the Outdoor Bar & Eatery.',

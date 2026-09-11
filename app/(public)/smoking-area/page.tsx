@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function SmokingAreaPage() {
-  const config = await resolveAmenityConfig('smoking-area', {{
+  const config = await resolveAmenityConfig('smoking-area', {
     name: 'Smoking Area', eyebrow: 'Designated zone',
     heroImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=80',
     description: 'An open-air designated smoking area located on the east terrace, away from dining and pool areas, with comfortable outdoor seating.',
