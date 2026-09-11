@@ -18,14 +18,13 @@ export default function PermissionsClient({ roles, canEdit }: { roles: RoleGroup
     if (!canEdit) return
     const next = !sectionRow.allowed
     setSavingId(sectionRow.id)
-    setData(prev => prev.map(r => r.role !== active ? r : { ...r, sections: r.sections.map(s => s.id === sectionRow.id ? { ...s, allowed: next } : s) }))
-    const { error } = await supabase.from('role_permissions').update({ allowed: next }).eq('id', sectionRow.id)
+    const { data: saved, error } = await supabase.from('role_permissions').update({ allowed: next }).eq('id', sectionRow.id).select('id, allowed').maybeSingle()
     setSavingId(null)
-    if (error) {
-      setData(prev => prev.map(r => r.role !== active ? r : { ...r, sections: r.sections.map(s => s.id === sectionRow.id ? { ...s, allowed: !next } : s) }))
-      pushToast('Could not update permission: ' + error.message, 'error')
+    if (error || !saved) {
+      pushToast('Could not update permission: ' + (error?.message || 'The change was not saved.'), 'error')
       return
     }
+    setData(prev => prev.map(r => r.role !== active ? r : { ...r, sections: r.sections.map(s => s.id === sectionRow.id ? { ...s, allowed: saved.allowed } : s) }))
     pushToast(`${sectionRow.label} ${next ? 'allowed' : 'restricted'} for ${group.label}`, 'success')
   }
 
@@ -49,10 +48,9 @@ export default function PermissionsClient({ roles, canEdit }: { roles: RoleGroup
                   onClick={() => toggle(s)}
                   disabled={savingId === s.id}
                   aria-label={`Toggle ${s.label} for ${group.label}`}
-                  className={'relative w-10 h-5.5 rounded-full transition-colors disabled:opacity-60 ' + (s.allowed ? 'bg-emerald-500' : 'bg-black/15')}
-                  style={{ height: '22px' }}
+                  className={'relative w-10 h-[22px] rounded-full transition-colors disabled:opacity-60 ' + (s.allowed ? 'bg-emerald-500' : 'bg-black/15')}
                 >
-                  <span className={'absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform ' + (s.allowed ? 'translate-x-[19px]' : 'translate-x-0.5')} style={{ width: '18px', height: '18px' }} />
+                  <span className={'absolute left-0.5 top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow transition-transform duration-200 ' + (s.allowed ? 'translate-x-[18px]' : 'translate-x-0')} />
                 </button>
               ) : (
                 s.allowed

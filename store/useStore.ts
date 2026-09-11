@@ -103,7 +103,7 @@ interface StoreState {
   removeGalleryImage: (id: string) => void
 
   setRoomTypeImages: (id: string, images: string[]) => void
-  saveAmenity: (key: string, patch: Partial<Amenity>) => void
+  saveAmenity: (key: string, patch: Partial<Amenity>) => Promise<boolean>
 }
 
 let toastSeq = 1
@@ -541,7 +541,8 @@ export const useStore = create<StoreState>((set, get) => ({
     get().pushToast('Room photos updated — now live on the website', 'success')
   },
 
-  saveAmenity: (key, patch) => {
+  saveAmenity: async (key, patch) => {
+    const previous = get().amenities.find(a => a.key === key)
     set(s => ({ amenities: s.amenities.map(a => a.key === key ? { ...a, ...patch } : a) }))
     const row: Record<string, any> = {}
     if (patch.name !== undefined) row.name = patch.name
@@ -554,7 +555,15 @@ export const useStore = create<StoreState>((set, get) => ({
     if (patch.pricingNote !== undefined) row.pricing_note = patch.pricingNote
     if (patch.ctaLabel !== undefined) row.cta_label = patch.ctaLabel
     if (patch.published !== undefined) row.published = patch.published
-    save('amenities', row, key)
+    // Amenities are identified by their `key`, not an `id` column. Using the
+    // generic save helper here made every amenity update fail silently.
+    const { data, error } = await supabase.from('amenities').update(row).eq('key', key).select('key').maybeSingle()
+    if (error || !data) {
+      console.error('[amenities] update failed', error?.message ?? 'Amenity was not found')
+      if (previous) set(s => ({ amenities: s.amenities.map(a => a.key === key ? previous : a) }))
+      return false
+    }
+    return true
   },
 }))
 

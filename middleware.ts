@@ -43,7 +43,8 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/account/dashboard'
       return NextResponse.redirect(url)
     }
-    const fullAdmin = list.includes('super_admin') || list.includes('manager')
+    const isSuperAdmin = list.includes('super_admin')
+    const fullAdmin = isSuperAdmin || list.includes('manager')
     const canEnterAdminArea = fullAdmin || list.includes('restaurant') || list.includes('bar') || list.includes('accountant')
     const allowed =
       (pathname.startsWith('/admin') && canEnterAdminArea) ||
@@ -60,7 +61,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Fine-grained section check (super_admin/manager bypass — they're the ones who set permissions).
-    if (!fullAdmin) {
+    if (!isSuperAdmin) {
       const section = sectionForPath(pathname)
       if (section && !ALWAYS_ALLOWED_SECTIONS.has(section)) {
         const { data: permRows } = await supabase.from('role_permissions').select('allowed').in('role', list).eq('section', section)

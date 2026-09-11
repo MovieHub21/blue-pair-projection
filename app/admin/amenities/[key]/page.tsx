@@ -53,7 +53,10 @@ export default function AmenityManagementPage({ params }: { params: { key: strin
               {amenity.heroImage && <img src={amenity.heroImage} className="w-full h-full object-cover" alt={amenity.name} />}
             </div>
             <ImageUploader folder={`amenities/${k}`} label="Upload from device"
-              onUploaded={urls => { saveAmenity(k, { heroImage: urls[0] }); pushToast('Main photo updated', 'success') }} />
+              onUploaded={async urls => {
+                if (await saveAmenity(k, { heroImage: urls[0] })) pushToast('Main photo updated', 'success')
+                else pushToast('Could not save the main photo. Please try again.', 'error')
+              }} />
           </div>
         </div>
 
@@ -63,29 +66,37 @@ export default function AmenityManagementPage({ params }: { params: { key: strin
             {gallery.map((src, i) => (
               <div key={src + i} className="relative aspect-square rounded-lg overflow-hidden group">
                 <img src={src} className="w-full h-full object-cover" alt={`${amenity.name} photo ${i + 1}`} />
-                <button onClick={() => saveAmenity(k, { gallery: gallery.filter((_, j) => j !== i) })}
+                <button onClick={async () => {
+                  if (!(await saveAmenity(k, { gallery: gallery.filter((_, j) => j !== i) }))) pushToast('Could not remove the photo. Please try again.', 'error')
+                }}
                   className="absolute top-1 right-1 w-7 h-7 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
               </div>
             ))}
           </div>
           <ImageUploader folder={`amenities/${k}`} multiple label="Upload photos from device"
-            onUploaded={urls => { saveAmenity(k, { gallery: [...gallery, ...urls] }); pushToast('Photos added', 'success') }} />
+            onUploaded={async urls => {
+              if (await saveAmenity(k, { gallery: [...gallery, ...urls] })) pushToast('Photos added', 'success')
+              else pushToast('Could not save the photos. Please try again.', 'error')
+            }} />
         </div>
 
         <div className="flex gap-3 pt-2">
           <button
-            onClick={() => {
-              saveAmenity(k, {
+            onClick={async () => {
+              const saved = await saveAmenity(k, {
                 description: draft.description,
                 hours: draft.hours,
                 pricingNote: draft.pricingNote,
                 facilities: draft.facilities.split(',').map(f => f.trim()).filter(Boolean),
                 published: true,
               })
-              pushToast(`${amenity.name} page published`, 'success')
+              pushToast(saved ? `${amenity.name} page published` : `Could not publish the ${amenity.name} page. Please try again.`, saved ? 'success' : 'error')
             }}
             className="btn-primary">Publish changes</button>
-          <button onClick={() => { saveAmenity(k, { published: false }); pushToast('Saved as draft', 'info') }} className="btn-outline">Save as draft</button>
+          <button onClick={async () => {
+            if (await saveAmenity(k, { published: false })) pushToast('Saved as draft', 'info')
+            else pushToast('Could not save the draft. Please try again.', 'error')
+          }} className="btn-outline">Save as draft</button>
         </div>
       </div>
     </div>

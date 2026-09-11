@@ -77,7 +77,7 @@ export default function PublicNavbar() {
         <button className="lg:hidden" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
       </div>
       {open && (
-        <div className="lg:hidden px-6 pb-6 flex flex-col gap-1 text-sm font-medium">
+        <div className="lg:hidden px-6 pb-6 flex flex-col gap-1 text-sm font-medium max-h-[calc(100dvh-73px)] overflow-y-auto overscroll-contain">
           <Link href="/rooms" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Rooms</Link>
           <Link href="/about" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">About</Link>
           {explore.map(e => <Link key={e.href} href={e.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">{e.label}</Link>)}

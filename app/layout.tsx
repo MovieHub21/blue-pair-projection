@@ -5,9 +5,14 @@ import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
 import ToastHost from '../components/ui/Toast'
 import RouteProgress from '../components/RouteProgress'
 
-export const viewport: Viewport = { themeColor: '#0A1229' }
+// Keep Tailwind's mobile breakpoints on the device width. Without an explicit
+// viewport the portals can render as a compressed desktop sidebar on phones.
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
 export const metadata: Metadata = {
+  keywords: ['hotel in Uromi', 'luxury hotel Edo State', 'Uromi accommodation', 'hotel rooms Uromi', 'restaurant in Uromi', 'event venue Uromi', 'short-let Uromi', 'Blue Pair Hotel'],
+  category: 'hotel',
+  formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),
   title: { default: `${SITE_NAME} — Luxury Hotel in Uromi, Edo State`, template: `%s | ${SITE_NAME}` },
   description: "Blue Pair Hotel — Uromi's premier luxury hotel in Edo State. Rooms & suites, fine dining, an indoor pool, gym, VIP lounge and events. Book online.",
@@ -20,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-NG">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />

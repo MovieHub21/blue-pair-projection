@@ -36,8 +36,8 @@ export async function getMyBookings() {
   const customer = await getMyCustomer()
   if (!customer) return []
   const db = createSupabaseServerClient()
-  const { data } = await db.from('bookings').select('*, room_types(*)').eq('customer_id', customer.id).order('created_at', { ascending: false })
-  return (data ?? []).map((r: any) => ({ ...mapBooking(r), room: r.room_types ? mapRoomType(r.room_types) : null }))
+  const { data } = await db.from('bookings').select('*, room_types(*), rooms(room_number)').eq('customer_id', customer.id).order('created_at', { ascending: false })
+  return (data ?? []).map((r: any) => ({ ...mapBooking(r), room: r.room_types ? mapRoomType(r.room_types) : null, roomNumber: r.rooms?.room_number ?? null }))
 }
 
 export async function getMyPayments() {

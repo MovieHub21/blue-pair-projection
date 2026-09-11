@@ -13,12 +13,14 @@ const TYPES = [
   { k: 'Other request', icon: MessageCircle },
 ]
 
-export default function RequestsClient({ initialRequests, customerId, guestName }: {
-  initialRequests: GuestRequest[]; customerId: string | null; guestName: string
+export default function RequestsClient({ initialRequests, customerId, guestName, activeRoom, bookingRef, orderItems }: {
+  initialRequests: GuestRequest[]; customerId: string | null; guestName: string; activeRoom?: string; bookingRef?: string
+  orderItems: { name: string; price: number; kind: string }[]
 }) {
   const pushToast = useStore(s => s.pushToast)
   const [selected, setSelected] = useState('Extra towels')
   const [note, setNote] = useState('')
+  const [order, setOrder] = useState('')
   const [sent, setSent] = useState(initialRequests)
   const [submitting, setSubmitting] = useState(false)
 
@@ -26,14 +28,21 @@ export default function RequestsClient({ initialRequests, customerId, guestName 
     if (!customerId) { pushToast('Please sign in to submit a request', 'error'); return }
     setSubmitting(true)
     const id = `gr_${Date.now()}`
+    if (selected === 'Room service' && !order) { pushToast('Choose a food or drink to order.', 'error'); return }
+    if (selected === 'Room service' && !activeRoom) { pushToast('Room service is available once you are checked in to a room.', 'error'); return }
+    const selectedItem = orderItems.find(item => item.name === order)
+    const message = selected === 'Room service'
+      ? `Room service order: ${selectedItem?.name ?? order}${selectedItem ? ` — ₦${selectedItem.price.toLocaleString('en-NG')}` : ''}${note ? `. Notes: ${note}` : ''}`
+      : note
     const { error } = await supabase.from('guest_requests').insert({
-      id, customer_id: customerId, guest_name: guestName, type: selected, message: note, status: 'open',
+      id, customer_id: customerId, booking_ref: bookingRef ?? '', room: activeRoom ?? '', guest_name: guestName, type: selected, message, status: 'open',
     })
     setSubmitting(false)
     if (error) { pushToast('Could not submit request', 'error'); return }
-    setSent([{ id, customerId, bookingRef: '', room: '', guestName, type: selected, message: note, status: 'open', createdAt: new Date().toISOString().slice(0, 10) }, ...sent])
+    setSent([{ id, customerId, bookingRef: bookingRef ?? '', room: activeRoom ?? '', guestName, type: selected, message, status: 'open', createdAt: new Date().toISOString().slice(0, 10) }, ...sent])
     setNote('')
-    pushToast('Request submitted to front desk', 'success')
+    setOrder('')
+    pushToast(selected === 'Room service' ? `Order sent to Room ${activeRoom}` : 'Request submitted to front desk', 'success')
   }
 
   return (
@@ -47,6 +56,16 @@ export default function RequestsClient({ initialRequests, customerId, guestName 
             </button>
           ))}
         </div>
+        {selected === 'Room service' && (
+          <div className="mb-5 rounded-xl bg-cream-100 p-3.5">
+            <label className="field-label">Food or drink</label>
+            <select value={order} onChange={e => setOrder(e.target.value)} className="field-input">
+              <option value="">Choose from the menu</option>
+              {orderItems.map(item => <option key={`${item.kind}-${item.name}`} value={item.name}>{item.kind} · {item.name} — ₦{item.price.toLocaleString('en-NG')}</option>)}
+            </select>
+            <p className="text-xs text-navy-500 mt-2">{activeRoom ? `Delivery is prefilled for your checked-in room: ${activeRoom}.` : 'Check in to a room to place a room-service order.'}</p>
+          </div>
+        )}
         <label className="field-label">Details</label>
         <textarea value={note} onChange={e => setNote(e.target.value)} rows={4} className="field-input !h-auto py-2.5 mb-5" placeholder="Let us know more..." />
         <button onClick={submit} disabled={submitting} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{submitting && <Loader2 size={15} className="animate-spin" />}{submitting ? 'Submitting…' : 'Submit request'}</button>

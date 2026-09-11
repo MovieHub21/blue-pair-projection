@@ -31,10 +31,26 @@ export default function PortalShell({
 
   return (
     <div className="min-h-screen flex bg-cream-100">
-      <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950 text-white flex items-center justify-between px-4 py-3.5">
+      <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950 text-white flex items-center justify-between px-4 py-3.5 relative">
         <button onClick={() => setOpen(true)}><Menu size={20} /></button>
         <span className="font-display text-sm font-semibold">{portalName}</span>
-        <div className="w-8 h-8 rounded-full bg-gold-500 text-navy-950 text-[11px] font-bold flex items-center justify-center">{userName.split(' ').map(n=>n[0]).join('')}</div>
+        <button onClick={() => setMenuOpen(v => !v)} aria-label="Open user menu" aria-expanded={menuOpen} className="w-8 h-8 rounded-full bg-gold-500 text-navy-950 text-[11px] font-bold flex items-center justify-center">{userName.split(' ').map(n=>n[0]).join('')}</button>
+        {menuOpen && (
+          <div className="absolute top-full right-3 pt-2 w-56 z-50">
+            <div className="bg-white rounded-xl2 shadow-pop border border-black/5 p-2 text-navy-600">
+              <div className="max-h-72 overflow-y-auto flex flex-col gap-0.5">
+                {allItems.map(item => (
+                  <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium ' + (isActive(item.href, item.end) ? 'bg-cream-100 text-navy-900' : 'text-navy-600 hover:bg-cream-100')}>
+                    {item.icon}{item.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="border-t border-black/5 mt-1.5 pt-1.5">
+                <button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 text-left"><LogOut size={14} />Sign out</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <aside className={
