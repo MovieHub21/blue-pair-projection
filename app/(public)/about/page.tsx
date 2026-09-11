@@ -3,7 +3,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { getGalleryImages } from '../../../lib/data'
+import { getGalleryImages, getSiteContent } from '../../../lib/data'
 import { CheckCircle2 } from 'lucide-react'
 
 export const metadata = buildMetadata({
@@ -16,7 +16,7 @@ export const metadata = buildMetadata({
 const breadcrumbs = [{name:'Home',path:'/'},{name:'About',path:'/about'}]
 
 export default async function AboutPage() {
-  const gallery = await getGalleryImages()
+  const [gallery, content] = await Promise.all([getGalleryImages(), getSiteContent()])
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
@@ -26,7 +26,7 @@ export default async function AboutPage() {
         <div className="container-w grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <span className="eyebrow">Since 2014</span>
-            <h2 className="text-3xl md:text-4xl font-semibold mt-3 mb-5">A Nigerian hospitality brand, built to compete anywhere</h2>
+            <h2 className="text-3xl md:text-4xl font-semibold mt-3 mb-5">{content.about_title || 'A Nigerian hospitality brand, built to compete anywhere'}</h2>
             <p className="text-navy-500 text-[15px] leading-relaxed mb-4">Blue Pair Hotel opened on Auchi Road, Uromi in 2014 with a simple premise: Edo State deserved a hotel that matched Esan hospitality with world-class standards, without guests needing to travel to Lagos or Abuja for it. Twelve years on, Blue Pair is a full campus — the main hotel, the Annex short-let residences, two restaurants, three bars, an indoor pool, a club, and an events hall — serving Uromi, Ekpoma, Auchi, Ubiaja and beyond.</p>
             <p className="text-navy-500 text-[15px] leading-relaxed">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced — which is why the same warmth shows up whether you're checking into a Standard Room or hosting 200 guests in the Grand Hall.</p>
           </div>

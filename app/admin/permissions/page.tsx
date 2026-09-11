@@ -1,29 +1,31 @@
-'use client'
-import { useState } from 'react'
-import { rolePermissions } from '../../../data/mock'
-import { Check, X } from 'lucide-react'
+import { getMyPermissions } from '../../../lib/permissions'
+import { createSupabaseServerClient } from '../../../lib/supabase/server'
+import PermissionsClient from './PermissionsClient'
 
-export default function Permissions() {
-  const roles = Object.keys(rolePermissions)
-  const [role, setRole] = useState(roles[2])
+const ROLES = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant'] as const
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Admin', manager: 'Manager', reception: 'Reception', housekeeping: 'Housekeeping',
+  maintenance: 'Maintenance', restaurant: 'Restaurant', bar: 'Bar', accountant: 'Accountant',
+}
+
+export default async function PermissionsPage() {
+  const { isSuperAdmin } = await getMyPermissions()
+  const db = createSupabaseServerClient()
+  const { data } = await db.from('role_permissions').select('*').order('sort_order')
+  const rows = data ?? []
+
+  const byRole = ROLES.map(role => ({
+    role, label: ROLE_LABELS[role],
+    sections: rows.filter((r: any) => r.role === role).map((r: any) => ({ id: r.id, section: r.section, label: r.label, allowed: r.allowed })),
+  }))
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Permissions</h1>
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {roles.map(r => <button key={r} onClick={() => setRole(r)} className={'px-3.5 py-2 rounded-full text-xs font-semibold border ' + (role===r ? 'bg-navy-950 text-white border-navy-950' : 'border-black/15')}>{r}</button>)}
-      </div>
-      <div className="card p-6 max-w-lg">
-        <h4 className="font-semibold mb-4 uppercase text-xs tracking-wider text-navy-400">{role}</h4>
-        <div className="flex flex-col gap-1">
-          {rolePermissions[role].map(p => (
-            <div key={p.section} className="flex items-center justify-between py-2.5 border-b border-black/5 last:border-none text-sm">
-              <span>{p.section}</span>
-              {p.allowed ? <span className="flex items-center gap-1 text-emerald-600 font-semibold text-xs"><Check size={14}/>Allowed</span> : <span className="flex items-center gap-1 text-red-500 font-semibold text-xs"><X size={14}/>Restricted</span>}
-            </div>
-          ))}
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold mb-1">Permissions</h1>
+      <p className="text-xs text-navy-400 mb-6">
+        {isSuperAdmin ? 'Control which portal sections each staff role can access.' : 'You can view permissions for your role — only a Super Admin can change them.'}
+      </p>
+      <PermissionsClient roles={byRole} canEdit={isSuperAdmin} />
     </div>
   )
 }

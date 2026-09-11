@@ -11,6 +11,7 @@ import {
   type Drink, type ShortLet, type EventItem, type MaintenanceTicket, type HousekeepingTask,
   type BillboardSpace, type Payment, type Offer, type RoomStatus, type ParkingZone,
 } from '../data/mock'
+import { ROLE_LABEL_TO_ENUM } from '../lib/roles'
 
 interface ToastMsg { id: number; text: string; tone: 'success' | 'info' | 'error' }
 
@@ -62,19 +63,38 @@ interface StoreState {
   updateMenuItemPrice: (id: string, price: number) => void
   toggleMenuItemAvailable: (id: string) => void
   addMenuItem: (item: MenuItem) => void
+  updateMenuItem: (id: string, patch: Partial<MenuItem>) => void
+  deleteMenuItem: (id: string) => void
 
   updateDrinkPrice: (id: string, price: number) => void
   toggleDrinkAvailable: (id: string) => void
   addDrink: (d: Drink) => void
+  deleteDrink: (id: string) => void
 
   addStaff: (s: StaffMember) => void
   toggleStaffStatus: (id: string) => void
   updateStaffRole: (id: string, role: StaffMember['role']) => void
+  updateStaffInfo: (id: string, updates: Partial<Pick<StaffMember, 'name' | 'phone' | 'department'>>) => void
 
   togglePublishEvent: (id: string) => void
   addEvent: (e: EventItem) => void
+  updateEvent: (id: string, patch: Partial<EventItem>) => void
+  deleteEvent: (id: string) => void
 
   toggleOfferActive: (id: string) => void
+  addOffer: (o: Offer) => void
+  updateOffer: (id: string, patch: Partial<Offer>) => void
+  deleteOffer: (id: string) => void
+
+  addShortLet: (sl: ShortLet) => void
+  updateShortLet: (id: string, patch: Partial<ShortLet>) => void
+  toggleShortLetAvailable: (id: string) => void
+  deleteShortLet: (id: string) => void
+
+  addBillboard: (b: BillboardSpace) => void
+  updateBillboard: (id: string, patch: Partial<BillboardSpace>) => void
+  toggleBillboardAvailable: (id: string) => void
+  deleteBillboard: (id: string) => void
 
   addGuestRequest: (r: { customerId?: string; bookingRef?: string; room?: string; guestName: string; type: string; message: string }) => void
   resolveGuestRequest: (id: string) => void
@@ -96,6 +116,11 @@ async function save(table: string, patch: Record<string, any>, id: string) {
 async function insertRow(table: string, row: Record<string, any>) {
   const { error } = await supabase.from(table).insert(row)
   if (error) console.error(`[${table}] insert failed`, error.message)
+}
+
+async function deleteRow(table: string, id: string) {
+  const { error } = await supabase.from(table).delete().eq('id', id)
+  if (error) console.error(`[${table}] delete failed`, error.message)
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -322,6 +347,16 @@ export const useStore = create<StoreState>((set, get) => ({
     })
     get().pushToast('Menu item added', 'success')
   },
+  updateMenuItem: (id, patch) => {
+    set(s => ({ menuItems: s.menuItems.map(m => m.id === id ? { ...m, ...patch } : m) }))
+    save('menu_items', patch, id)
+    get().pushToast('Menu item updated', 'success')
+  },
+  deleteMenuItem: (id) => {
+    set(s => ({ menuItems: s.menuItems.filter(m => m.id !== id) }))
+    deleteRow('menu_items', id)
+    get().pushToast('Menu item removed', 'info')
+  },
 
   updateDrinkPrice: (id, price) => {
     set(s => ({ drinks: s.drinks.map(d => d.id === id ? { ...d, price } : d) }))
@@ -337,6 +372,11 @@ export const useStore = create<StoreState>((set, get) => ({
     set(s => ({ drinks: [d, ...s.drinks] }))
     insertRow('drinks', { id: d.id, bar: d.bar, category: d.category, name: d.name, price: d.price, available: d.available })
     get().pushToast('Drink added', 'success')
+  },
+  deleteDrink: (id) => {
+    set(s => ({ drinks: s.drinks.filter(d => d.id !== id) }))
+    deleteRow('drinks', id)
+    get().pushToast('Drink removed', 'info')
   },
 
   addStaff: (member) => {
@@ -355,7 +395,23 @@ export const useStore = create<StoreState>((set, get) => ({
   updateStaffRole: (id, role) => {
     set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, role } : m) }))
     save('staff', { role }, id)
+    ;(async () => {
+      const { data: row } = await supabase.from('staff').select('user_id').eq('id', id).maybeSingle()
+      const userId = (row as any)?.user_id
+      if (userId) {
+        const roleEnum = ROLE_LABEL_TO_ENUM[role as string]
+        if (roleEnum) {
+          await supabase.from('user_roles').delete().eq('user_id', userId)
+          await supabase.from('user_roles').insert({ user_id: userId, role: roleEnum })
+        }
+      }
+    })()
     get().pushToast('Role updated — permissions refreshed', 'success')
+  },
+  updateStaffInfo: (id, updates) => {
+    set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, ...updates } : m) }))
+    save('staff', updates, id)
+    get().pushToast('Staff details updated', 'success')
   },
 
   togglePublishEvent: (id) => {
@@ -372,11 +428,78 @@ export const useStore = create<StoreState>((set, get) => ({
     })
     get().pushToast('Event created', 'success')
   },
+  updateEvent: (id, patch) => {
+    set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...patch } : e) }))
+    save('events', patch, id)
+    get().pushToast('Event updated', 'success')
+  },
+  deleteEvent: (id) => {
+    set(s => ({ events: s.events.filter(e => e.id !== id) }))
+    deleteRow('events', id)
+    get().pushToast('Event deleted', 'info')
+  },
 
   toggleOfferActive: (id) => {
     const next = !get().offers.find(o => o.id === id)?.active
     set(s => ({ offers: s.offers.map(o => o.id === id ? { ...o, active: next } : o) }))
     save('offers', { active: next }, id)
+  },
+  addOffer: (o) => {
+    set(s => ({ offers: [o, ...s.offers] }))
+    insertRow('offers', { id: o.id, title: o.title, description: o.description, discount: o.discount, category: o.category, active: o.active })
+    get().pushToast('Offer created', 'success')
+  },
+  updateOffer: (id, patch) => {
+    set(s => ({ offers: s.offers.map(o => o.id === id ? { ...o, ...patch } : o) }))
+    save('offers', patch, id)
+    get().pushToast('Offer updated', 'success')
+  },
+  deleteOffer: (id) => {
+    set(s => ({ offers: s.offers.filter(o => o.id !== id) }))
+    deleteRow('offers', id)
+    get().pushToast('Offer deleted', 'info')
+  },
+
+  addShortLet: (sl) => {
+    set(s => ({ shortLets: [sl, ...s.shortLets] }))
+    insertRow('short_lets', { id: sl.id, name: sl.name, type: sl.type, price: sl.price, bedrooms: sl.bedrooms, amenities: sl.amenities, image: sl.image, available: sl.available, description: sl.description })
+    get().pushToast('Short-let added', 'success')
+  },
+  updateShortLet: (id, patch) => {
+    set(s => ({ shortLets: s.shortLets.map(sl => sl.id === id ? { ...sl, ...patch } : sl) }))
+    save('short_lets', patch, id)
+    get().pushToast('Short-let updated', 'success')
+  },
+  toggleShortLetAvailable: (id) => {
+    const next = !get().shortLets.find(sl => sl.id === id)?.available
+    set(s => ({ shortLets: s.shortLets.map(sl => sl.id === id ? { ...sl, available: next } : sl) }))
+    save('short_lets', { available: next }, id)
+  },
+  deleteShortLet: (id) => {
+    set(s => ({ shortLets: s.shortLets.filter(sl => sl.id !== id) }))
+    deleteRow('short_lets', id)
+    get().pushToast('Short-let removed', 'info')
+  },
+
+  addBillboard: (b) => {
+    set(s => ({ billboards: [b, ...s.billboards] }))
+    insertRow('billboards', { id: b.id, location: b.location, dimensions: b.dimensions, price: b.price, image: b.image, available: b.available })
+    get().pushToast('Billboard added', 'success')
+  },
+  updateBillboard: (id, patch) => {
+    set(s => ({ billboards: s.billboards.map(b => b.id === id ? { ...b, ...patch } : b) }))
+    save('billboards', patch, id)
+    get().pushToast('Billboard updated', 'success')
+  },
+  toggleBillboardAvailable: (id) => {
+    const next = !get().billboards.find(b => b.id === id)?.available
+    set(s => ({ billboards: s.billboards.map(b => b.id === id ? { ...b, available: next } : b) }))
+    save('billboards', { available: next }, id)
+  },
+  deleteBillboard: (id) => {
+    set(s => ({ billboards: s.billboards.filter(b => b.id !== id) }))
+    deleteRow('billboards', id)
+    get().pushToast('Billboard removed', 'info')
   },
 
   addGuestRequest: (r) => {

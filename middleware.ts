@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './lib/supabase/config'
+import { sectionForPath, ALWAYS_ALLOWED_SECTIONS } from './lib/permissionSections'
 
 const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
@@ -42,12 +43,13 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/account/dashboard'
       return NextResponse.redirect(url)
     }
-    const admin = list.includes('super_admin') || list.includes('manager')
+    const fullAdmin = list.includes('super_admin') || list.includes('manager')
+    const canEnterAdminArea = fullAdmin || list.includes('restaurant') || list.includes('bar') || list.includes('accountant')
     const allowed =
-      (pathname.startsWith('/admin') && admin) ||
-      (pathname.startsWith('/reception') && (admin || list.includes('reception'))) ||
-      (pathname.startsWith('/housekeeping') && (admin || list.includes('housekeeping'))) ||
-      (pathname.startsWith('/maintenance') && (admin || list.includes('maintenance')))
+      (pathname.startsWith('/admin') && canEnterAdminArea) ||
+      (pathname.startsWith('/reception') && (fullAdmin || list.includes('reception'))) ||
+      (pathname.startsWith('/housekeeping') && (fullAdmin || list.includes('housekeeping'))) ||
+      (pathname.startsWith('/maintenance') && (fullAdmin || list.includes('maintenance')))
     if (!allowed) {
       const url = request.nextUrl.clone()
       url.pathname = list.includes('reception') ? '/reception/dashboard'
@@ -55,6 +57,26 @@ export async function middleware(request: NextRequest) {
         : list.includes('maintenance') ? '/maintenance/dashboard'
         : '/account/dashboard'
       return NextResponse.redirect(url)
+    }
+
+    // Fine-grained section check (super_admin/manager bypass — they're the ones who set permissions).
+    if (!fullAdmin) {
+      const section = sectionForPath(pathname)
+      if (section && !ALWAYS_ALLOWED_SECTIONS.has(section)) {
+        const { data: permRows } = await supabase.from('role_permissions').select('allowed').in('role', list).eq('section', section)
+        const rows = permRows ?? []
+        const restricted = rows.length > 0 && !rows.some((r: any) => r.allowed)
+        if (restricted) {
+          const url = request.nextUrl.clone()
+          url.pathname = list.includes('reception') ? '/reception/dashboard'
+            : list.includes('housekeeping') ? '/housekeeping/dashboard'
+            : list.includes('maintenance') ? '/maintenance/dashboard'
+            : canEnterAdminArea ? '/admin/dashboard'
+            : '/account/dashboard'
+          url.searchParams.set('restricted', '1')
+          return NextResponse.redirect(url)
+        }
+      }
     }
   }
 

@@ -21,10 +21,8 @@ export default function AnnexManagement() {
       </div>
 
       {tab === 'Outdoor Eatery' && (
-        <div className="card p-6 max-w-2xl flex flex-col gap-4">
-          <div><label className="field-label">Hours</label><input className="field-input" defaultValue="Daily, 12:00 PM – 1:00 AM" /></div>
-          <div><label className="field-label">Description</label><textarea className="field-input !h-auto py-2.5" rows={3} defaultValue="Open-air seating scattered across the Annex courtyard, lit by string lights." /></div>
-          <button className="btn-primary w-fit">Save changes</button>
+        <div className="card p-6 max-w-2xl text-sm text-navy-500">
+          Outdoor Eatery menu items are managed in the Grilling and Restaurant tabs above (outlet: Annex Grilling / Annex Restaurant). A dedicated page for its hours and description isn't wired up yet.
         </div>
       )}
       {tab === 'Grilling' && (
@@ -54,10 +52,8 @@ export default function AnnexManagement() {
         </div>
       )}
       {tab === 'VIP Lounge' && (
-        <div className="card p-6 max-w-2xl flex flex-col gap-4">
-          <div><label className="field-label">Minimum spend</label><input className="field-input" defaultValue="₦100,000" /></div>
-          <div><label className="field-label">Hours</label><input className="field-input" defaultValue="Daily, 5:00 PM – 2:00 AM" /></div>
-          <button className="btn-primary w-fit">Save changes</button>
+        <div className="card p-6 max-w-2xl text-sm text-navy-500">
+          VIP Lounge content (description, hours, photos) is managed under <b>Outlets → VIP Lounge</b> in the sidebar — that page is fully live on the public site.
         </div>
       )}
       {tab === 'Restaurant' && (

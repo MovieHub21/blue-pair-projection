@@ -86,3 +86,11 @@ export async function getAmenity(key: string) {
   const { data } = await db.from('amenities').select('*').eq('key', key).maybeSingle()
   return data ? mapAmenity(data) : null
 }
+
+export async function getSiteContent() {
+  const db = createSupabasePublicClient()
+  const { data } = await db.from('site_content').select('key, value')
+  const map: Record<string, string> = {}
+  for (const row of data ?? []) map[(row as any).key] = (row as any).value
+  return map
+}

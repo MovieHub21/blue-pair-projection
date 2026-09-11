@@ -10,7 +10,7 @@ import type { MenuItem } from '../../../data/mock'
 const OUTLETS = ['Blue Pair Restaurant', 'Outdoor Bar & Eatery'] as const
 
 export default function RestaurantManagement() {
-  const { menuItems, updateMenuItemPrice, toggleMenuItemAvailable, addMenuItem } = useStore()
+  const { menuItems, updateMenuItemPrice, toggleMenuItemAvailable, addMenuItem, deleteMenuItem } = useStore()
   const [outlet, setOutlet] = useState<typeof OUTLETS[number]>('Blue Pair Restaurant')
   const [showAdd, setShowAdd] = useState(false)
   const [draft, setDraft] = useState({ name: '', category: 'Mains', price: '' })
@@ -40,7 +40,7 @@ export default function RestaurantManagement() {
                 <td className="p-4 text-navy-500">{m.category}</td>
                 <td className="p-4"><EditablePrice value={m.price} onSave={v => updateMenuItemPrice(m.id, v)} /></td>
                 <td className="p-4"><button onClick={() => toggleMenuItemAvailable(m.id)} className={m.available ? 'pill-green' : 'pill-red'}>{m.available ? 'Available' : 'Sold out'}</button></td>
-                <td className="p-4"><button className="text-xs font-semibold text-red-600">Delete</button></td>
+                <td className="p-4"><button onClick={() => { if (confirm('Remove this item?')) deleteMenuItem(m.id) }} className="text-xs font-semibold text-red-600">Delete</button></td>
               </tr>
             ))}
           </tbody>

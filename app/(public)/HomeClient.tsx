@@ -8,7 +8,7 @@ import RoomCard from '../../components/ui/RoomCard'
 import { type RoomType, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
 
-export default function HomeClient({ roomTypes, offers, gallery }: { roomTypes: RoomType[]; offers: Offer[]; gallery: GalleryImage[] }) {
+export default function HomeClient({ roomTypes, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
   const router = useRouter()
   const [checkIn, setCheckIn] = useState('2026-08-14')
   const [checkOut, setCheckOut] = useState('2026-08-16')
@@ -23,10 +23,10 @@ export default function HomeClient({ roomTypes, offers, gallery }: { roomTypes: 
             <span className="w-9 h-px bg-gold-300" />Uromi, Edo State — Est. 2014
           </div>
           <h1 className="text-4xl md:text-6xl font-semibold leading-[1.05] max-w-2xl">
-            Premium hospitality, <em className="italic text-gold-300 font-medium">the Blue Pair way</em>.
+            {headline || <>Premium hospitality, <em className="italic text-gold-300 font-medium">the Blue Pair way</em>.</>}
           </h1>
           <p className="mt-5 max-w-md text-white/80 text-[15.5px] leading-relaxed">
-            Sixty rooms and suites, a resident restaurant and bar, an indoor pool, and a private Annex for extended stays — Edo State's most complete luxury address, right here in Uromi.
+            {subtitle || "Sixty rooms and suites, a resident restaurant and bar, an indoor pool, and a private Annex for extended stays — Edo State's most complete luxury address, right here in Uromi."}
           </p>
           <div className="flex gap-3 mt-8">
             <Link href="/booking" className="btn-gold">Book a room</Link>

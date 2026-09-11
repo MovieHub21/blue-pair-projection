@@ -29,7 +29,7 @@ export const mapCustomer = (r: Row): Customer => ({
 })
 
 export const mapStaff = (r: Row): StaffMember => ({
-  id: r.id, name: r.name, email: r.email, phone: r.phone, role: r.role,
+  id: r.id, userId: r.user_id ?? undefined, name: r.name, email: r.email, phone: r.phone, role: r.role,
   department: r.department, status: r.status, joined: r.joined,
 })
 

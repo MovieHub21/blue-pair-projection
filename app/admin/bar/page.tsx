@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import EditablePrice from '../../../components/admin/EditablePrice'
 import Modal from '../../../components/ui/Modal'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import type { Drink } from '../../../data/mock'
 
 const BARS = ['Main Bar', 'VIP Bar', 'Outdoor Bar', 'Annex Bar'] as const
 
 export default function BarManagement() {
-  const { drinks, updateDrinkPrice, toggleDrinkAvailable, addDrink } = useStore()
+  const { drinks, updateDrinkPrice, toggleDrinkAvailable, addDrink, deleteDrink } = useStore()
   const [bar, setBar] = useState<typeof BARS[number]>('Main Bar')
   const [showAdd, setShowAdd] = useState(false)
   const [draft, setDraft] = useState({ name: '', category: 'Beer', price: '' })
@@ -36,6 +36,7 @@ export default function BarManagement() {
             <div className="flex items-center gap-4">
               <button onClick={() => toggleDrinkAvailable(d.id)} className={d.available ? 'pill-green' : 'pill-red'}>{d.available ? 'Available' : 'Sold out'}</button>
               <EditablePrice value={d.price} onSave={v => updateDrinkPrice(d.id, v)} />
+              <button onClick={() => { if (confirm('Remove this drink?')) deleteDrink(d.id) }} className="text-red-600"><Trash2 size={14} /></button>
             </div>
           </div>
         ))}

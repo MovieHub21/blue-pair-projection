@@ -3,17 +3,39 @@ import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { naira, formatDate } from '../../../lib/format'
 import Modal from '../../../components/ui/Modal'
+import ImageUploader from '../../../components/admin/ImageUploader'
 import { Plus } from 'lucide-react'
 import type { EventItem } from '../../../data/mock'
 
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=900&q=80'
+
 export default function EventsManagement() {
-  const { events, togglePublishEvent, addEvent } = useStore()
+  const { events, togglePublishEvent, addEvent, updateEvent, deleteEvent } = useStore()
   const [showAdd, setShowAdd] = useState(false)
-  const [draft, setDraft] = useState({ title: '', date: '2026-09-01', price: '20000', capacity: '100' })
+  const [editing, setEditing] = useState<EventItem | null>(null)
+  const [draft, setDraft] = useState({ title: '', date: '2026-09-01', price: '20000', capacity: '100', image: DEFAULT_IMAGE, description: '' })
+  const [editDraft, setEditDraft] = useState({ title: '', date: '', price: '', capacity: '', image: '', description: '' })
 
   function submit() {
-    const e: EventItem = { id: `e_${Date.now()}`, title: draft.title || 'New Event', date: draft.date, price: Number(draft.price), capacity: Number(draft.capacity), image: 'https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=900&q=80', description: 'Event details to be finalised.', published: false }
-    addEvent(e); setShowAdd(false)
+    const e: EventItem = { id: `e_${Date.now()}`, title: draft.title || 'New Event', date: draft.date, price: Number(draft.price), capacity: Number(draft.capacity), image: draft.image || DEFAULT_IMAGE, description: draft.description || 'Event details to be finalised.', published: false }
+    addEvent(e)
+    setShowAdd(false)
+    setDraft({ title: '', date: '2026-09-01', price: '20000', capacity: '100', image: DEFAULT_IMAGE, description: '' })
+  }
+
+  function openEdit(e: EventItem) {
+    setEditing(e)
+    setEditDraft({ title: e.title, date: e.date, price: String(e.price), capacity: String(e.capacity), image: e.image, description: e.description })
+  }
+
+  function saveEdit() {
+    if (!editing) return
+    updateEvent(editing.id, { title: editDraft.title, date: editDraft.date, price: Number(editDraft.price), capacity: Number(editDraft.capacity), image: editDraft.image, description: editDraft.description })
+    setEditing(null)
+  }
+
+  function remove(id: string) {
+    if (confirm('Delete this event? This cannot be undone.')) deleteEvent(id)
   }
 
   return (
@@ -25,7 +47,7 @@ export default function EventsManagement() {
       <div className="grid md:grid-cols-3 gap-5">
         {events.map(e => (
           <div key={e.id} className="card overflow-hidden">
-            <div className="h-36"><img src={e.image} className="w-full h-full object-cover" /></div>
+            <div className="h-36"><img src={e.image} className="w-full h-full object-cover" alt={e.title} /></div>
             <div className="p-5">
               <div className="flex justify-between items-start gap-2">
                 <b>{e.title}</b>
@@ -34,12 +56,14 @@ export default function EventsManagement() {
               <span className="text-xs text-navy-400 block mt-1.5">{formatDate(e.date)} · {e.capacity} capacity</span>
               <div className="flex justify-between items-center mt-3">
                 <b className="font-display">{naira(e.price)}</b>
-                <div className="flex gap-2"><button className="text-xs font-semibold text-navy-900">Edit</button><button className="text-xs font-semibold text-red-600">Delete</button></div>
+                <div className="flex gap-2"><button onClick={() => openEdit(e)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => remove(e.id)} className="text-xs font-semibold text-red-600">Delete</button></div>
               </div>
             </div>
           </div>
         ))}
+        {events.length === 0 && <p className="text-sm text-navy-400">No events yet.</p>}
       </div>
+
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Create event">
         <div className="grid gap-4">
           <div><label className="field-label">Event title</label><input className="field-input" value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})} /></div>
@@ -48,8 +72,36 @@ export default function EventsManagement() {
             <div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})} /></div>
             <div><label className="field-label">Capacity</label><input type="number" className="field-input" value={draft.capacity} onChange={e=>setDraft({...draft,capacity:e.target.value})} /></div>
           </div>
+          <div><label className="field-label">Description</label><textarea className="field-input !h-auto py-2.5" rows={3} value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})} /></div>
+          <div>
+            <label className="field-label">Photo</label>
+            <div className="flex items-center gap-4">
+              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={draft.image} className="w-full h-full object-cover" alt="" /></div>
+              <ImageUploader folder="events/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
+            </div>
+          </div>
         </div>
         <button onClick={submit} className="btn-primary w-full justify-center mt-6">Create as draft</button>
+      </Modal>
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit event">
+        <div className="grid gap-4">
+          <div><label className="field-label">Event title</label><input className="field-input" value={editDraft.title} onChange={e=>setEditDraft({...editDraft,title:e.target.value})} /></div>
+          <div className="grid grid-cols-3 gap-4">
+            <div><label className="field-label">Date</label><input type="date" className="field-input" value={editDraft.date} onChange={e=>setEditDraft({...editDraft,date:e.target.value})} /></div>
+            <div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={editDraft.price} onChange={e=>setEditDraft({...editDraft,price:e.target.value})} /></div>
+            <div><label className="field-label">Capacity</label><input type="number" className="field-input" value={editDraft.capacity} onChange={e=>setEditDraft({...editDraft,capacity:e.target.value})} /></div>
+          </div>
+          <div><label className="field-label">Description</label><textarea className="field-input !h-auto py-2.5" rows={3} value={editDraft.description} onChange={e=>setEditDraft({...editDraft,description:e.target.value})} /></div>
+          <div>
+            <label className="field-label">Photo</label>
+            <div className="flex items-center gap-4">
+              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={editDraft.image} className="w-full h-full object-cover" alt="" /></div>
+              <ImageUploader folder={`events/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
+            </div>
+          </div>
+        </div>
+        <button onClick={saveEdit} className="btn-primary w-full justify-center mt-6">Save changes</button>
       </Modal>
     </div>
   )

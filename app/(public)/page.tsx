@@ -1,5 +1,5 @@
 import { buildMetadata } from '../../lib/buildMetadata'
-import { getRoomTypes, getOffers, getGalleryImages } from '../../lib/data'
+import { getRoomTypes, getOffers, getGalleryImages, getSiteContent } from '../../lib/data'
 import HomeClient from './HomeClient'
 
 export const metadata = buildMetadata({
@@ -10,6 +10,6 @@ export const metadata = buildMetadata({
 })
 
 export default async function HomePage() {
-  const [roomTypes, offers, gallery] = await Promise.all([getRoomTypes(), getOffers(true), getGalleryImages()])
-  return <HomeClient roomTypes={roomTypes} offers={offers} gallery={gallery} />
+  const [roomTypes, offers, gallery, content] = await Promise.all([getRoomTypes(), getOffers(true), getGalleryImages(), getSiteContent()])
+  return <HomeClient roomTypes={roomTypes} offers={offers} gallery={gallery} headline={content.home_headline} subtitle={content.home_subtitle} />
 }

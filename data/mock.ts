@@ -57,6 +57,7 @@ export interface Customer {
 
 export interface StaffMember {
   id: string
+  userId?: string
   name: string
   email: string
   phone: string
