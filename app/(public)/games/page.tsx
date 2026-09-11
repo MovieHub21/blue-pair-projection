@@ -1,5 +1,6 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
+import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
   title: 'Games Room & Entertainment in Uromi, Edo State | Blue Pair Hotel',
@@ -8,8 +9,8 @@ export const metadata = buildMetadata({
   path: '/games',
 })
 
-export default function GamesPage() {
-  return <AmenityPage config={{
+export default async function GamesPage() {
+  const config = await resolveAmenityConfig('games', {{
     name: 'Games & Entertainment', eyebrow: 'For every evening',
     heroImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80',
     description: 'A dedicated games room with pool tables, table tennis, board games, and a big-screen sports lounge.',
@@ -23,5 +24,6 @@ export default function GamesPage() {
     pricingNote: 'Pool table: ₦3,000/hour. Table tennis: ₦2,000/hour. Free for VIP Suite guests.',
     ctaLabel: 'Reserve a table',
     breadcrumbs: [{name:'Home',path:'/'},{name:'Games',path:'/games'}],
-  }} />
+  })
+  return <AmenityPage config={config} />
 }

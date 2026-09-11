@@ -2,6 +2,7 @@ import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
 import JsonLd from '../../../components/JsonLd'
 import { getEvents } from '../../../lib/data'
+import { resolveAmenityConfig } from '../../../lib/amenity'
 import { formatDate, naira } from '../../../lib/format'
 
 export const metadata = buildMetadata({
@@ -18,10 +19,7 @@ export default async function ClubPage() {
     location: { '@type': 'Place', name: 'The Club at Blue Pair Hotel', address: 'Auchi Road, Uromi, Edo State' },
     offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' },
   }))
-  return (
-    <>
-      <JsonLd data={eventsJsonLd} />
-      <AmenityPage config={{
+  const config = await resolveAmenityConfig('club', {
     name: 'The Club', eyebrow: 'Nightlife',
     heroImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=80',
     description: 'Edo State\u2019s after-dark address — resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
@@ -48,7 +46,11 @@ export default async function ClubPage() {
         </div>
       </div>
     )
-  }} />
+  })
+  return (
+    <>
+      <JsonLd data={eventsJsonLd} />
+      <AmenityPage config={config} />
     </>
   )
 }

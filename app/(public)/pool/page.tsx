@@ -1,5 +1,6 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
+import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
   title: 'Indoor Swimming Pool in Uromi, Edo State | Blue Pair Hotel',
@@ -8,8 +9,8 @@ export const metadata = buildMetadata({
   path: '/pool',
 })
 
-export default function PoolPage() {
-  return <AmenityPage config={{
+export default async function PoolPage() {
+  const config = await resolveAmenityConfig('pool', {{
     name: 'Indoor Pool', eyebrow: 'Swim year-round',
     heroImage: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1600&q=80',
     description: 'A temperature-controlled indoor pool with a dedicated kids\u2019 section and poolside service from the Outdoor Bar & Eatery.',
@@ -29,5 +30,6 @@ export default function PoolPage() {
         Children under 12 must be supervised at all times. No glass containers poolside. Swimwear required — no street clothing in the pool.
       </div>
     )
-  }} />
+  })
+  return <AmenityPage config={config} />
 }

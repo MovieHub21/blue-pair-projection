@@ -1,5 +1,6 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
+import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
   title: 'Smoking Area & Rules | Blue Pair Hotel Uromi',
@@ -9,8 +10,8 @@ export const metadata = buildMetadata({
   noindex: false,
 })
 
-export default function SmokingAreaPage() {
-  return <AmenityPage config={{
+export default async function SmokingAreaPage() {
+  const config = await resolveAmenityConfig('smoking-area', {{
     name: 'Smoking Area', eyebrow: 'Designated zone',
     heroImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=80',
     description: 'An open-air designated smoking area located on the east terrace, away from dining and pool areas, with comfortable outdoor seating.',
@@ -29,5 +30,6 @@ export default function SmokingAreaPage() {
         Smoking is strictly prohibited in all rooms, indoor common areas, and the restaurant. The east terrace is the only designated smoking zone on the property, accessible via the pool deck corridor.
       </div>
     )
-  }} />
+  })
+  return <AmenityPage config={config} />
 }
