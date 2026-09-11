@@ -105,3 +105,24 @@ export interface GalleryImage { id: string; url: string; caption?: string; sortO
 export const mapGalleryImage = (r: Row): GalleryImage => ({
   id: r.id, url: r.url, caption: r.caption ?? undefined, sortOrder: r.sort_order ?? 0,
 })
+
+export interface Amenity {
+  key: string
+  name: string
+  eyebrow: string
+  description: string
+  heroImage: string
+  gallery: string[]
+  hours: string
+  facilities: string[]
+  pricingNote: string
+  ctaLabel: string
+  published: boolean
+}
+
+export const mapAmenity = (r: Row): Amenity => ({
+  key: r.key, name: r.name, eyebrow: r.eyebrow, description: r.description,
+  heroImage: r.hero_image, gallery: r.gallery ?? [], hours: r.hours,
+  facilities: r.facilities ?? [], pricingNote: r.pricing_note ?? '',
+  ctaLabel: r.cta_label ?? 'Reserve now', published: r.published,
+})
