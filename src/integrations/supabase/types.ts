@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      amenities: {
+        Row: {
+          created_at: string
+          cta_label: string
+          description: string
+          eyebrow: string
+          facilities: string[]
+          gallery: string[]
+          hero_image: string
+          hours: string
+          key: string
+          name: string
+          pricing_note: string
+          published: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string
+          description?: string
+          eyebrow?: string
+          facilities?: string[]
+          gallery?: string[]
+          hero_image?: string
+          hours?: string
+          key: string
+          name?: string
+          pricing_note?: string
+          published?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string
+          description?: string
+          eyebrow?: string
+          facilities?: string[]
+          gallery?: string[]
+          hero_image?: string
+          hours?: string
+          key?: string
+          name?: string
+          pricing_note?: string
+          published?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       billboards: {
         Row: {
           available: boolean
