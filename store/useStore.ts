@@ -4,7 +4,7 @@ import {
   mapRoomType, mapRoom, mapBooking, mapCustomer, mapStaff, mapMenuItem, mapDrink,
   mapShortLet, mapEvent, mapMaintenanceTicket, mapHousekeepingTask, mapBillboard,
   mapParkingZone, mapPayment, mapOffer, mapGuestRequest, type GuestRequest,
-  mapGalleryImage, type GalleryImage,
+  mapGalleryImage, type GalleryImage, mapAmenity, type Amenity,
 } from '../lib/mappers'
 import {
   type RoomType, type Room, type Booking, type Customer, type StaffMember, type MenuItem,
@@ -33,6 +33,7 @@ interface StoreState {
   guestRequests: GuestRequest[]
   parkingZones: ParkingZone[]
   galleryImages: GalleryImage[]
+  amenities: Amenity[]
   toasts: ToastMsg[]
 
   loadAll: () => Promise<void>
@@ -80,6 +81,9 @@ interface StoreState {
 
   addGalleryImage: (url: string, caption?: string) => void
   removeGalleryImage: (id: string) => void
+
+  setRoomTypeImages: (id: string, images: string[]) => void
+  saveAmenity: (key: string, patch: Partial<Amenity>) => void
 }
 
 let toastSeq = 1
@@ -113,10 +117,11 @@ export const useStore = create<StoreState>((set, get) => ({
   guestRequests: [],
   parkingZones: [],
   galleryImages: [],
+  amenities: [],
   toasts: [],
 
   loadAll: async () => {
-    const [rt, rm, bk, cu, st, mi, dr, sl, ev, mt, hk, bb, pz, pay, of, gr, gi] = await Promise.all([
+    const [rt, rm, bk, cu, st, mi, dr, sl, ev, mt, hk, bb, pz, pay, of, gr, gi, am] = await Promise.all([
       supabase.from('room_types').select('*').order('price'),
       supabase.from('rooms').select('*').order('room_number'),
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
@@ -134,6 +139,7 @@ export const useStore = create<StoreState>((set, get) => ({
       supabase.from('offers').select('*').order('title'),
       supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('gallery_images').select('*').order('sort_order'),
+      supabase.from('amenities').select('*').order('name'),
     ])
     set({
       loaded: true,
@@ -154,6 +160,7 @@ export const useStore = create<StoreState>((set, get) => ({
       offers: (of.data ?? []).map(mapOffer),
       guestRequests: (gr.data ?? []).map(mapGuestRequest),
       galleryImages: (gi.data ?? []).map(mapGalleryImage),
+      amenities: (am.data ?? []).map(mapAmenity),
     })
   },
 
@@ -403,6 +410,28 @@ export const useStore = create<StoreState>((set, get) => ({
       if (error) console.error('[gallery_images] delete failed', error.message)
     })
     get().pushToast('Image removed', 'info')
+  },
+
+  setRoomTypeImages: (id, images) => {
+    set(s => ({ roomTypes: s.roomTypes.map(rt => rt.id === id ? { ...rt, images } : rt) }))
+    save('room_types', { images }, id)
+    get().pushToast('Room photos updated — now live on the website', 'success')
+  },
+
+  saveAmenity: (key, patch) => {
+    set(s => ({ amenities: s.amenities.map(a => a.key === key ? { ...a, ...patch } : a) }))
+    const row: Record<string, any> = {}
+    if (patch.name !== undefined) row.name = patch.name
+    if (patch.eyebrow !== undefined) row.eyebrow = patch.eyebrow
+    if (patch.description !== undefined) row.description = patch.description
+    if (patch.heroImage !== undefined) row.hero_image = patch.heroImage
+    if (patch.gallery !== undefined) row.gallery = patch.gallery
+    if (patch.hours !== undefined) row.hours = patch.hours
+    if (patch.facilities !== undefined) row.facilities = patch.facilities
+    if (patch.pricingNote !== undefined) row.pricing_note = patch.pricingNote
+    if (patch.ctaLabel !== undefined) row.cta_label = patch.ctaLabel
+    if (patch.published !== undefined) row.published = patch.published
+    save('amenities', row, key)
   },
 }))
 
