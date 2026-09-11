@@ -1,5 +1,6 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
+import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
   title: 'Hotel Gym & Fitness Centre in Uromi, Edo State | Blue Pair Hotel',
@@ -8,8 +9,8 @@ export const metadata = buildMetadata({
   path: '/gym',
 })
 
-export default function GymPage() {
-  return <AmenityPage config={{
+export default async function GymPage() {
+  const config = await resolveAmenityConfig('gym', {
     name: 'Fitness Gym', eyebrow: 'Stay on routine',
     heroImage: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1600&q=80',
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',
@@ -23,5 +24,6 @@ export default function GymPage() {
     pricingNote: 'Complimentary for all hotel guests. Day passes for non-guests: ₦10,000.',
     ctaLabel: 'Book a trainer',
     breadcrumbs: [{name:'Home',path:'/'},{name:'Gym',path:'/gym'}],
-  }} />
+  })
+  return <AmenityPage config={config} />
 }
