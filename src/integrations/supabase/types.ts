@@ -207,6 +207,30 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: []
+      }
       guest_requests: {
         Row: {
           booking_ref: string | null
