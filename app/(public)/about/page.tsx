@@ -3,7 +3,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { galleryImages } from '../../../data/mock'
+import { getGalleryImages } from '../../../lib/data'
 import { CheckCircle2 } from 'lucide-react'
 
 export const metadata = buildMetadata({
@@ -15,7 +15,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'About',path:'/about'}]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const gallery = await getGalleryImages()
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
@@ -58,7 +59,7 @@ export default function AboutPage() {
         <div className="container-w">
           <SectionHeading eyebrow="Gallery" title="Around the property" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {galleryImages.map((g,i) => <div key={i} className="h-48 rounded-xl2 overflow-hidden"><img src={g} alt="Blue Pair Hotel, Uromi, Edo State" className="w-full h-full object-cover" /></div>)}
+            {gallery.map(g => <div key={g.id} className="h-48 rounded-xl2 overflow-hidden"><img src={g.url} alt={g.caption || 'Blue Pair Hotel, Uromi, Edo State'} className="w-full h-full object-cover" /></div>)}
           </div>
         </div>
       </section>

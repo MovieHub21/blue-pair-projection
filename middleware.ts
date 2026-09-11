@@ -4,7 +4,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './lib/supabase/config'
 
 const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
-const PUBLIC_PATHS = ['/account/login', '/account/register', '/staff/login', '/housekeeping/login']
+const PUBLIC_PATHS = ['/account/login', '/account/register', '/staff/login']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

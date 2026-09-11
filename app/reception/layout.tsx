@@ -1,12 +1,17 @@
 import type { Metadata } from 'next'
 import PortalShell from '../../components/layout/PortalShell'
 import { LayoutGrid, LogIn, LogOut, BedDouble, MessageSquare } from 'lucide-react'
+import { getCurrentStaff } from '../../lib/staff'
+import StoreLoader from '../../components/providers/StoreLoader'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
-export default function ReceptionRootLayout({ children }: { children: React.ReactNode }) {
+export default async function ReceptionRootLayout({ children }: { children: React.ReactNode }) {
+  const { name, roleLabel } = await getCurrentStaff()
   return (
-    <PortalShell portalName="Reception" portalTag="Front Desk Portal" userName="Yusuf Aliyu" userRole="Reception"
+    <>
+    <StoreLoader />
+    <PortalShell portalName="Reception" portalTag="Front Desk Portal" userName={name} userRole={roleLabel}
       groups={[{ items: [
         { href: '/reception/dashboard', label: 'Dashboard', icon: <LayoutGrid size={16} />, end: true },
         { href: '/reception/arrivals', label: "Today's Arrivals", icon: <LogIn size={16} /> },
@@ -16,5 +21,6 @@ export default function ReceptionRootLayout({ children }: { children: React.Reac
       ]}]}>
       {children}
     </PortalShell>
+    </>
   )
 }

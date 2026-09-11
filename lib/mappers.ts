@@ -99,3 +99,9 @@ export const mapGuestRequest = (r: Row): GuestRequest => ({
   room: r.room ?? '', guestName: r.guest_name ?? '', type: r.type, message: r.message,
   status: r.status, createdAt: (r.created_at ?? '').slice(0, 10),
 })
+
+export interface GalleryImage { id: string; url: string; caption?: string; sortOrder: number }
+
+export const mapGalleryImage = (r: Row): GalleryImage => ({
+  id: r.id, url: r.url, caption: r.caption ?? undefined, sortOrder: r.sort_order ?? 0,
+})

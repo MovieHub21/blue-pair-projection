@@ -5,9 +5,10 @@ import { useState } from 'react'
 import { Calendar, Users, BedDouble, ArrowRight, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
-import { galleryImages, type RoomType, type Offer } from '../../data/mock'
+import { type RoomType, type Offer } from '../../data/mock'
+import type { GalleryImage } from '../../lib/mappers'
 
-export default function HomeClient({ roomTypes, offers }: { roomTypes: RoomType[]; offers: Offer[] }) {
+export default function HomeClient({ roomTypes, offers, gallery }: { roomTypes: RoomType[]; offers: Offer[]; gallery: GalleryImage[] }) {
   const router = useRouter()
   const [checkIn, setCheckIn] = useState('2026-08-14')
   const [checkOut, setCheckOut] = useState('2026-08-16')
@@ -135,9 +136,9 @@ export default function HomeClient({ roomTypes, offers }: { roomTypes: RoomType[
             <Link href="/gallery" className="text-sm font-semibold flex items-center gap-1.5 text-navy-900">Full gallery <ArrowRight size={14} /></Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {galleryImages.slice(0, 8).map((g, i) => (
-              <div key={i} className={'rounded-xl2 overflow-hidden ' + (i === 0 ? 'col-span-2 row-span-2 h-full' : 'h-40')}>
-                <img src={g} alt="Blue Pair Hotel, Uromi, Edo State" className="w-full h-full object-cover" />
+            {gallery.slice(0, 8).map((g, i) => (
+              <div key={g.id} className={'rounded-xl2 overflow-hidden ' + (i === 0 ? 'col-span-2 row-span-2 h-full' : 'h-40')}>
+                <img src={g.url} alt={g.caption || 'Blue Pair Hotel, Uromi, Edo State'} className="w-full h-full object-cover" />
               </div>
             ))}
           </div>

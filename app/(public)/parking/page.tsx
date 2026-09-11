@@ -3,7 +3,7 @@ import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
-import { parkingZones } from '../../../store/useStore'
+import { getParkingZones } from '../../../lib/data'
 import { Car, ShieldCheck } from 'lucide-react'
 
 export const metadata = buildMetadata({
@@ -15,7 +15,8 @@ export const metadata = buildMetadata({
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Parking',path:'/parking'}]
 
-export default function ParkingPage() {
+export default async function ParkingPage() {
+  const parkingZones = await getParkingZones()
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />

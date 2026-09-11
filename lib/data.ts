@@ -1,7 +1,7 @@
 import { createSupabasePublicClient } from './supabase/server'
 import {
   mapRoomType, mapRoom, mapMenuItem, mapDrink, mapShortLet, mapEvent,
-  mapBillboard, mapParkingZone, mapOffer,
+  mapBillboard, mapParkingZone, mapOffer, mapGalleryImage,
 } from './mappers'
 
 /** Public, server-rendered reads. Kept fresh so admin edits appear on the website. */
@@ -73,4 +73,10 @@ export async function getOffers(activeOnly = false) {
   if (activeOnly) q = q.eq('active', true)
   const { data } = await q
   return (data ?? []).map(mapOffer)
+}
+
+export async function getGalleryImages() {
+  const db = createSupabasePublicClient()
+  const { data } = await db.from('gallery_images').select('*').order('sort_order')
+  return (data ?? []).map(mapGalleryImage)
 }

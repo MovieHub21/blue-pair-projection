@@ -1,8 +1,9 @@
 'use client'
-import { parkingZones } from '../../../store/useStore'
+import { useStore } from '../../../store/useStore'
 import { Car } from 'lucide-react'
 
 export default function ParkingManagement() {
+  const parkingZones = useStore(s => s.parkingZones)
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-6">Parking Management</h1>

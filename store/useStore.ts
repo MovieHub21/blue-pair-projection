@@ -4,12 +4,12 @@ import {
   mapRoomType, mapRoom, mapBooking, mapCustomer, mapStaff, mapMenuItem, mapDrink,
   mapShortLet, mapEvent, mapMaintenanceTicket, mapHousekeepingTask, mapBillboard,
   mapParkingZone, mapPayment, mapOffer, mapGuestRequest, type GuestRequest,
+  mapGalleryImage, type GalleryImage,
 } from '../lib/mappers'
 import {
-  parkingZones,
   type RoomType, type Room, type Booking, type Customer, type StaffMember, type MenuItem,
   type Drink, type ShortLet, type EventItem, type MaintenanceTicket, type HousekeepingTask,
-  type BillboardSpace, type Payment, type Offer, type RoomStatus,
+  type BillboardSpace, type Payment, type Offer, type RoomStatus, type ParkingZone,
 } from '../data/mock'
 
 interface ToastMsg { id: number; text: string; tone: 'success' | 'info' | 'error' }
@@ -31,7 +31,8 @@ interface StoreState {
   payments: Payment[]
   offers: Offer[]
   guestRequests: GuestRequest[]
-  parkingZones: typeof parkingZones
+  parkingZones: ParkingZone[]
+  galleryImages: GalleryImage[]
   toasts: ToastMsg[]
 
   loadAll: () => Promise<void>
@@ -76,6 +77,9 @@ interface StoreState {
 
   addGuestRequest: (r: { customerId?: string; bookingRef?: string; room?: string; guestName: string; type: string; message: string }) => void
   resolveGuestRequest: (id: string) => void
+
+  addGalleryImage: (url: string, caption?: string) => void
+  removeGalleryImage: (id: string) => void
 }
 
 let toastSeq = 1
@@ -107,11 +111,12 @@ export const useStore = create<StoreState>((set, get) => ({
   payments: [],
   offers: [],
   guestRequests: [],
-  parkingZones,
+  parkingZones: [],
+  galleryImages: [],
   toasts: [],
 
   loadAll: async () => {
-    const [rt, rm, bk, cu, st, mi, dr, sl, ev, mt, hk, bb, pz, pay, of, gr] = await Promise.all([
+    const [rt, rm, bk, cu, st, mi, dr, sl, ev, mt, hk, bb, pz, pay, of, gr, gi] = await Promise.all([
       supabase.from('room_types').select('*').order('price'),
       supabase.from('rooms').select('*').order('room_number'),
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
@@ -128,6 +133,7 @@ export const useStore = create<StoreState>((set, get) => ({
       supabase.from('payments').select('*').order('date', { ascending: false }),
       supabase.from('offers').select('*').order('title'),
       supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
+      supabase.from('gallery_images').select('*').order('sort_order'),
     ])
     set({
       loaded: true,
@@ -143,10 +149,11 @@ export const useStore = create<StoreState>((set, get) => ({
       maintenanceTickets: (mt.data ?? []).map(mapMaintenanceTicket),
       housekeepingTasks: (hk.data ?? []).map(mapHousekeepingTask),
       billboards: (bb.data ?? []).map(mapBillboard),
-      parkingZones: (pz.data ?? []).length ? (pz.data ?? []).map(mapParkingZone) : parkingZones,
+      parkingZones: (pz.data ?? []).map(mapParkingZone),
       payments: (pay.data ?? []).map(mapPayment),
       offers: (of.data ?? []).map(mapOffer),
       guestRequests: (gr.data ?? []).map(mapGuestRequest),
+      galleryImages: (gi.data ?? []).map(mapGalleryImage),
     })
   },
 
@@ -383,6 +390,19 @@ export const useStore = create<StoreState>((set, get) => ({
     save('guest_requests', { status: 'resolved' }, id)
     get().pushToast('Request marked resolved', 'success')
   },
+
+  addGalleryImage: (url, caption) => {
+    const img: GalleryImage = { id: `gi_${Date.now()}`, url, caption, sortOrder: get().galleryImages.length + 1 }
+    set(s => ({ galleryImages: [...s.galleryImages, img] }))
+    insertRow('gallery_images', { id: img.id, url: img.url, caption: img.caption ?? null, sort_order: img.sortOrder })
+    get().pushToast('Image added to gallery', 'success')
+  },
+  removeGalleryImage: (id) => {
+    set(s => ({ galleryImages: s.galleryImages.filter(g => g.id !== id) }))
+    supabase.from('gallery_images').delete().eq('id', id).then(({ error }) => {
+      if (error) console.error('[gallery_images] delete failed', error.message)
+    })
+    get().pushToast('Image removed', 'info')
+  },
 }))
 
-export { parkingZones }

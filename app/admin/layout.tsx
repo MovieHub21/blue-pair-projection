@@ -5,12 +5,17 @@ import {
   UtensilsCrossed, Martini, ClipboardList, Building2, PartyPopper, MonitorPlay, Car,
   Tag, Image, FileCode, Search, UserCog, ShieldCheck, BarChart3,
 } from 'lucide-react'
+import { getCurrentStaff } from '../../lib/staff'
+import StoreLoader from '../../components/providers/StoreLoader'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { name, roleLabel } = await getCurrentStaff()
   return (
-    <PortalShell portalName="Admin" portalTag="Hotel Management" userName="Chinedu Obiora" userRole="Super Admin"
+    <>
+    <StoreLoader />
+    <PortalShell portalName="Admin" portalTag="Hotel Management" userName={name} userRole={roleLabel}
       groups={[
         { label: 'Overview', items: [
           { href: '/admin/dashboard', label: 'Dashboard', icon: <LayoutGrid size={16} />, end: true },
@@ -55,5 +60,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ]}>
       {children}
     </PortalShell>
+    </>
   )
 }
