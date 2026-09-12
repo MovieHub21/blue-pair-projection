@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { sendResendEmail } from '../../../../../lib/email/resend'
+import { SITE_URL } from '../../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment } from '../../../../../lib/contactAttachments'
@@ -34,6 +36,16 @@ export async function POST(request: Request) {
     const { error: insertError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message: message || '', ...(attachment || {}) })
     if (insertError) throw insertError
     await admin.from('contact_conversations').update({ status: 'waiting_for_guest' }).eq('id', conversation.id)
+
+    if (conversation.guest_email) {
+      const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
+      await sendResendEmail({
+        to: conversation.guest_email,
+        subject: `New message from Blue Pair Hotel: ${conversation.subject}`,
+        text: `Blue Pair Hotel has sent you a new message in your guest portal.\n\nSubject: ${conversation.subject}\n\nSign in to your guest portal to view the message and reply: ${guestUrl}`,
+        html: `<h2>You have a new message</h2><p>Blue Pair Hotel has sent you a new message in your guest portal.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${guestUrl}">View the message and reply</a></p>`,
+      })
+    }
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('[admin-contact-attachment]', error)
