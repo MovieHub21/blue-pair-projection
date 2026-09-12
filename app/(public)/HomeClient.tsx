@@ -7,6 +7,7 @@ import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
 import { type RoomType, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
+import { todayISO, addDaysISO } from '../../lib/format'
 
 export default function HomeClient({ roomTypes, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
   const router = useRouter()
