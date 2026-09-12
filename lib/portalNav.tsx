@@ -24,6 +24,7 @@ import {
   Wrench,
   MessageSquare,
   Sparkles,
+  Activity,
 } from 'lucide-react'
 import type { PortalNavGroup } from '../components/layout/PortalShell'
 import { sectionForPath } from './permissionSections'
@@ -91,6 +92,7 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
     label: 'Insights',
     items: [
       { href: '/admin/reports/revenue', label: 'Reports', icon: <BarChart3 size={16} /> },
+      { href: '/admin/activity', label: 'Activity Log', icon: <Activity size={16} /> },
     ],
   },
   {
