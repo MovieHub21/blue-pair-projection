@@ -9,6 +9,7 @@ import GuestEmailWatcher from '../components/GuestEmailWatcher'
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
 export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
   keywords: [
     'Blue Pair Signature Crown Hotel & Suites', 'Blue Pair Signature Crown', 'hotel in Nigeria', 'hotel in Uromi', 'hotel in Edo State', 'luxury hotel Nigeria',
     'hotel with swimming pool in Nigeria', 'hotel with gym in Nigeria', 'hotel with pool and gym in Edo State',
@@ -37,6 +38,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-NG">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Blue Pair" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
