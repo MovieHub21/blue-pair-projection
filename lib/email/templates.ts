@@ -3,29 +3,42 @@ function escapeHtml(value: string) {
 }
 
 function money(value: number) {
-  return `₦${value.toLocaleString('en-NG')}`
+  return `₦${Number(value || 0).toLocaleString('en-NG')}`
 }
 
-export function bookingConfirmationEmail(input: {
-  guestName: string
-  email: string
-  reference: string
-  roomName: string
-  checkIn: string
-  checkOut: string
-  adults: number
-  children: number
-  total: number
-  paymentStatus: string
-}) {
-  const name = escapeHtml(input.guestName || 'Guest')
-  const room = escapeHtml(input.roomName)
-  const reference = escapeHtml(input.reference)
-  const payment = escapeHtml(input.paymentStatus)
+function layout(title: string, body: string) {
+  return `<!doctype html><html><body style="margin:0;background:#f6f3ec;font-family:Arial,sans-serif;color:#101a35"><div style="max-width:620px;margin:32px auto;background:#fff;border:1px solid #e8e3d8"><div style="background:#0b1633;padding:28px 32px;color:#fff"><div style="font-size:11px;letter-spacing:3px;color:#d7ae52;font-weight:700">BLUE PAIR HOTEL</div><h1 style="margin:12px 0 0;font-size:25px;font-weight:600">${escapeHtml(title)}</h1></div><div style="padding:32px">${body}</div><div style="padding:20px 32px;border-top:1px solid #eee;color:#777f91;font-size:12px">Blue Pair Hotel · Uromi, Edo State</div></div></body></html>`
+}
 
+function details(input: { reference?: string; roomName?: string; checkIn?: string; checkOut?: string; total?: number; payment?: string }) {
+  return `<div style="background:#f8f6f0;border:1px solid #e9e4d8;padding:20px;margin:24px 0"><table style="width:100%;border-collapse:collapse;font-size:14px">${input.reference ? `<tr><td style="padding:6px 0;color:#777f91">Reference</td><td style="padding:6px 0;text-align:right;font-weight:700">${escapeHtml(input.reference)}</td></tr>` : ''}${input.roomName ? `<tr><td style="padding:6px 0;color:#777f91">Room</td><td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(input.roomName)}</td></tr>` : ''}${input.checkIn ? `<tr><td style="padding:6px 0;color:#777f91">Check-in</td><td style="padding:6px 0;text-align:right">${escapeHtml(input.checkIn)}</td></tr>` : ''}${input.checkOut ? `<tr><td style="padding:6px 0;color:#777f91">Check-out</td><td style="padding:6px 0;text-align:right">${escapeHtml(input.checkOut)}</td></tr>` : ''}${input.total !== undefined ? `<tr><td style="padding:12px 0 6px;color:#777f91;border-top:1px solid #e5e1d7">Total</td><td style="padding:12px 0 6px;text-align:right;font-weight:700;border-top:1px solid #e5e1d7">${money(input.total)}</td></tr>` : ''}${input.payment ? `<tr><td style="padding:6px 0;color:#777f91">Payment</td><td style="padding:6px 0;text-align:right">${escapeHtml(input.payment)}</td></tr>` : ''}</table></div>`
+}
+
+function basic(name: string, title: string, message: string, extra = '') {
+  const safeName = escapeHtml(name || 'Guest')
   return {
-    subject: `Booking received — ${input.reference} | Blue Pair Hotel`,
-    text: `Hello ${input.guestName || 'Guest'},\n\nYour booking request has been received by Blue Pair Hotel.\n\nBooking reference: ${input.reference}\nRoom: ${input.roomName}\nCheck-in: ${input.checkIn}\nCheck-out: ${input.checkOut}\nGuests: ${input.adults} adults${input.children ? `, ${input.children} children` : ''}\nTotal: ${money(input.total)}\nPayment: ${input.paymentStatus}\n\nOur front desk will follow up regarding payment confirmation.\n\nBlue Pair Hotel, Uromi.`,
-    html: `<!doctype html><html><body style="margin:0;background:#f6f3ec;font-family:Arial,sans-serif;color:#101a35"><div style="max-width:620px;margin:32px auto;background:#fff;border:1px solid #e8e3d8"><div style="background:#0b1633;padding:28px 32px;color:#fff"><div style="font-size:11px;letter-spacing:3px;color:#d7ae52;font-weight:700">BLUE PAIR HOTEL</div><h1 style="margin:12px 0 0;font-size:25px;font-weight:600">Booking received</h1></div><div style="padding:32px"><p style="font-size:16px">Hello ${name},</p><p style="color:#566079;line-height:1.7">Thank you for choosing Blue Pair Hotel. We have received your booking request and reserved the details below for our front desk team.</p><div style="background:#f8f6f0;border:1px solid #e9e4d8;padding:20px;margin:24px 0"><div style="font-size:11px;color:#8a8f9d;text-transform:uppercase;letter-spacing:1px">Booking reference</div><div style="font-size:22px;font-weight:700;margin-top:6px">${reference}</div><hr style="border:0;border-top:1px solid #e5e1d7;margin:18px 0"><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><td style="padding:6px 0;color:#777f91">Room</td><td style="padding:6px 0;text-align:right;font-weight:600">${room}</td></tr><tr><td style="padding:6px 0;color:#777f91">Check-in</td><td style="padding:6px 0;text-align:right">${escapeHtml(input.checkIn)}</td></tr><tr><td style="padding:6px 0;color:#777f91">Check-out</td><td style="padding:6px 0;text-align:right">${escapeHtml(input.checkOut)}</td></tr><tr><td style="padding:6px 0;color:#777f91">Guests</td><td style="padding:6px 0;text-align:right">${input.adults} adults${input.children ? `, ${input.children} children` : ''}</td></tr><tr><td style="padding:12px 0 6px;color:#777f91;border-top:1px solid #e5e1d7">Total</td><td style="padding:12px 0 6px;text-align:right;font-weight:700;border-top:1px solid #e5e1d7">${money(input.total)}</td></tr><tr><td style="padding:6px 0;color:#777f91">Payment</td><td style="padding:6px 0;text-align:right">${payment}</td></tr></table></div><p style="color:#566079;line-height:1.7">Payment is currently pending. Our front desk will contact you to confirm payment and finalize your reservation.</p><p style="margin-top:28px;color:#566079">We look forward to welcoming you.</p><p style="font-weight:700">Blue Pair Hotel<br><span style="font-weight:400;color:#777f91">Uromi, Edo State</span></p></div></div></body></html>`,
+    subject: `${title} | Blue Pair Hotel`,
+    text: `Hello ${name || 'Guest'},\n\n${message}\n\nBlue Pair Hotel, Uromi.`,
+    html: layout(title, `<p style="font-size:16px">Hello ${safeName},</p><p style="color:#566079;line-height:1.7">${escapeHtml(message)}</p>${extra}<p style="margin-top:28px;color:#566079">We look forward to welcoming you.</p>`),
   }
 }
+
+export function bookingConfirmationEmail(input: { guestName:string; email:string; reference:string; roomName:string; checkIn:string; checkOut:string; adults:number; children:number; total:number; paymentStatus:string }) {
+  const extra = details(input)
+  return { subject: `Booking received — ${input.reference} | Blue Pair Hotel`, text: `Hello ${input.guestName || 'Guest'},\n\nYour booking request has been received.\nReference: ${input.reference}\nRoom: ${input.roomName}\nCheck-in: ${input.checkIn}\nCheck-out: ${input.checkOut}\nGuests: ${input.adults} adults${input.children ? `, ${input.children} children` : ''}\nTotal: ${money(input.total)}\nPayment: ${input.paymentStatus}\n\nBlue Pair Hotel, Uromi.`, html: layout('Booking received', `<p style="font-size:16px">Hello ${escapeHtml(input.guestName || 'Guest')},</p><p style="color:#566079;line-height:1.7">Thank you for choosing Blue Pair Hotel. We have received your booking request.</p>${extra}<p style="color:#566079;line-height:1.7">Payment is currently pending. Our front desk will follow up to confirm your reservation.</p>`) }
+}
+
+export function paymentSuccessfulEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;paymentReference?:string}) { return basic(input.guestName, 'Payment confirmed', 'Your payment has been successfully recorded and your reservation is confirmed.', details({...input,payment:'Paid'}) + (input.paymentReference ? `<p style="color:#566079">Receipt: <strong>${escapeHtml(input.paymentReference)}</strong></p>` : '')) }
+export function paymentFailedEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;reason?:string}) { return basic(input.guestName, 'Payment requires attention', `We could not confirm the payment for booking ${input.reference}.${input.reason ? ` Reason: ${input.reason}` : ''}`, details({...input,payment:'Payment not confirmed'})) }
+export function bookingCancelledEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;reason?:string}) { return basic(input.guestName, 'Booking cancelled', `Your booking ${input.reference} has been cancelled.${input.reason ? ` ${input.reason}` : ''}`, details(input)) }
+export function bookingModifiedEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;changes?:string}) { return basic(input.guestName, 'Booking updated', `Your booking ${input.reference} has been updated.${input.changes ? ` Changes: ${input.changes}` : ''}`, details(input)) }
+export function preArrivalEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) { return basic(input.guestName, 'Your stay is approaching', `We are looking forward to welcoming you for booking ${input.reference}. Your check-in date is ${input.checkIn}. Please have your booking reference available at reception.`, details(input)) }
+export function checkInReminderEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) { return basic(input.guestName, 'Check-in reminder', `This is a reminder that your Blue Pair Hotel stay begins on ${input.checkIn}.`, details(input)) }
+export function checkInWelcomeEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) { return basic(input.guestName, 'Welcome to Blue Pair Hotel', `Welcome. Your booking ${input.reference} has been checked in. We hope you enjoy your stay.`, details(input)) }
+export function checkoutReminderEmail(input:{guestName:string;reference:string;roomName:string;checkOut:string}) { return basic(input.guestName, 'Checkout reminder', `Your stay ends on ${input.checkOut}. Please complete checkout with reception before leaving and ensure personal belongings are collected.`, details(input)) }
+export function checkoutThankYouEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) { return basic(input.guestName, 'Thank you for staying with us', `Thank you for staying at Blue Pair Hotel. Your booking ${input.reference} has been checked out successfully. We hope to welcome you again soon.`, details(input)) }
+export function reviewRequestEmail(input:{guestName:string;reference:string;reviewUrl?:string}) { return basic(input.guestName, 'How was your stay?', `We would love to hear about your experience at Blue Pair Hotel. Your feedback helps us improve future stays.`, input.reviewUrl ? `<p><a href="${escapeHtml(input.reviewUrl)}" style="display:inline-block;background:#0b1633;color:#fff;padding:12px 18px;text-decoration:none">Share your feedback</a></p>` : '') }
+export function serviceRequestReceivedEmail(input:{guestName:string;bookingRef:string;type:string;message:string}) { return basic(input.guestName, 'Service request received', `We have received your ${input.type} request for booking ${input.bookingRef}. Our team has been notified and will attend to it shortly.`, `<div style="background:#f8f6f0;padding:16px;margin:20px 0"><strong>${escapeHtml(input.type)}</strong><p style="margin:8px 0;color:#566079">${escapeHtml(input.message)}</p></div>`) }
+export function serviceRequestStatusEmail(input:{guestName:string;bookingRef:string;type:string;message:string;status:string}) { return basic(input.guestName, `Service request ${input.status}`, `Your ${input.type} request for booking ${input.bookingRef} is now ${input.status}.`, `<div style="background:#f8f6f0;padding:16px;margin:20px 0;color:#566079">${escapeHtml(input.message)}</div>`) }
+export function supportTicketEmail(input:{guestName:string;reference:string;subject:string;message:string;status:string}) { return basic(input.guestName, `Support request ${input.status}`, `Your support request ${input.reference} is now ${input.status}.`, `<div style="background:#f8f6f0;padding:16px;margin:20px 0"><strong>${escapeHtml(input.subject)}</strong><p style="margin:8px 0;color:#566079">${escapeHtml(input.message)}</p></div>`) }
+export function announcementEmail(input:{guestName:string;title:string;message:string;offerUrl?:string}) { return basic(input.guestName, input.title, input.message, input.offerUrl ? `<p><a href="${escapeHtml(input.offerUrl)}" style="color:#0b1633;font-weight:700">View details</a></p>` : '') }
