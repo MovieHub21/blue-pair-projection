@@ -40,10 +40,8 @@ export default function ContactMessagesPage() {
         </>}
       </section>
     </div>
-<<<<<<< HEAD
-    {lightbox && <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl h-full p-4 grid place-items-center" onClick={() => setLightbox(null)}><button className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white grid place-items-center" onClick={() => setLightbox(null)} aria-label="Close image"><X /></button><img src={lightbox} alt="Attachment preview" className="max-h-[88vh] max-w-[92vw] object-contain rounded-xl" onClick={e => e.stopPropagation()} /></div>}
-=======
+
     {lightbox && <div className="fixed inset-0 z-[100] h-dvh min-h-screen w-screen overflow-hidden bg-black/[0.92] backdrop-blur-2xl p-4 grid place-items-center" onClick={() => setLightbox(null)}><button className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/10 text-white grid place-items-center" onClick={() => setLightbox(null)} aria-label="Close image"><X /></button><img src={lightbox} alt="Attachment preview" className="max-h-[88dvh] max-w-[92vw] object-contain rounded-xl" onClick={e => e.stopPropagation()} /></div>}
->>>>>>> cd291c0775ce4f47d249f19c53b47c797b0daea7
+
   </div>
 }
