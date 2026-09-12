@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, CalendarDays, BookOpen } from 'lucide-react'
 import { getPublishedBlogPosts } from '../../../lib/blog'
-import { SITE_URL } from '../../../lib/siteConfig'
+import { SITE_URL, SITE_NAME } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
-  title: 'Hotel News & Stories | Blue Pair Hotel Uromi',
-  description: 'Read the latest stories, hotel news, travel ideas, dining highlights and experiences from Blue Pair Hotel in Uromi, Edo State.',
+  title: `Hotel News & Stories | ${SITE_NAME} Uromi`,
+  description: `Read the latest stories, hotel news, travel ideas, dining highlights and experiences from ${SITE_NAME} in Uromi, Edo State.`,
   alternates: { canonical: `${SITE_URL}/blog` },
-  openGraph: { title: 'Hotel News & Stories | Blue Pair Hotel', description: 'Stories and updates from Blue Pair Hotel in Uromi, Edo State.', url: `${SITE_URL}/blog`, type: 'website' },
+  openGraph: { title: `Hotel News & Stories | ${SITE_NAME}`, description: `Stories and updates from ${SITE_NAME} in Uromi, Edo State.`, url: `${SITE_URL}/blog`, type: 'website' },
 }
 
 function dateLabel(value: string) {
