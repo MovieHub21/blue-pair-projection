@@ -5,12 +5,13 @@ import { SITE_URL } from '../../../../lib/siteConfig'
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const reference = String(url.searchParams.get('reference') || url.searchParams.get('trxref') || '').trim()
-  const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/admin/bookings`
-  if (!reference) return NextResponse.redirect(`${adminUrl}?payment=missing`)
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL
+  const adminUrl = `${baseUrl}/admin/bookings`
+  if (!reference) return NextResponse.redirect(`${baseUrl}/account/bookings?payment=missing`)
 
   try {
     const secret = process.env.PAYSTACK_SECRET_KEY
-    if (!secret) return NextResponse.redirect(`${adminUrl}?payment=not-configured`)
+    if (!secret) return NextResponse.redirect(`${baseUrl}/account/bookings?payment=not-configured`)
 
     const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: { Authorization: `Bearer ${secret}` },
@@ -18,14 +19,14 @@ export async function GET(request: Request) {
     })
     const result = await response.json()
     const transaction = result?.data
-    if (!response.ok || !result?.status || transaction?.status !== 'success') return NextResponse.redirect(`${adminUrl}?payment=failed`)
+    if (!response.ok || !result?.status || transaction?.status !== 'success') return NextResponse.redirect(`${baseUrl}/account/bookings?payment=failed`)
 
     const admin = createSupabaseAdminClient()
-    const { data: payment } = await admin.from('payments').select('id,booking_ref,amount').eq('reference', reference).maybeSingle()
+    const { data: payment } = await admin.from('payments').select('id,booking_ref,amount,customer_id').eq('reference', reference).maybeSingle()
     if (!payment) return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
 
     const verifiedAmount = Number(transaction.amount)
-    if (verifiedAmount !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${adminUrl}?payment=amount-mismatch`)
+    if (verifiedAmount !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${baseUrl}/account/bookings?payment=amount-mismatch`)
 
     const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
     const { error: paymentError } = await admin.from('payments').update({ status: 'success', method: 'Paystack', date: paidOn }).eq('id', payment.id)
@@ -34,9 +35,11 @@ export async function GET(request: Request) {
     const { error: bookingError } = await admin.from('bookings').update({ payment_status: 'paid', status: 'confirmed' }).eq('reference', payment.booking_ref)
     if (bookingError) throw bookingError
 
-    return NextResponse.redirect(`${adminUrl}?payment=success&reference=${encodeURIComponent(reference)}`)
+    const { data: customer } = await admin.from('customers').select('user_id').eq('id', payment.customer_id).maybeSingle()
+    const destination = customer?.user_id ? `${baseUrl}/account/bookings?payment=success&reference=${encodeURIComponent(reference)}` : `${adminUrl}?payment=success&reference=${encodeURIComponent(reference)}`
+    return NextResponse.redirect(destination)
   } catch (error) {
     console.error('[paystack-callback]', error)
-    return NextResponse.redirect(`${adminUrl}?payment=error`)
+    return NextResponse.redirect(`${baseUrl}/account/bookings?payment=error`)
   }
 }
