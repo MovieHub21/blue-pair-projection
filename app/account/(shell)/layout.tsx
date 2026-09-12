@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import PortalShell from '../../../components/layout/PortalShell'
+import PwaInstallPrompt from '../../../components/ui/PwaInstallPrompt'
 import { LayoutGrid, CalendarCheck, FileText, MessageSquarePlus, MessageSquare, User, PartyPopper, Bell } from 'lucide-react'
 import { getCurrentUser } from '../../../lib/account'
 
@@ -15,5 +16,5 @@ export default async function AccountShellLayout({ children }: { children: React
     { href:'/account/invoices', label:'Invoices', icon:<FileText size={16}/> },
     { href:'/account/requests', label:'Special Requests', icon:<MessageSquarePlus size={16}/> },
     { href:'/account/profile', label:'Profile', icon:<User size={16}/> },
-  ]}]}>{children}</PortalShell>
+  ]}]}><>{children}<PwaInstallPrompt /></></PortalShell>
 }
