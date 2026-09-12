@@ -53,6 +53,7 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
     { href: '/reception/departures', label: "Today's Departures", icon: <LogOut size={16} /> },
     { href: '/reception/room-assignment', label: 'Room Assignment', icon: <BedDouble size={16} /> },
     { href: '/reception/requests', label: 'Guest Requests', icon: <MessageSquare size={16} /> },
+    { href: '/admin/contact-messages', label: 'Guest Messages', icon: <MessageSquare size={16} /> },
   ] },
   { label: 'Housekeeping', items: [
     { href: '/housekeeping/dashboard', label: 'Housekeeping Dashboard', icon: <Sparkles size={16} />, end: true },
