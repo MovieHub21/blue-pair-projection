@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { sendResendEmail } from '../../../lib/email/resend'
-import { SITE_EMAIL, SITE_URL } from '../../../lib/siteConfig'
-import { createSupabaseAdminClient } from '../../../lib/supabase/admin'
-import { createSupabaseServerClient } from '../../../lib/supabase/server'
+import { sendResendEmail } from '../../../../lib/email/resend'
+import { SITE_EMAIL, SITE_URL } from '../../../../lib/siteConfig'
+import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 
 const CATEGORIES = ['Booking', 'Existing reservation', 'Rooms', 'Restaurant & dining', 'Events', 'Short-let', 'Facilities', 'Payment', 'Complaint', 'General enquiry', 'Other']
 
@@ -16,9 +16,16 @@ export async function GET() {
   const { data: { user } } = await server.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
   const admin = createSupabaseAdminClient()
-  const { data, error } = await admin.from('contact_conversations').select('*').eq('user_id', user.id).order('last_message_at', { ascending: false })
+  const email = (user.email || '').toLowerCase()
+  const { data, error } = await admin.from('contact_conversations').select('*').or(`user_id.eq.${user.id},guest_email.eq.${email}`).order('last_message_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ conversations: data ?? [] })
+  const conversations = data ?? []
+  const unclaimed = conversations.filter((conversation: any) => !conversation.user_id)
+  if (unclaimed.length) {
+    await admin.from('contact_conversations').update({ user_id: user.id }).in('id', unclaimed.map((conversation: any) => conversation.id))
+    conversations.forEach((conversation: any) => { if (!conversation.user_id) conversation.user_id = user.id })
+  }
+  return NextResponse.json({ conversations })
 }
 
 export async function POST(request: Request) {
