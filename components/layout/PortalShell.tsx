@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, Bell, Search, ChevronDown, LogOut } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
+import LiveDateTime from '../ui/LiveDateTime'
 
 export interface PortalNavItem {
   href: string
@@ -185,11 +186,16 @@ export default function PortalShell({
 
         {/* DESKTOP HEADER — LEFT EXACTLY AS BEFORE */}
         <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white border-b border-black/5 sticky top-0 z-30">
-          <div className="flex items-center gap-2 text-navy-400 text-sm w-80 bg-cream-100 rounded-full px-4 py-2">
-            <Search size={15} />
-            <span className="text-xs">
-              Search {portalName.toLowerCase()}…
-            </span>
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="flex items-center gap-2 text-navy-400 text-sm w-64 bg-cream-100 rounded-full px-4 py-2">
+              <Search size={15} />
+              <span className="text-xs">
+                Search {portalName.toLowerCase()}…
+              </span>
+            </div>
+            <div className="text-navy-500 truncate">
+              <LiveDateTime />
+            </div>
           </div>
 
           <div className="flex items-center gap-5">
