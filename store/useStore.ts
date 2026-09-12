@@ -266,24 +266,26 @@ export const useStore = create<StoreState>((set, get) => ({
     get().pushToast('Payment confirmed — invoice generated for the guest', 'success')
   },
   checkInBooking: (bookingId, roomId) => {
+    const checkedInAt = new Date().toISOString()
     set(s => ({
-      bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: 'checked_in', roomId } : b),
+      bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: 'checked_in', roomId, checkedInAt } : b),
       rooms: s.rooms.map(r => r.id === roomId ? { ...r, status: 'occupied' } : r),
     }))
-    save('bookings', { status: 'checked_in', room_id: roomId }, bookingId)
+    save('bookings', { status: 'checked_in', room_id: roomId, checked_in_at: checkedInAt }, bookingId)
     save('rooms', { status: 'occupied' }, roomId)
     get().pushToast('Guest checked in', 'success')
   },
   checkOutBooking: (bookingId) => {
     const booking = get().bookings.find(b => b.id === bookingId)
+    const checkedOutAt = new Date().toISOString()
     set(s => ({
-      bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: 'checked_out' } : b),
+      bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: 'checked_out', checkedOutAt } : b),
       rooms: booking?.roomId ? s.rooms.map(r => r.id === booking.roomId ? { ...r, status: 'cleaning_required' } : r) : s.rooms,
     }))
-    save('bookings', { status: 'checked_out' }, bookingId)
+    save('bookings', { status: 'checked_out', checked_out_at: checkedOutAt }, bookingId)
     if (booking?.roomId) {
       save('rooms', { status: 'cleaning_required' }, booking.roomId)
-      const room = get().rooms.find(r => r.id === booking.roomId)
+      const room = get().rooms.find(r => r.roomNumber === booking.roomId)
       const rt = get().roomTypes.find(t => t.id === booking.roomTypeId)
       const exists = get().housekeepingTasks.some(t => t.room === room?.roomNumber && t.status !== 'completed')
       if (room && !exists) {
@@ -365,16 +367,19 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   addMenuItem: (item) => {
     set(s => ({ menuItems: [item, ...s.menuItems] }))
-    insertRow('menu_items', {
-      id: item.id, outlet: item.outlet, category: item.category, name: item.name,
-      price: item.price, image: item.image, available: item.available,
-    })
+    insertRow('menu_items', { id: item.id, outlet: item.outlet, category: item.category, name: item.name, price: item.price, image: item.image, available: item.available })
     get().pushToast('Menu item added', 'success')
   },
   updateMenuItem: (id, patch) => {
     set(s => ({ menuItems: s.menuItems.map(m => m.id === id ? { ...m, ...patch } : m) }))
-    save('menu_items', patch, id)
-    get().pushToast('Menu item updated', 'success')
+    const dbPatch: Record<string, any> = {}
+    if (patch.name !== undefined) dbPatch.name = patch.name
+    if (patch.category !== undefined) dbPatch.category = patch.category
+    if (patch.price !== undefined) dbPatch.price = patch.price
+    if (patch.image !== undefined) dbPatch.image = patch.image
+    if (patch.available !== undefined) dbPatch.available = patch.available
+    if (patch.outlet !== undefined) dbPatch.outlet = patch.outlet
+    if (Object.keys(dbPatch).length) save('menu_items', dbPatch, id)
   },
   deleteMenuItem: (id) => {
     set(s => ({ menuItems: s.menuItems.filter(m => m.id !== id) }))
@@ -385,7 +390,7 @@ export const useStore = create<StoreState>((set, get) => ({
   updateDrinkPrice: (id, price) => {
     set(s => ({ drinks: s.drinks.map(d => d.id === id ? { ...d, price } : d) }))
     save('drinks', { price }, id)
-    get().pushToast('Drink price updated — reflected on public bar menu', 'success')
+    get().pushToast('Drink price updated', 'success')
   },
   toggleDrinkAvailable: (id) => {
     const next = !get().drinks.find(d => d.id === id)?.available
@@ -403,59 +408,51 @@ export const useStore = create<StoreState>((set, get) => ({
     get().pushToast('Drink removed', 'info')
   },
 
-  addStaff: (member) => {
-    set(s => ({ staff: [member, ...s.staff] }))
-    insertRow('staff', {
-      id: member.id, name: member.name, email: member.email, phone: member.phone,
-      role: member.role, department: member.department, status: member.status, joined: member.joined,
-    })
-    get().pushToast('Staff member added — permissions applied', 'success')
+  addStaff: (s) => {
+    set(state => ({ staff: [s, ...state.staff] }))
+    insertRow('staff', { id: s.id, user_id: s.userId ?? null, name: s.name, email: s.email, phone: s.phone, role: ROLE_LABEL_TO_ENUM[s.role] ?? s.role, department: s.department, status: s.status, joined: s.joined })
+    get().pushToast('Staff member added', 'success')
   },
   toggleStaffStatus: (id) => {
-    const next = get().staff.find(m => m.id === id)?.status === 'active' ? 'disabled' : 'active'
+    const current = get().staff.find(s => s.id === id)?.status
+    const next = current === 'active' ? 'inactive' : 'active'
     set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, status: next } : m) }))
     save('staff', { status: next }, id)
   },
   updateStaffRole: (id, role) => {
     set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, role } : m) }))
-    save('staff', { role }, id)
-    ;(async () => {
-      const { data: row } = await supabase.from('staff').select('user_id').eq('id', id).maybeSingle()
-      const userId = (row as any)?.user_id
-      if (userId) {
-        const roleEnum = ROLE_LABEL_TO_ENUM[role as string]
-        if (roleEnum) {
-          await supabase.from('user_roles').delete().eq('user_id', userId)
-          await supabase.from('user_roles').insert({ user_id: userId, role: roleEnum })
-        }
-      }
-    })()
-    get().pushToast('Role updated — permissions refreshed', 'success')
+    save('staff', { role: ROLE_LABEL_TO_ENUM[role] ?? role }, id)
   },
   updateStaffInfo: (id, updates) => {
     set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, ...updates } : m) }))
-    save('staff', updates, id)
-    get().pushToast('Staff details updated', 'success')
+    const patch: Record<string, any> = {}
+    if (updates.name !== undefined) patch.name = updates.name
+    if (updates.phone !== undefined) patch.phone = updates.phone
+    if (updates.department !== undefined) patch.department = updates.department
+    if (Object.keys(patch).length) save('staff', patch, id)
   },
 
   togglePublishEvent: (id) => {
     const next = !get().events.find(e => e.id === id)?.published
     set(s => ({ events: s.events.map(e => e.id === id ? { ...e, published: next } : e) }))
     save('events', { published: next }, id)
-    get().pushToast('Event publish state updated', 'success')
   },
   addEvent: (e) => {
     set(s => ({ events: [e, ...s.events] }))
-    insertRow('events', {
-      id: e.id, title: e.title, date: e.date, price: e.price, capacity: e.capacity,
-      image: e.image, description: e.description, published: e.published,
-    })
+    insertRow('events', { id: e.id, title: e.title, date: e.date, price: e.price, capacity: e.capacity, image: e.image, description: e.description, published: e.published })
     get().pushToast('Event created', 'success')
   },
   updateEvent: (id, patch) => {
     set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...patch } : e) }))
-    save('events', patch, id)
-    get().pushToast('Event updated', 'success')
+    const dbPatch: Record<string, any> = {}
+    if (patch.title !== undefined) dbPatch.title = patch.title
+    if (patch.date !== undefined) dbPatch.date = patch.date
+    if (patch.price !== undefined) dbPatch.price = patch.price
+    if (patch.capacity !== undefined) dbPatch.capacity = patch.capacity
+    if (patch.image !== undefined) dbPatch.image = patch.image
+    if (patch.description !== undefined) dbPatch.description = patch.description
+    if (patch.published !== undefined) dbPatch.published = patch.published
+    if (Object.keys(dbPatch).length) save('events', dbPatch, id)
   },
   deleteEvent: (id) => {
     set(s => ({ events: s.events.filter(e => e.id !== id) }))
@@ -475,8 +472,13 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   updateOffer: (id, patch) => {
     set(s => ({ offers: s.offers.map(o => o.id === id ? { ...o, ...patch } : o) }))
-    save('offers', patch, id)
-    get().pushToast('Offer updated', 'success')
+    const dbPatch: Record<string, any> = {}
+    if (patch.title !== undefined) dbPatch.title = patch.title
+    if (patch.description !== undefined) dbPatch.description = patch.description
+    if (patch.discount !== undefined) dbPatch.discount = patch.discount
+    if (patch.category !== undefined) dbPatch.category = patch.category
+    if (patch.active !== undefined) dbPatch.active = patch.active
+    if (Object.keys(dbPatch).length) save('offers', dbPatch, id)
   },
   deleteOffer: (id) => {
     set(s => ({ offers: s.offers.filter(o => o.id !== id) }))
@@ -491,11 +493,19 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   updateShortLet: (id, patch) => {
     set(s => ({ shortLets: s.shortLets.map(sl => sl.id === id ? { ...sl, ...patch } : sl) }))
-    save('short_lets', patch, id)
-    get().pushToast('Short-let updated', 'success')
+    const dbPatch: Record<string, any> = {}
+    if (patch.name !== undefined) dbPatch.name = patch.name
+    if (patch.type !== undefined) dbPatch.type = patch.type
+    if (patch.price !== undefined) dbPatch.price = patch.price
+    if (patch.bedrooms !== undefined) dbPatch.bedrooms = patch.bedrooms
+    if (patch.amenities !== undefined) dbPatch.amenities = patch.amenities
+    if (patch.image !== undefined) dbPatch.image = patch.image
+    if (patch.available !== undefined) dbPatch.available = patch.available
+    if (patch.description !== undefined) dbPatch.description = patch.description
+    if (Object.keys(dbPatch).length) save('short_lets', dbPatch, id)
   },
   toggleShortLetAvailable: (id) => {
-    const next = !get().shortLets.find(sl => sl.id === id)?.available
+    const next = !get().shortLets.find(s => s.id === id)?.available
     set(s => ({ shortLets: s.shortLets.map(sl => sl.id === id ? { ...sl, available: next } : sl) }))
     save('short_lets', { available: next }, id)
   },
@@ -508,12 +518,17 @@ export const useStore = create<StoreState>((set, get) => ({
   addBillboard: (b) => {
     set(s => ({ billboards: [b, ...s.billboards] }))
     insertRow('billboards', { id: b.id, location: b.location, dimensions: b.dimensions, price: b.price, image: b.image, available: b.available })
-    get().pushToast('Billboard added', 'success')
+    get().pushToast('Billboard space added', 'success')
   },
   updateBillboard: (id, patch) => {
     set(s => ({ billboards: s.billboards.map(b => b.id === id ? { ...b, ...patch } : b) }))
-    save('billboards', patch, id)
-    get().pushToast('Billboard updated', 'success')
+    const dbPatch: Record<string, any> = {}
+    if (patch.location !== undefined) dbPatch.location = patch.location
+    if (patch.dimensions !== undefined) dbPatch.dimensions = patch.dimensions
+    if (patch.price !== undefined) dbPatch.price = patch.price
+    if (patch.image !== undefined) dbPatch.image = patch.image
+    if (patch.available !== undefined) dbPatch.available = patch.available
+    if (Object.keys(dbPatch).length) save('billboards', dbPatch, id)
   },
   toggleBillboardAvailable: (id) => {
     const next = !get().billboards.find(b => b.id === id)?.available
@@ -527,17 +542,10 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addGuestRequest: (r) => {
-    const req: GuestRequest = {
-      id: `gr_${Date.now()}`, customerId: r.customerId, bookingRef: r.bookingRef ?? '', room: r.room ?? '',
-      guestName: r.guestName, type: r.type, message: r.message, status: 'open',
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    set(s => ({ guestRequests: [req, ...s.guestRequests] }))
-    insertRow('guest_requests', {
-      id: req.id, customer_id: req.customerId ?? null, booking_ref: req.bookingRef, room: req.room,
-      guest_name: req.guestName, type: req.type, message: req.message, status: 'open',
-    })
-    get().pushToast('Request sent to reception', 'success')
+    const item: GuestRequest = { ...r, id: `gr_${Date.now()}`, bookingRef: r.bookingRef ?? '', room: r.room ?? '', status: 'open', createdAt: new Date().toISOString().slice(0, 10) }
+    set(s => ({ guestRequests: [item, ...s.guestRequests] }))
+    insertRow('guest_requests', { id: item.id, customer_id: item.customerId ?? null, booking_ref: item.bookingRef, room: item.room, guest_name: item.guestName, type: item.type, message: item.message, status: 'open' })
+    get().pushToast('Guest request sent to reception', 'success')
   },
   resolveGuestRequest: (id) => {
     set(s => ({ guestRequests: s.guestRequests.map(r => r.id === id ? { ...r, status: 'resolved' } : r) }))
@@ -546,48 +554,37 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addGalleryImage: (url, caption) => {
-    const img: GalleryImage = { id: `gi_${Date.now()}`, url, caption, sortOrder: get().galleryImages.length + 1 }
-    set(s => ({ galleryImages: [...s.galleryImages, img] }))
-    insertRow('gallery_images', { id: img.id, url: img.url, caption: img.caption ?? null, sort_order: img.sortOrder })
-    get().pushToast('Image added to gallery', 'success')
+    const image: GalleryImage = { id: `gi_${Date.now()}`, url, caption, sortOrder: get().galleryImages.length }
+    set(s => ({ galleryImages: [image, ...s.galleryImages] }))
+    insertRow('gallery_images', { id: image.id, url: image.url, caption: image.caption ?? null, sort_order: image.sortOrder })
+    get().pushToast('Gallery image added', 'success')
   },
   removeGalleryImage: (id) => {
-    set(s => ({ galleryImages: s.galleryImages.filter(g => g.id !== id) }))
-    supabase.from('gallery_images').delete().eq('id', id).then(({ error }) => {
-      if (error) console.error('[gallery_images] delete failed', error.message)
-    })
-    get().pushToast('Image removed', 'info')
+    set(s => ({ galleryImages: s.galleryImages.filter(i => i.id !== id) }))
+    deleteRow('gallery_images', id)
+    get().pushToast('Gallery image removed', 'info')
   },
 
   setRoomTypeImages: (id, images) => {
     set(s => ({ roomTypes: s.roomTypes.map(rt => rt.id === id ? { ...rt, images } : rt) }))
     save('room_types', { images }, id)
-    get().pushToast('Room photos updated — now live on the website', 'success')
   },
-
   saveAmenity: async (key, patch) => {
-    const previous = get().amenities.find(a => a.key === key)
     set(s => ({ amenities: s.amenities.map(a => a.key === key ? { ...a, ...patch } : a) }))
-    const row: Record<string, any> = {}
-    if (patch.name !== undefined) row.name = patch.name
-    if (patch.eyebrow !== undefined) row.eyebrow = patch.eyebrow
-    if (patch.description !== undefined) row.description = patch.description
-    if (patch.heroImage !== undefined) row.hero_image = patch.heroImage
-    if (patch.gallery !== undefined) row.gallery = patch.gallery
-    if (patch.hours !== undefined) row.hours = patch.hours
-    if (patch.facilities !== undefined) row.facilities = patch.facilities
-    if (patch.pricingNote !== undefined) row.pricing_note = patch.pricingNote
-    if (patch.ctaLabel !== undefined) row.cta_label = patch.ctaLabel
-    if (patch.published !== undefined) row.published = patch.published
-    // Amenities are identified by their `key`, not an `id` column. Using the
-    // generic save helper here made every amenity update fail silently.
-    const { data, error } = await supabase.from('amenities').update(row).eq('key', key).select('key').maybeSingle()
-    if (error || !data) {
-      console.error('[amenities] update failed', error?.message ?? 'Amenity was not found')
-      if (previous) set(s => ({ amenities: s.amenities.map(a => a.key === key ? previous : a) }))
-      return false
-    }
+    const dbPatch: Record<string, any> = {}
+    if (patch.name !== undefined) dbPatch.name = patch.name
+    if (patch.eyebrow !== undefined) dbPatch.eyebrow = patch.eyebrow
+    if (patch.description !== undefined) dbPatch.description = patch.description
+    if (patch.heroImage !== undefined) dbPatch.hero_image = patch.heroImage
+    if (patch.gallery !== undefined) dbPatch.gallery = patch.gallery
+    if (patch.hours !== undefined) dbPatch.hours = patch.hours
+    if (patch.facilities !== undefined) dbPatch.facilities = patch.facilities
+    if (patch.pricingNote !== undefined) dbPatch.pricing_note = patch.pricingNote
+    if (patch.ctaLabel !== undefined) dbPatch.cta_label = patch.ctaLabel
+    if (patch.published !== undefined) dbPatch.published = patch.published
+    const { error } = await supabase.from('amenities').update(dbPatch).eq('key', key)
+    if (error) { console.error('[amenities] update failed', error.message); get().pushToast('Could not save amenity', 'error'); return false }
+    get().pushToast('Amenity saved', 'success')
     return true
   },
 }))
-
