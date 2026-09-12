@@ -20,7 +20,7 @@ export const PATH_SECTIONS: { prefix: string; section: string }[] = [
   { prefix: '/admin/gallery', section: 'gallery' },
   { prefix: '/admin/website', section: 'website' },
   { prefix: '/admin/blog', section: 'blog' },
-  { prefix: '/admin/contact-messages', section: 'contact_messages' },
+  { prefix: '/admin/contact-messages', section: 'reception' },
   { prefix: '/admin/seo', section: 'seo' },
   { prefix: '/admin/staff', section: 'staff' },
   { prefix: '/admin/permissions', section: 'permissions' },
