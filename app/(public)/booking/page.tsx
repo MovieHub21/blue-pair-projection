@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { buildMetadata } from '../../../lib/buildMetadata'
 import { getRoomTypes } from '../../../lib/data'
-import BookingFlowClient from './BookingFlowClient'
+import BookingFlowPaystackClient from './BookingFlowPaystackClient'
 
 export const metadata = buildMetadata({
   title: 'Book a Hotel Room in Uromi, Edo State | Blue Pair Hotel Booking',
@@ -14,7 +14,7 @@ export default async function BookingPage() {
   const roomTypes = await getRoomTypes()
   return (
     <Suspense>
-      <BookingFlowClient roomTypes={roomTypes} />
+      <BookingFlowPaystackClient roomTypes={roomTypes} />
     </Suspense>
   )
 }
