@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { bookingConfirmationEmail } from '../../../../lib/email/templates'
 
 export async function POST(request: Request) {
   try {
+    const supabase = createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const required = ['guestEmail', 'guestName', 'reference', 'roomName', 'checkIn', 'checkOut', 'total']
 
@@ -11,9 +19,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing booking email data' }, { status: 400 })
     }
 
+    const guestEmail = String(body.guestEmail).trim().toLowerCase()
+    const guestName = String(body.guestName).trim()
+
+    if (guestEmail !== String(user.email ?? '').trim().toLowerCase()) {
+      return NextResponse.json({ error: 'Email does not match the signed-in account' }, { status: 403 })
+    }
+
     const email = bookingConfirmationEmail({
-      guestName: String(body.guestName),
-      email: String(body.guestEmail),
+      guestName,
+      email: guestEmail,
       reference: String(body.reference),
       roomName: String(body.roomName),
       checkIn: String(body.checkIn),
@@ -25,7 +40,7 @@ export async function POST(request: Request) {
     })
 
     const result = await sendResendEmail({
-      to: String(body.guestEmail),
+      to: guestEmail,
       subject: email.subject,
       html: email.html,
       text: email.text,
