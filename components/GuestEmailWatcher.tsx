@@ -7,6 +7,7 @@ type EventName =
   | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified'
   | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder'
   | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status'
+  | 'support_acknowledged' | 'support_status'
 
 export async function sendGuestTransactionalEmail(event: EventName, input: { bookingId?: string; requestId?: string; reason?: string; changes?: string; paymentReference?: string; reviewUrl?: string }) {
   try {
@@ -33,6 +34,8 @@ export default function GuestEmailWatcher() {
 
         if (old.paymentStatus !== 'paid' && booking.paymentStatus === 'paid') {
           void sendGuestTransactionalEmail('payment_successful', { bookingId: booking.id })
+        } else if (old.paymentStatus !== 'failed' && booking.paymentStatus === 'failed') {
+          void sendGuestTransactionalEmail('payment_failed', { bookingId: booking.id })
         } else if (old.status !== 'cancelled' && booking.status === 'cancelled') {
           void sendGuestTransactionalEmail('booking_cancelled', { bookingId: booking.id })
         } else if (old.status !== 'checked_in' && booking.status === 'checked_in') {
@@ -51,7 +54,8 @@ export default function GuestEmailWatcher() {
         if (!old) {
           void sendGuestTransactionalEmail('service_request_received', { requestId: request.id })
         } else if (old.status !== request.status) {
-          void sendGuestTransactionalEmail('service_request_status', { requestId: request.id })
+          const event = request.type.toLowerCase().includes('complaint') || request.type.toLowerCase().includes('support') ? 'support_status' : 'service_request_status'
+          void sendGuestTransactionalEmail(event, { requestId: request.id })
         }
       }
     })
