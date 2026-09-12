@@ -3,6 +3,7 @@ import { sendResendEmail } from '../../../../../lib/email/resend'
 import { SITE_EMAIL, SITE_URL } from '../../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
+import { uploadContactAttachment, withContactAttachmentUrls } from '../../../../../lib/contactAttachments'
 
 async function getCompanyEmail(admin: ReturnType<typeof createSupabaseAdminClient>) {
   const { data } = await admin.from('site_content').select('key,value').eq('key', 'hotel_email').maybeSingle()
@@ -20,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const { data: messages, error } = await admin.from('contact_messages').select('*').eq('conversation_id', conversation.id).order('created_at', { ascending: true })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   await admin.from('contact_messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', conversation.id).eq('sender_type', 'staff').is('read_at', null)
-  return NextResponse.json({ conversation, messages: messages ?? [] })
+  return NextResponse.json({ conversation, messages: await withContactAttachmentUrls(messages ?? []) })
 }
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -28,16 +29,21 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const server = createSupabaseServerClient()
     const { data: { user } } = await server.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
-    const body = await request.json()
-    const message = String(body.message ?? '').trim()
-    if (message.length < 2 || message.length > 5000) return NextResponse.json({ error: 'Message must be between 2 and 5000 characters.' }, { status: 400 })
+    const contentType = request.headers.get('content-type') || ''
+    const multipart = contentType.includes('multipart/form-data')
+    const body = multipart ? await request.formData() : await request.json()
+    const message = String(multipart ? body.get('message') ?? '' : body.message ?? '').trim()
+    const value = multipart ? body.get('file') : null
+    const file = value instanceof File && value.size > 0 ? value : null
+    if ((!message && !file) || message.length > 5000) return NextResponse.json({ error: 'Add a message or attachment. Messages can be up to 5000 characters.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
     const { data: conversation } = await admin.from('contact_conversations').select('*').eq('id', params.id).or(`user_id.eq.${user.id},guest_email.eq.${(user.email || '').toLowerCase()}`).maybeSingle()
     if (!conversation) return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 })
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved. Start a new message if you need further help.' }, { status: 409 })
 
-    const { error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message })
+    const attachment = file ? await uploadContactAttachment(file, conversation.id, 'guest') : null
+    const { error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) })
     if (error) throw error
 
     const companyEmail = await getCompanyEmail(admin)
