@@ -20,7 +20,19 @@ export async function POST(request: Request) {
     const { data: customer } = await admin.from('customers').select('id').eq('user_id', user.id).maybeSingle()
     if (!customer) return NextResponse.json({ error: 'We could not find your guest profile.' }, { status: 400 })
 
-    const { data: eligibleBookings } = await admin.from('bookings').select('id,checked_in_at,check_in,check_out').eq('customer_id', customer.id).not('checked_in_at', 'is', null).order('checked_in_at', { ascending: false })
+    // A guest is eligible once the booking has a recorded check-in. The status
+    // fallback keeps existing check-ins eligible if they were created before
+    // checked_in_at was added to the check-in flow.
+    const { data: eligibleBookings, error: bookingError } = await admin
+      .from('bookings')
+      .select('id,checked_in_at,check_in,check_out,status')
+      .eq('customer_id', customer.id)
+      .or('checked_in_at.not.is.null,status.in.(checked_in,checked_out)')
+      .order('checked_in_at', { ascending: false, nullsFirst: false })
+      .order('check_in', { ascending: false })
+
+    if (bookingError) throw bookingError
+
     const eligible = eligibleBookings?.[0]
     if (!eligible) return NextResponse.json({ error: 'Reviews are available after you have checked in at Blue Pair Hotel.' }, { status: 403 })
 
@@ -28,7 +40,16 @@ export async function POST(request: Request) {
     if (existing) return NextResponse.json({ error: 'You have already reviewed this stay.' }, { status: 409 })
 
     const keywords = extractReviewKeywords(`${title} ${review}`)
-    const { data: created, error } = await admin.from('guest_reviews').insert({ user_id: user.id, booking_id: eligible.id, rating, title: title || null, review, keywords, published: true, published_at: new Date().toISOString() }).select('id,rating,title,review,keywords,created_at').single()
+    const { data: created, error } = await admin.from('guest_reviews').insert({
+      user_id: user.id,
+      booking_id: eligible.id,
+      rating,
+      title: title || null,
+      review,
+      keywords,
+      published: true,
+      published_at: new Date().toISOString(),
+    }).select('id,rating,title,review,keywords,created_at').single()
     if (error) throw error
 
     return NextResponse.json({ ok: true, review: created })
