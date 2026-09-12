@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { getSiteContent } from '../../../lib/data'
 import { SITE_EMAIL, SITE_NAME, SITE_PHONE_DISPLAY, SITE_URL, SITE_ADDRESS_DISPLAY } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
@@ -8,7 +9,12 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/terms` },
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const content = await getSiteContent()
+  const address = content.hotel_address || SITE_ADDRESS_DISPLAY
+  const phone = content.hotel_phone || SITE_PHONE_DISPLAY
+  const email = content.hotel_email || SITE_EMAIL
+
   return (
     <main className="min-h-screen bg-cream-50 text-navy-950">
       <section className="section pt-32">
@@ -83,9 +89,9 @@ export default function TermsPage() {
               <h2 className="text-2xl font-display font-semibold mb-3">13. Contact</h2>
               <p>For questions about a reservation, these terms or our hotel services, contact Blue Pair Hotel:</p>
               <div className="mt-4 space-y-1">
-                <p>{SITE_ADDRESS_DISPLAY}</p>
-                <p>{SITE_PHONE_DISPLAY}</p>
-                <p>{SITE_EMAIL}</p>
+                <p>{address}</p>
+                <p>{phone}</p>
+                <p>{email}</p>
               </div>
             </section>
           </div>
