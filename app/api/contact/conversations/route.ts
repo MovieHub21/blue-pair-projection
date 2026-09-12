@@ -69,6 +69,14 @@ export async function POST(request: Request) {
       html: `<h2>New guest message</h2><p><strong>${name}</strong> has sent a new message through the Blue Pair Hotel website.</p><p><strong>Subject:</strong> ${subject}<br /><strong>Category:</strong> ${category}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
     })
 
+    const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
+    await sendResendEmail({
+      to: email,
+      subject: `Your message has been received by Blue Pair Hotel`,
+      text: `Your message has been received by Blue Pair Hotel. The team will review it and notify you by email when they reply.\n\nOpen your guest portal: ${guestUrl}`,
+      html: `<h2>Your message has been received</h2><p>Blue Pair Hotel has received your message. The team will notify you by email when they reply.</p><p><a href="${guestUrl}">Open your guest portal</a></p>`,
+    })
+
     return NextResponse.json({ success: true, conversationId: conversation.id })
   } catch (error: any) {
     console.error('[contact-conversation-create]', error)
