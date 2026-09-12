@@ -40,9 +40,13 @@ export default function PublicFooter() {
             </div>
           </div>
         </div>
-        <div className="mt-16 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-2 text-xs text-white/40">
+        <div className="mt-16 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-3 text-xs text-white/40">
           <span>© 2026 Blue Pair Hotel. All rights reserved.</span>
-          <span>Privacy policy · Terms of service</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-white/80 transition-colors">Privacy Policy</Link>
+            <span aria-hidden="true">·</span>
+            <Link href="/terms" className="hover:text-white/80 transition-colors">Terms &amp; Conditions</Link>
+          </div>
         </div>
       </div>
     </footer>
