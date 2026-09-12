@@ -13,7 +13,7 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
       <div className="container-w px-6 md:px-10">
         <div className="grid md:grid-cols-4 gap-10">
           <div>
-            <div className="flex items-center gap-2.5 font-display text-xl font-semibold text-white mb-4"><span className="w-2.5 h-2.5 rounded-full bg-gold-500" />Blue Pair Hotel</div>
+            <div className="flex items-center gap-2.5 font-display text-xl font-semibold text-white mb-4"><span className="w-2.5 h-2.5 rounded-full bg-gold-500" />Blue Pair Signature Crown Hotel &amp; Suites</div>
             <p className="text-sm leading-relaxed max-w-xs">{note}</p>
             <SocialLinks content={content} className="mt-5" />
           </div>
@@ -35,7 +35,7 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
           </div>
         </div>
         <div className="mt-16 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-3 text-xs text-white/40">
-          <span>© 2026 Blue Pair Hotel. All rights reserved.</span>
+          <span>© 2026 Blue Pair Signature Crown Hotel &amp; Suites. All rights reserved.</span>
           <div className="flex items-center gap-4"><Link href="/privacy" className="hover:text-white/80 transition-colors">Privacy Policy</Link><span aria-hidden="true">·</span><Link href="/terms" className="hover:text-white/80 transition-colors">Terms &amp; Conditions</Link></div>
         </div>
       </div>
