@@ -20,7 +20,6 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const { data: messages, error } = await admin.from('contact_messages').select('*').eq('conversation_id', conversation.id).order('created_at', { ascending: true })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   await admin.from('contact_messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', conversation.id).eq('sender_type', 'staff').is('read_at', null)
-  if (conversation.status === 'waiting_for_guest') await admin.from('contact_conversations').update({ status: 'waiting_for_staff' }).eq('id', conversation.id)
   return NextResponse.json({ conversation, messages: messages ?? [] })
 }
 
