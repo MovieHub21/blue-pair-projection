@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Calendar, Users, BedDouble, ArrowRight, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car } from 'lucide-react'
+import { Calendar, Users, BedDouble, ArrowRight, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, Sparkles } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
 import { type RoomType, type Offer } from '../../data/mock'
@@ -13,49 +13,70 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
   const router = useRouter()
   const [checkIn, setCheckIn] = useState(todayISO())
   const [checkOut, setCheckOut] = useState(addDaysISO(2))
+  const heroImage = gallery[0]?.url || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=2200&q=85'
 
   return (
     <div>
-      <header className="relative h-[92vh] min-h-[640px] text-white flex items-end">
-        <div className="absolute inset-0 bg-hero" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=80')" }} role="img" aria-label="Blue Pair Hotel, Uromi, Edo State" />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/25 to-navy-950/10" />
-        <div className="relative z-10 container-w px-6 md:px-10 pb-16 w-full">
-          <div className="flex items-center gap-2.5 text-[11px] tracking-[0.16em] uppercase font-bold text-gold-300 mb-5">
-            <span className="w-9 h-px bg-gold-300" />Uromi, Edo State — Est. 2014
-          </div>
-          <h1 className="text-4xl md:text-6xl font-semibold leading-[1.05] max-w-2xl">
-            {headline || <>Premium hospitality, <em className="italic text-gold-300 font-medium">the Blue Pair way</em>.</>}
-          </h1>
-          <p className="mt-5 max-w-md text-white/80 text-[15.5px] leading-relaxed">
-            {subtitle || "Sixty rooms and suites, a resident restaurant and bar, an indoor pool, and a private Annex for extended stays — Edo State's most complete luxury address, right here in Uromi."}
-          </p>
-          <div className="flex gap-3 mt-8">
-            <Link href="/booking" className="btn-gold">Book a room</Link>
-            <Link href="/about" className="btn-ghost-light">Explore the hotel</Link>
+      <header className="relative min-h-[720px] h-[88vh] max-h-[900px] text-white overflow-hidden">
+        <div className="absolute inset-0 bg-hero" style={{ backgroundImage: `url('${heroImage}')` }} role="img" aria-label="Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/90 via-navy-950/55 to-navy-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-navy-950/20" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-navy-950/50 to-transparent" />
+
+        <div className="relative z-10 container-w px-6 md:px-10 h-full flex items-end pb-28 md:pb-32">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-4 py-2 text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-6">
+              <Sparkles size={13} className="text-gold-300" />
+              A place to arrive, relax & feel at home
+            </div>
+            <h1 className="text-[2.7rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-3xl">
+              {headline || <>Welcome to <em className="italic text-gold-300 font-medium">Blue Pair.</em></>}
+            </h1>
+            <p className="mt-6 max-w-2xl text-base md:text-lg text-white/85 leading-relaxed">
+              {subtitle || 'Come in, settle down and let us take care of the rest. Thoughtful rooms, warm hospitality, good food and spaces made for memorable stays in Uromi.'}
+            </p>
+            <div className="flex flex-wrap gap-3 mt-8">
+              <Link href="/booking" className="btn-gold px-6 py-3.5">Find your room</Link>
+              <Link href="/about" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 transition-colors">Take a look around <ArrowRight size={15} /></Link>
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/65">
+              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Uromi, Edo State</span>
+              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Rooms & suites</span>
+              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Dining, pool & more</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container-w px-6 md:px-10 relative z-20 -mt-12">
-        <div className="card p-5 md:p-6 grid md:grid-cols-5 gap-4 md:gap-0">
-          <div className="md:px-5 md:border-r border-black/10">
-            <label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-in</label>
-            <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="field-input" />
+      <div className="container-w px-5 md:px-10 relative z-20 -mt-10 md:-mt-12">
+        <div className="rounded-2xl bg-white shadow-pop border border-black/[0.06] p-4 md:p-5">
+          <div className="flex items-center justify-between gap-4 mb-4 px-1">
+            <div>
+              <span className="eyebrow">Plan your stay</span>
+              <h2 className="font-semibold text-base md:text-lg mt-1">When would you like to feel at home?</h2>
+            </div>
+            <span className="hidden sm:block text-xs text-navy-400">Best available rooms shown after search</span>
           </div>
-          <div className="md:px-5 md:border-r border-black/10">
-            <label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-out</label>
-            <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="field-input" />
-          </div>
-          <div className="md:px-5 md:border-r border-black/10">
-            <label className="field-label flex items-center gap-1.5"><Users size={13} /> Guests</label>
-            <select className="field-input"><option>2 adults, 0 children</option><option>1 adult</option><option>2 adults, 2 children</option></select>
-          </div>
-          <div className="md:px-5">
-            <label className="field-label flex items-center gap-1.5"><BedDouble size={13} /> Room type</label>
-            <select className="field-input"><option>Any room</option>{roomTypes.map(r => <option key={r.id}>{r.name}</option>)}</select>
-          </div>
-          <div className="md:pl-5 flex items-end">
-            <button onClick={() => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center">Search availability</button>
+          <div className="grid md:grid-cols-5 gap-3">
+            <div className="md:px-3">
+              <label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-in</label>
+              <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="field-input" />
+            </div>
+            <div className="md:px-3">
+              <label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-out</label>
+              <input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="field-input" />
+            </div>
+            <div className="md:px-3">
+              <label className="field-label flex items-center gap-1.5"><Users size={13} /> Guests</label>
+              <select className="field-input"><option>2 adults, 0 children</option><option>1 adult</option><option>2 adults, 2 children</option></select>
+            </div>
+            <div className="md:px-3">
+              <label className="field-label flex items-center gap-1.5"><BedDouble size={13} /> Room type</label>
+              <select className="field-input"><option>Any room</option>{roomTypes.map(r => <option key={r.id}>{r.name}</option>)}</select>
+            </div>
+            <div className="flex items-end">
+              <button onClick={() => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center py-3.5">Search availability</button>
+            </div>
           </div>
         </div>
       </div>
