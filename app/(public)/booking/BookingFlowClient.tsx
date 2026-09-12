@@ -57,6 +57,34 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
         customerId, roomTypeId: room.id, checkIn, checkOut, adults, children,
         amount: total, specialRequests: guest.requests || undefined,
       })
+
+      // Send the transactional confirmation to the email belonging to the signed-in guest.
+      // Booking creation remains successful even if the email provider is temporarily unavailable.
+      try {
+        const emailResponse = await fetch('/api/email/booking-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            guestEmail: guest.email,
+            guestName: guest.name,
+            reference: b.reference,
+            roomName: room.name,
+            checkIn,
+            checkOut,
+            adults,
+            children,
+            total,
+            paymentStatus: 'pending',
+          }),
+        })
+
+        if (!emailResponse.ok) {
+          console.error('[booking] confirmation email failed', await emailResponse.text())
+        }
+      } catch (emailError) {
+        console.error('[booking] confirmation email request failed', emailError)
+      }
+
       setBooking(b)
       setStep(5)
     } catch (e: any) {
