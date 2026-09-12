@@ -6,16 +6,23 @@ import { sectionForPath, ALWAYS_ALLOWED_SECTIONS } from './lib/permissionSection
 const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
 const PUBLIC_PATHS = ['/account/login', '/account/register', '/staff/login']
+const MAINTENANCE_PATH = '/site-maintenance'
+
+function getEnvironment() {
+  if (process.env.VERCEL_ENV === 'preview') return 'preview'
+  if (process.env.VERCEL_ENV === 'production') return 'production'
+  return process.env.NODE_ENV === 'development' ? 'development' : 'production'
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const response = NextResponse.next({ request })
 
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return response
+  if (pathname === MAINTENANCE_PATH) return response
 
   const needsStaff = STAFF_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const needsGuest = GUEST_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
-  if (!needsStaff && !needsGuest) return response
+  const isAuthPath = PUBLIC_PATHS.some(p => pathname.startsWith(p))
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
@@ -25,6 +32,31 @@ export async function middleware(request: NextRequest) {
       },
     },
   })
+
+  // Maintenance is controlled from the Super Admin panel and stored per environment,
+  // so toggling localhost never puts the live production site into maintenance.
+  const environment = getEnvironment()
+  const { data: siteSetting } = await supabase
+    .from('site_settings')
+    .select('maintenance_mode')
+    .eq('environment', environment)
+    .maybeSingle()
+
+  if (siteSetting?.maintenance_mode && !needsStaff && !isAuthPath) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+      const isSuperAdmin = (roles ?? []).some((r: any) => r.role === 'super_admin')
+      if (isSuperAdmin) return response
+    }
+
+    const url = request.nextUrl.clone()
+    url.pathname = MAINTENANCE_PATH
+    return NextResponse.rewrite(url)
+  }
+
+  if (!needsStaff && !needsGuest) return response
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -79,5 +111,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/reception/:path*', '/housekeeping/:path*', '/maintenance/:path*', '/account/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|api/).*)'],
 }

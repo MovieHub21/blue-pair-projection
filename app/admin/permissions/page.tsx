@@ -1,6 +1,7 @@
 import { getMyPermissions } from '../../../lib/permissions'
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
 import PermissionsClient from './PermissionsClient'
+import MaintenanceModeClient from '../../../components/admin/MaintenanceModeClient'
 
 const ROLES = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant'] as const
 const ROLE_LABELS: Record<string, string> = {
@@ -26,6 +27,7 @@ export default async function PermissionsPage() {
         {isSuperAdmin ? 'Control which portal sections each staff role can access.' : 'You can view permissions for your role — only a Super Admin can change them.'}
       </p>
       <PermissionsClient roles={byRole} canEdit={isSuperAdmin} />
+      <MaintenanceModeClient canEdit={isSuperAdmin} />
     </div>
   )
 }
