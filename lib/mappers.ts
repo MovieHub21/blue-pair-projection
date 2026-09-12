@@ -123,13 +123,20 @@ export const mapGalleryImage = (r: Row): GalleryImage => ({
 export interface Amenity {
   key: string
   name: string
+  eyebrow: string
   description: string
-  icon: string
-  image?: string
-  active: boolean
+  heroImage: string
+  gallery: string[]
+  hours: string
+  facilities: string[]
+  pricingNote: string
+  ctaLabel: string
+  published: boolean
 }
 
 export const mapAmenity = (r: Row): Amenity => ({
-  key: r.key, name: r.name, description: r.description ?? '', icon: r.icon ?? '',
-  image: r.image ?? undefined, active: r.active ?? true,
+  key: r.key, name: r.name, eyebrow: r.eyebrow, description: r.description,
+  heroImage: r.hero_image, gallery: r.gallery ?? [], hours: r.hours,
+  facilities: r.facilities ?? [], pricingNote: r.pricing_note ?? '',
+  ctaLabel: r.cta_label ?? 'Reserve now', published: r.published,
 })
