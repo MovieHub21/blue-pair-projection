@@ -20,6 +20,7 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/admin/offers', 'offers'],
   ['/admin/gallery', 'gallery'],
   ['/admin/website', 'website'],
+  ['/admin/blog', 'blog'],
   ['/admin/seo', 'seo'],
   ['/admin/staff', 'staff'],
   ['/admin/permissions', 'permissions'],
@@ -29,7 +30,6 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/maintenance', 'maintenance'],
 ]
 
-/** Returns the permission section a portal path belongs to, if any. */
 export function sectionForPath(pathname: string): string | null {
   const hit = SECTION_PREFIXES.find(([prefix]) => pathname === prefix || pathname.startsWith(prefix + '/'))
   if (hit) return hit[1]
@@ -48,7 +48,6 @@ export const ROLE_LABELS: Record<AppRoleKey, string> = {
   bar: 'Bar Staff', accountant: 'Accountant',
 }
 
-/** Staff table role label -> auth role key. */
 export function roleKeyFromLabel(label: string): AppRoleKey {
   const entry = (Object.entries(ROLE_LABELS) as [AppRoleKey, string][]).find(([, l]) => l === label)
   return entry ? entry[0] : 'reception'
