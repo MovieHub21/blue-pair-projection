@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import PortalShell from '../../../components/layout/PortalShell'
-import { LayoutGrid, CalendarCheck, FileText, MessageSquarePlus, User, PartyPopper } from 'lucide-react'
+import { LayoutGrid, CalendarCheck, FileText, MessageSquarePlus, MessageSquare, User, PartyPopper } from 'lucide-react'
 import { getCurrentUser } from '../../../lib/account'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
@@ -10,6 +10,7 @@ export default async function AccountShellLayout({ children }: { children: React
     { href:'/account/dashboard', label:'Dashboard', icon:<LayoutGrid size={16}/>, end:true },
     { href:'/account/bookings', label:'My Bookings', icon:<CalendarCheck size={16}/> },
     { href:'/account/events', label:'Event Reservations', icon:<PartyPopper size={16}/> },
+    { href:'/account/messages', label:'Messages', icon:<MessageSquare size={16}/> },
     { href:'/account/invoices', label:'Invoices', icon:<FileText size={16}/> },
     { href:'/account/requests', label:'Special Requests', icon:<MessageSquarePlus size={16}/> },
     { href:'/account/profile', label:'Profile', icon:<User size={16}/> },
