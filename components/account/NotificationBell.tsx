@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Bell, CheckCheck, ChevronRight, CreditCard, CalendarCheck, MessageSquare, Sparkles, Wrench, X } from 'lucide-react'
+import { Bell, CheckCheck, ChevronRight, CreditCard, CalendarCheck, MessageSquare, Sparkles, Wrench } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
 
 type Notification = {
@@ -57,26 +57,39 @@ export default function NotificationBell() {
   }
 
   useEffect(() => {
-    load()
     let channel: ReturnType<typeof supabase.channel> | null = null
     let mounted = true
 
-    supabase.auth.getUser().then(({ data }) => {
+    const setupRealtime = async () => {
+      const { data } = await supabase.auth.getUser()
       if (!mounted || !data.user) return
+
+      // Configure all postgres_changes callbacks before subscribe().
+      // Supabase Realtime does not allow adding callbacks after a channel
+      // has already been subscribed.
       channel = supabase
         .channel(`guest-notifications-${data.user.id}`)
         .on('postgres_changes', {
-          event: 'INSERT', schema: 'public', table: 'guest_notifications', filter: `user_id=eq.${data.user.id}`,
-        }, () => load())
-        .subscribe()
-    })
+          event: 'INSERT',
+          schema: 'public',
+          table: 'guest_notifications',
+          filter: `user_id=eq.${data.user.id}`,
+        }, () => {
+          void load()
+        })
 
-    const onFocus = () => load()
+      channel.subscribe()
+    }
+
+    void load()
+    void setupRealtime()
+
+    const onFocus = () => void load()
     window.addEventListener('focus', onFocus)
     return () => {
       mounted = false
       window.removeEventListener('focus', onFocus)
-      if (channel) supabase.removeChannel(channel)
+      if (channel) void supabase.removeChannel(channel)
     }
   }, [])
 
@@ -154,9 +167,9 @@ export default function NotificationBell() {
                   </div>
                 )
                 return item.href ? (
-                  <Link key={item.id} href={item.href} onClick={() => { markRead(item.id); setOpen(false) }}>{content}</Link>
+                  <Link key={item.id} href={item.href} onClick={() => { void markRead(item.id); setOpen(false) }}>{content}</Link>
                 ) : (
-                  <button key={item.id} className="w-full text-left" onClick={() => markRead(item.id)}>{content}</button>
+                  <button key={item.id} className="w-full text-left" onClick={() => void markRead(item.id)}>{content}</button>
                 )
               })}
             </div>
