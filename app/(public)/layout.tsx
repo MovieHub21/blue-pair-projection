@@ -1,5 +1,6 @@
 import PublicNavbar from '../../components/layout/PublicNavbar'
 import PublicFooter from '../../components/layout/PublicFooter'
+import PublicMotion from '../../components/layout/PublicMotion'
 import JsonLd from '../../components/JsonLd'
 import { SITE_NAME, SITE_URL, SITE_PHONE, SITE_ADDRESS, SITE_GEO, DEFAULT_OG_IMAGE } from '../../lib/siteConfig'
 
@@ -35,9 +36,10 @@ const hotelJsonLd = {
 
 export default function PublicRouteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div>
+    <div className="public-site">
       <JsonLd data={hotelJsonLd} />
       <PublicNavbar />
+      <PublicMotion />
       {children}
       <PublicFooter />
     </div>
