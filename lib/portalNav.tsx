@@ -1,5 +1,5 @@
 import {
-  LayoutGrid, CalendarCheck, BedDouble, Grid3x3, LogIn, LogOut, Users, CreditCard,
+  LayoutGrid, CalendarCheck, BedDouble, Grid3x3, LogIn, LogOut, Users, CreditCard, WalletCards,
   UtensilsCrossed, Martini, ClipboardList, Building2, PartyPopper, MonitorPlay, Car, Tag,
   Image, FileCode, UserCog, ShieldCheck, BarChart3, Wrench, MessageSquare, Sparkles, Activity,
   Newspaper,
@@ -17,6 +17,7 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
     { href: '/admin/checkouts', label: 'Check-out', icon: <LogOut size={16} /> },
     { href: '/admin/customers', label: 'Customers', icon: <Users size={16} /> },
     { href: '/admin/payments', label: 'Payments', icon: <CreditCard size={16} /> },
+    { href: '/admin/finance', label: 'Finance', icon: <WalletCards size={16} /> },
   ] },
   { label: 'Outlets', items: [
     { href: '/admin/restaurant', label: 'Restaurant', icon: <UtensilsCrossed size={16} /> },
