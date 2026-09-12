@@ -6,6 +6,15 @@ import type {
 
 type Row = Record<string, any>
 
+type ExtendedBooking = Booking & {
+  checkedInAt?: string
+  checkedOutAt?: string
+  source?: 'online' | 'walk_in'
+  createdBy?: string
+}
+
+type ExtendedPayment = Payment & { customerId?: string }
+
 export const mapRoomType = (r: Row): RoomType => ({
   id: r.id, slug: r.slug, name: r.name, category: r.category,
   price: Number(r.price), guests: r.guests, bedType: r.bed_type, sizeSqm: r.size_sqm,
@@ -22,7 +31,11 @@ export const mapBooking = (r: Row): Booking => ({
   adults: r.adults, children: r.children, amount: Number(r.amount),
   paymentStatus: r.payment_status, status: r.status,
   createdAt: (r.created_at ?? '').slice(0, 10), specialRequests: r.special_requests ?? undefined,
-})
+  checkedInAt: r.checked_in_at ?? undefined,
+  checkedOutAt: r.checked_out_at ?? undefined,
+  source: r.source ?? 'online',
+  createdBy: r.created_by ?? undefined,
+} as ExtendedBooking)
 
 export const mapCustomer = (r: Row): Customer => ({
   id: r.id, name: r.name, email: r.email, phone: r.phone, lastStay: r.last_stay ?? undefined, status: r.status,
@@ -74,8 +87,9 @@ export const mapParkingZone = (r: Row): ParkingZone => ({
 
 export const mapPayment = (r: Row): Payment => ({
   id: r.id, reference: r.reference, bookingRef: r.booking_ref, customer: r.customer,
+  customerId: r.customer_id ?? undefined,
   amount: Number(r.amount), method: r.method, status: r.status, date: r.date,
-})
+} as ExtendedPayment)
 
 export const mapOffer = (r: Row): Offer => ({
   id: r.id, title: r.title, description: r.description, discount: r.discount,
