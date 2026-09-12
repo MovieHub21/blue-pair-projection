@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const rawBody = await request.text()
   const signature = request.headers.get('x-paystack-signature') || ''
   const expected = crypto.createHmac('sha512', secret).update(rawBody).digest('hex')
-  if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  if (!signature || signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
     return NextResponse.json({ error: 'Invalid signature.' }, { status: 401 })
   }
 
