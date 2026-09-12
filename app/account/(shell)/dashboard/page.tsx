@@ -26,7 +26,7 @@ export default async function DashboardPage() {
         <div className="relative z-10 w-full p-7 md:p-10 lg:p-12">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-2 text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-5">
-              <Sparkles size={13} className="text-gold-300" />
+              
               Welcome home
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>

@@ -26,7 +26,7 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
         <div className="relative z-10 container-w px-6 md:px-10 h-full flex items-end pb-28 md:pb-32">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-4 py-2 text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-6">
-              <Sparkles size={13} className="text-gold-300" />
+              
               A place to arrive, relax & feel at home
             </div>
             <h1 className="text-[2.7rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-3xl">
