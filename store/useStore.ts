@@ -237,9 +237,33 @@ export const useStore = create<StoreState>((set, get) => ({
     return booking
   },
   confirmBookingPayment: (bookingId) => {
+    const booking = get().bookings.find(b => b.id === bookingId)
     set(s => ({ bookings: s.bookings.map(b => b.id === bookingId ? { ...b, status: 'confirmed', paymentStatus: 'paid' } : b) }))
     save('bookings', { status: 'confirmed', payment_status: 'paid' }, bookingId)
-    get().pushToast('Payment confirmed — booking added to admin list', 'success')
+
+    // Confirming payment generates the guest's invoice/receipt, with the date paid.
+    if (booking && !get().payments.some(p => p.bookingRef === booking.reference)) {
+      const customerName = get().customers.find(c => c.id === booking.customerId)?.name ?? 'Guest'
+      const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+      const payment: Payment = {
+        id: `pay_${Date.now()}`,
+        reference: `INV-${booking.reference.replace(/^BPH-/, '')}`,
+        bookingRef: booking.reference,
+        customer: customerName,
+        amount: booking.amount,
+        method: 'cash',
+        status: 'successful',
+        date: paidOn,
+      }
+      set(s => ({ payments: [payment, ...s.payments] }))
+      insertRow('payments', {
+        id: payment.id, reference: payment.reference, booking_ref: payment.bookingRef,
+        customer: payment.customer, amount: payment.amount, method: payment.method,
+        status: payment.status, date: payment.date,
+      })
+    }
+
+    get().pushToast('Payment confirmed — invoice generated for the guest', 'success')
   },
   checkInBooking: (bookingId, roomId) => {
     set(s => ({
