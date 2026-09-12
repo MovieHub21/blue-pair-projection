@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div><span className="eyebrow"><LiveDateTime /></span><h1 className="text-2xl font-semibold mt-1">Hotel overview</h1><p className="text-sm text-navy-400 mt-1">Live operational and financial snapshot from Supabase.</p></div>
+        <div><span className="eyebrow"><LiveDateTime /></span><h1 className="text-2xl font-semibold mt-1">Hotel overview</h1><p className="text-sm text-navy-400 mt-1">Live operational and financial snapshot.</p></div>
         <div className="flex items-center gap-1 rounded-full border border-black/10 bg-white p-1">{(['week', 'month', 'year'] as const).map(item => <button key={item} onClick={() => setRange(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${range === item ? 'bg-navy-950 text-white' : 'text-navy-500'}`}>This {item}</button>)}</div>
       </div>
       {!loaded ? <div className="card p-8 text-center text-sm text-navy-400">Loading live hotel data…</div> : <>
