@@ -4,6 +4,7 @@ import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/ac
 import { naira, formatDate } from '../../../../lib/format'
 import StatusBadge from '../../../../components/ui/StatusBadge'
 import CancelBookingButton from '../CancelBookingButton'
+import LiveDateTime from '../../../../components/ui/LiveDateTime'
 
 export default async function DashboardPage() {
   const { profile } = await getCurrentUser()
@@ -13,8 +14,11 @@ export default async function DashboardPage() {
 
   return (
     <div>
+       <LiveDateTime /> 
       <section className="relative overflow-hidden rounded-xl2 min-h-72 p-6 md:p-9 mb-7 flex items-end text-white" style={{ backgroundImage: "linear-gradient(0deg, rgba(10,18,41,.88), rgba(10,18,41,.12)), url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=80')", backgroundPosition: 'center', backgroundSize: 'cover' }}>
+       
         <div className="relative z-10 max-w-md">
+          
           <p className="text-gold-300 uppercase tracking-[.16em] text-[10px] font-bold mb-3">Blue Pair Hotel</p>
           <h1 className="text-3xl md:text-4xl font-semibold">Good to have you here, {firstName}.</h1>
           <p className="text-sm text-white/80 mt-3 leading-relaxed">Your stay, your way. Order to your room, request hotel service, or explore everything Blue Pair has prepared for you.</p>

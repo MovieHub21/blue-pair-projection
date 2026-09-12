@@ -4,6 +4,7 @@ import { naira } from '../../../lib/format'
 import StatCard from '../../../components/ui/StatCard'
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { Wallet, BedDouble, LogIn, LogOut, ClipboardList, UtensilsCrossed, Martini, Building2 } from 'lucide-react'
+import LiveDateTime from '../../../components/ui/LiveDateTime'
 
 const revenueData = [
   { day: 'Mon', value: 2100000 }, { day: 'Tue', value: 2600000 }, { day: 'Wed', value: 1950000 },
@@ -25,7 +26,16 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-        <div><span className="eyebrow">Friday, 9 August 2026</span><h1 className="text-2xl font-semibold mt-1">Front desk overview</h1></div>
+       <div>
+      <span className="eyebrow">
+         <LiveDateTime /> 
+      </span>
+
+      <h1 className="text-2xl font-semibold mt-1">
+        Front desk overview
+      </h1>
+    </div>
+  
         <button className="btn-primary btn-sm">+ New booking</button>
       </div>
 
