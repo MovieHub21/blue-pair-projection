@@ -19,6 +19,7 @@ export const PATH_SECTIONS: { prefix: string; section: string }[] = [
   { prefix: '/admin/offers', section: 'offers' },
   { prefix: '/admin/gallery', section: 'gallery' },
   { prefix: '/admin/website', section: 'website' },
+  { prefix: '/admin/blog', section: 'blog' },
   { prefix: '/admin/seo', section: 'seo' },
   { prefix: '/admin/staff', section: 'staff' },
   { prefix: '/admin/permissions', section: 'permissions' },
@@ -28,11 +29,9 @@ export const PATH_SECTIONS: { prefix: string; section: string }[] = [
   { prefix: '/reception', section: 'reception' },
 ]
 
-/** Longest-prefix match, so /admin/amenities/gym resolves to the 'amenities' section, not a partial /admin match. */
 export function sectionForPath(pathname: string): string | null {
   const match = PATH_SECTIONS.filter(p => pathname.startsWith(p.prefix)).sort((a, b) => b.prefix.length - a.prefix.length)[0]
   return match?.section ?? null
 }
 
-/** Sections every signed-in staff member can reach regardless of restrictions, so no one gets locked out entirely. */
 export const ALWAYS_ALLOWED_SECTIONS = new Set(['dashboard'])
