@@ -10,6 +10,8 @@ html {
 body {
   @apply font-body text-ink bg-cream-50;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4 {
@@ -42,7 +44,10 @@ h1, h2, h3, h4 {
 
   .card {
     @apply bg-white border border-black/5 rounded-xl2 shadow-card;
+    transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
   }
+
+  .card:hover { @apply shadow-pop; }
 
   .glass-card {
     @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg;
@@ -70,9 +75,7 @@ h1, h2, h3, h4 {
   .section { @apply py-20 px-6 md:px-10; }
   .container-w { @apply max-w-7xl mx-auto; }
 
-  .public-site section {
-    position: relative;
-  }
+  .public-site section { position: relative; }
 
   .public-site section:nth-of-type(even)::before {
     content: '';
@@ -86,6 +89,14 @@ h1, h2, h3, h4 {
     pointer-events: none;
   }
 
+  .public-site .section > .container-w { position: relative; z-index: 1; }
+
+  .public-site .section h2 { letter-spacing: -0.025em; }
+  .public-site .section p { text-wrap: pretty; }
+
+  .public-site .card { border-color: rgb(5 40 100 / 0.08); }
+  .public-site .card:hover { transform: translateY(-3px); border-color: rgb(198 140 33 / 0.28); }
+
   .scroll-reveal {
     opacity: 0;
     transform: translate3d(0, 28px, 0);
@@ -93,24 +104,26 @@ h1, h2, h3, h4 {
     will-change: opacity, transform;
   }
 
-  .scroll-reveal.is-visible {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-
+  .scroll-reveal.is-visible { opacity: 1; transform: translate3d(0, 0, 0); }
   .scroll-reveal:nth-child(2) { transition-delay: 70ms; }
   .scroll-reveal:nth-child(3) { transition-delay: 120ms; }
   .scroll-reveal:nth-child(4) { transition-delay: 170ms; }
   .scroll-reveal:nth-child(5) { transition-delay: 220ms; }
 
-  .public-site img {
-    transition: transform 700ms cubic-bezier(.22,1,.36,1), filter 500ms ease;
-  }
-
+  .public-site img { transition: transform 700ms cubic-bezier(.22,1,.36,1), filter 500ms ease; }
   .public-site a img:hover,
-  .public-site .group:hover img {
-    transform: scale(1.025);
-  }
+  .public-site .group:hover img { transform: scale(1.025); }
+
+  .luxury-divider { height: 1px; background: linear-gradient(90deg, transparent, rgb(198 140 33 / .45), transparent); }
+
+  .portal-shell { background: linear-gradient(180deg, #fbfaf7 0%, #f6f3ed 100%); }
+  .portal-shell .card { box-shadow: 0 14px 40px rgb(7 21 54 / .055); }
+}
+
+@media (max-width: 640px) {
+  .section { @apply py-14 px-4; }
+  .public-site section:nth-of-type(even)::before { width: 260px; height: 260px; right: -180px; }
+  .btn { @apply min-h-11; }
 }
 
 @media (prefers-reduced-motion: reduce) {
