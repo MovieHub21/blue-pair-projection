@@ -3,14 +3,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Users, BedDouble, Ruler, Star, CheckCircle2, Calendar } from 'lucide-react'
-import { naira } from '../../../../lib/format'
+import { naira , todayISO, addDaysISO} from '../../../../lib/format'
 import RoomCard from '../../../../components/ui/RoomCard'
 import type { RoomType } from '../../../../data/mock'
 
 export default function RoomDetailsClient({ room, others }: { room: RoomType; others: RoomType[] }) {
   const router = useRouter()
-  const [checkIn, setCheckIn] = useState('2026-08-14')
-  const [checkOut, setCheckOut] = useState('2026-08-16')
+  const [checkIn, setCheckIn] = useState(todayISO())
+  const [checkOut, setCheckOut] = useState(addDaysISO(2))
   const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
   const subtotal = room.price * nights
   const tax = Math.round(subtotal * 0.075)

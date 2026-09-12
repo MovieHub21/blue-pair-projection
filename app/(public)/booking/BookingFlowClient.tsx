@@ -4,7 +4,7 @@ import { useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useStore } from '../../../store/useStore'
 import { useAuth, ensureCustomer } from '../../../lib/useAuth'
-import { naira, nightsBetween, formatDate } from '../../../lib/format'
+import { naira, nightsBetween, formatDate , todayISO, addDaysISO} from '../../../lib/format'
 import { Check, Calendar, Users, CreditCard, Landmark, Wallet, Download, Loader2 } from 'lucide-react'
 import type { RoomType } from '../../../data/mock'
 
@@ -17,8 +17,8 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
   const { createBooking } = useStore()
   const [step, setStep] = useState(0)
   const [roomId, setRoomId] = useState(roomTypes.find(r => r.slug === params.get('room'))?.id ?? roomTypes[0]?.id ?? '')
-  const [checkIn, setCheckIn] = useState(params.get('checkin') || '2026-08-14')
-  const [checkOut, setCheckOut] = useState(params.get('checkout') || '2026-08-16')
+  const [checkIn, setCheckIn] = useState(params.get('checkin') || todayISO())
+  const [checkOut, setCheckOut] = useState(params.get('checkout') || addDaysISO(2))
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
   const [guest, setGuest] = useState({ name: '', email: '', phone: '', requests: '' })

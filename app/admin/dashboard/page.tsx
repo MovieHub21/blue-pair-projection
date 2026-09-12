@@ -5,6 +5,7 @@ import StatCard from '../../../components/ui/StatCard'
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { Wallet, BedDouble, LogIn, LogOut, ClipboardList, UtensilsCrossed, Martini, Building2 } from 'lucide-react'
 import LiveDateTime from '../../../components/ui/LiveDateTime'
+import { todayISO } from '../../../lib/format'
 
 const revenueData = [
   { day: 'Mon', value: 2100000 }, { day: 'Tue', value: 2600000 }, { day: 'Wed', value: 1950000 },
@@ -19,8 +20,9 @@ export default function AdminDashboardPage() {
   const occupied = rooms.filter(r => r.status === 'occupied').length
   const available = rooms.filter(r => r.status === 'available').length
   const cleaningReq = rooms.filter(r => r.status === 'cleaning_required').length
-  const todayCheckins = bookings.filter(b => b.checkIn === '2026-08-09').length
-  const todayCheckouts = bookings.filter(b => b.checkOut === '2026-08-09').length
+  const today = todayISO()
+  const todayCheckins = bookings.filter(b => b.checkIn === today).length
+  const todayCheckouts = bookings.filter(b => b.checkOut === today).length
   const pending = bookings.filter(b => b.status === 'pending').length
 
   return (
