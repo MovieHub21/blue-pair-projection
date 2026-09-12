@@ -10,7 +10,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export const metadata: Metadata = {
   keywords: [
-    'Blue Pair Hotel', 'hotel in Nigeria', 'hotel in Uromi', 'hotel in Edo State', 'luxury hotel Nigeria',
+    'Blue Pair Signature Crown Hotel & Suites', 'Blue Pair Signature Crown', 'hotel in Nigeria', 'hotel in Uromi', 'hotel in Edo State', 'luxury hotel Nigeria',
     'hotel with swimming pool in Nigeria', 'hotel with gym in Nigeria', 'hotel with pool and gym in Edo State',
     'hotel rooms and suites Nigeria', 'hotel booking Nigeria', 'hotel accommodation Nigeria',
     'hotel near Ekpoma', 'hotel near Auchi', 'hotel near Benin City', 'restaurant in Uromi', 'event venue Uromi', 'short-let Uromi',
@@ -19,9 +19,16 @@ export const metadata: Metadata = {
   formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),
   title: { default: `${SITE_NAME} — Luxury Hotel in Uromi, Edo State`, template: `%s | ${SITE_NAME}` },
-  description: "Blue Pair Hotel is a premium hotel in Uromi, Edo State, Nigeria, offering rooms and suites, an indoor swimming pool, fitness gym, dining, VIP lounge, events and short-let accommodation. Book online.",
-  openGraph: { siteName: SITE_NAME, images: [{ url: DEFAULT_OG_IMAGE }], locale: 'en_NG', type: 'website' },
-  twitter: { card: 'summary_large_image' },
+  description: 'Blue Pair Signature Crown Hotel & Suites is a premium hotel in Uromi, Edo State, Nigeria, offering rooms and suites, an indoor swimming pool, fitness gym, dining, VIP lounge, events and short-let accommodation. Book your stay online.',
+  openGraph: {
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Luxury Hotel in Uromi, Edo State`,
+    description: 'Premium rooms, suites, dining, leisure, events and guest services in Uromi, Edo State, Nigeria.',
+    images: [{ url: DEFAULT_OG_IMAGE }],
+    locale: 'en_NG',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: SITE_NAME, description: 'Premium hotel accommodation, dining, leisure and events in Uromi, Edo State, Nigeria.' },
   icons: { icon: '/favicon.ico' },
 }
 
