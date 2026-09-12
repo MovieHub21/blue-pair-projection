@@ -10,30 +10,36 @@ interface Params {
   noindex?: boolean
 }
 
-/** One consistent shape for every page's <head> — title, description,
- * keywords, canonical, robots, Open Graph and Twitter Card. Used via the
- * `metadata` (static) or `generateMetadata` (dynamic routes) export in
- * every page.tsx — this is what Next.js renders server-side into the raw
- * HTML `<head>`, so it's there before any JavaScript runs.
- *
- * The root layout defines a title template ("%s | Blue Pair Hotel"), so
- * page titles here are passed as plain strings WITHOUT the brand name —
- * Next appends it automatically. Titles that already stand on their own
- * (e.g. the homepage) opt out of the template via `title.absolute`. */
+const HOTEL_SEARCH_CONTEXT = [
+  'hotel in Nigeria',
+  'hotel in Edo State',
+  'hotel in Uromi',
+  'hotel with swimming pool in Nigeria',
+  'hotel with gym in Nigeria',
+  'hotel with pool and gym in Edo State',
+  'luxury hotel Nigeria',
+  'hotel accommodation Nigeria',
+  'hotel rooms and suites Nigeria',
+  'hotel booking Nigeria',
+  'hotel near Ekpoma',
+  'hotel near Auchi',
+  'hotel near Benin City',
+]
+
 export function buildMetadata({ title, description, path, keywords, image, noindex }: Params): Metadata {
   const url = `${SITE_URL}${path}`
   const ogImage = image ?? DEFAULT_OG_IMAGE
   const alreadyBranded = title.includes(SITE_NAME)
+  const keywordSet = new Set([...(keywords ? keywords.split(',').map(value => value.trim()).filter(Boolean) : []), ...HOTEL_SEARCH_CONTEXT])
   return {
     title: alreadyBranded ? { absolute: title } : title,
     description,
-    keywords,
+    keywords: Array.from(keywordSet),
     alternates: { canonical: url },
     robots: noindex ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       title: alreadyBranded ? title : `${title} | ${SITE_NAME}`, description, url, siteName: SITE_NAME,
-      images: [{ url: ogImage, width: 1200, height: 630 }],
-      locale: 'en_NG', type: 'website',
+      images: [{ url: ogImage, width: 1200, height: 630 }], locale: 'en_NG', type: 'website',
     },
     twitter: { card: 'summary_large_image', title: alreadyBranded ? title : `${title} | ${SITE_NAME}`, description, images: [ogImage] },
   }

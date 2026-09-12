@@ -1,16 +1,17 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useStore } from '../../../store/useStore'
 import { naira, formatDate, nightsBetween, todayISO, addDaysISO } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Modal from '../../../components/ui/Modal'
-import { Search, UserRoundPlus, CreditCard, Banknote, X, Loader2 } from 'lucide-react'
+import { Search, UserRoundPlus, CreditCard, Banknote, Loader2 } from 'lucide-react'
 import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatcher'
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
 
-type PaymentMethod = 'Cash' | 'POS'
+type PaymentMethod = 'Paystack' | 'Cash' | 'POS'
 
 const emptyWalkIn = {
   name: '', email: '', phone: '', roomTypeId: '', checkIn: todayISO(), checkOut: addDaysISO(1),
@@ -19,7 +20,8 @@ const emptyWalkIn = {
 
 export default function BookingManagement() {
   const auth = useAuth()
-  const { bookings, roomTypes, customers, rooms, cancelBooking, checkInBooking, checkOutBooking, loadAll } = useStore()
+  const searchParams = useSearchParams()
+  const { bookings, roomTypes, customers, rooms, cancelBooking, checkInBooking, checkOutBooking, loadAll, pushToast } = useStore()
   const [active, setActive] = useState<typeof bookings[0] | null>(null)
   const [q, setQ] = useState('')
   const [showWalkIn, setShowWalkIn] = useState(false)
@@ -29,6 +31,22 @@ export default function BookingManagement() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
   const [savingPayment, setSavingPayment] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const result = searchParams.get('payment')
+    if (!result) return
+    const messages: Record<string, string> = {
+      success: 'Paystack payment verified and booking marked as paid.',
+      failed: 'Paystack payment was not completed.',
+      'not-configured': 'Paystack is not configured on the server.',
+      'amount-mismatch': 'Paystack payment amount did not match the booking.',
+      unmatched: 'Paystack payment could not be matched to a booking.',
+      missing: 'Paystack returned without a payment reference.',
+      error: 'There was a problem verifying the Paystack payment.',
+    }
+    pushToast(messages[result] || 'Payment status updated.', result === 'success' ? 'success' : 'error')
+    void loadAll()
+  }, [searchParams, pushToast, loadAll])
 
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
@@ -73,8 +91,26 @@ export default function BookingManagement() {
     }
   }
 
+  async function startPaystackPayment() {
+    if (!confirmingPayment) return
+    setSavingPayment(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/admin/paystack/initialize', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: confirmingPayment.id }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.authorizationUrl) throw new Error(data.error || 'Unable to start Paystack payment.')
+      window.location.assign(data.authorizationUrl)
+    } catch (e: any) {
+      setError(e?.message || 'Unable to start Paystack payment.')
+      setSavingPayment(false)
+    }
+  }
+
   async function confirmPayment() {
-    if (!confirmingPayment || !paymentMethod) return
+    if (!confirmingPayment || !paymentMethod || paymentMethod === 'Paystack') return
     setSavingPayment(true)
     setError(null)
     try {
@@ -121,9 +157,7 @@ export default function BookingManagement() {
             <Search size={14} className="text-navy-400" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search guest, email or booking…" className="text-sm outline-none flex-1" />
           </div>
-          <button onClick={() => { setError(null); setShowWalkIn(true) }} className="btn-gold flex items-center gap-2">
-            <UserRoundPlus size={16} /> Walk-in booking
-          </button>
+          <button onClick={() => { setError(null); setShowWalkIn(true) }} className="btn-gold flex items-center gap-2"><UserRoundPlus size={16} /> Walk-in booking</button>
         </div>
       </div>
 
@@ -133,57 +167,34 @@ export default function BookingManagement() {
             <th className="p-4">Booking ID</th><th className="p-4">Customer</th><th className="p-4">Source</th><th className="p-4">Room</th><th className="p-4">Check-in</th>
             <th className="p-4">Check-out</th><th className="p-4">Amount</th><th className="p-4">Payment</th><th className="p-4">Status</th><th className="p-4">Actions</th>
           </tr></thead>
-          <tbody>
-            {filtered.map(b => (
-              <tr key={b.id} className="border-b border-black/5 last:border-none">
-                <td className="p-4 font-medium">{b.reference}</td>
-                <td className="p-4">{custOf(b.customerId)?.name}</td>
-                <td className="p-4">
-                  {(b as any).source === 'walk_in' ? <span className="rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] font-semibold">Walk-in</span> : <span className="text-xs text-navy-400">Online</span>}
-                </td>
-                <td className="p-4 text-navy-500">{roomOf(b.roomTypeId)?.name}</td>
-                <td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td>
-                <td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
-                <td className="p-4 font-display">{naira(b.amount)}</td>
-                <td className="p-4"><StatusBadge status={b.paymentStatus} /></td>
-                <td className="p-4"><StatusBadge status={b.status} /></td>
-                <td className="p-4">
-                  <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setActive(b)} className="text-xs font-semibold text-navy-900">View</button>
-                    {b.paymentStatus !== 'paid' && b.status !== 'cancelled' && <button onClick={() => { setConfirmingPayment(b); setPaymentMethod(null); setError(null) }} className="text-xs font-semibold text-gold-700">Confirm payment</button>}
-                    {b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
-                    {b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
-                    {['pending','confirmed'].includes(b.status) && <button onClick={() => cancelBooking(b.id)} className="text-xs font-semibold text-red-600">Cancel</button>}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          <tbody>{filtered.map(b => (
+            <tr key={b.id} className="border-b border-black/5 last:border-none">
+              <td className="p-4 font-medium">{b.reference}</td><td className="p-4">{custOf(b.customerId)?.name}</td>
+              <td className="p-4">{(b as any).source === 'walk_in' ? <span className="rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] font-semibold">Walk-in</span> : <span className="text-xs text-navy-400">Online</span>}</td>
+              <td className="p-4 text-navy-500">{roomOf(b.roomTypeId)?.name}</td><td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td><td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
+              <td className="p-4 font-display">{naira(b.amount)}</td><td className="p-4"><StatusBadge status={b.paymentStatus} /></td><td className="p-4"><StatusBadge status={b.status} /></td>
+              <td className="p-4"><div className="flex gap-2 flex-wrap">
+                <button onClick={() => setActive(b)} className="text-xs font-semibold text-navy-900">View</button>
+                {b.paymentStatus !== 'paid' && b.status !== 'cancelled' && <button onClick={() => { setConfirmingPayment(b); setPaymentMethod(null); setError(null) }} className="text-xs font-semibold text-gold-700">Payment</button>}
+                {b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
+                {b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
+                {['pending','confirmed'].includes(b.status) && <button onClick={() => cancelBooking(b.id)} className="text-xs font-semibold text-red-600">Cancel</button>}
+              </div></td>
+            </tr>
+          ))}</tbody>
         </table>
         {filtered.length === 0 && <div className="py-14 text-center text-sm text-navy-400">No bookings match your search.</div>}
       </div>
 
       <Modal open={!!active} onClose={() => setActive(null)} title="Booking details" subtitle={active?.reference}>
-        {active && (
-          <div className="flex flex-col gap-0.5">
-            {[
-              ['Customer', custOf(active.customerId)?.name],
-              ['Email', custOf(active.customerId)?.email],
-              ['Phone', custOf(active.customerId)?.phone],
-              ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'],
-              ['Room', roomOf(active.roomTypeId)?.name],
-              ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`],
-              ['Guests', `${active.adults} adults, ${active.children} children`],
-              ['Amount', naira(active.amount)],
-              ['Payment', active.paymentStatus],
-              ['Special requests', active.specialRequests || 'None'],
-              ['Checked in at', (active as any).checkedInAt ? new Date((active as any).checkedInAt).toLocaleString('en-NG') : 'Not checked in'],
-              ['Checked out at', (active as any).checkedOutAt ? new Date((active as any).checkedOutAt).toLocaleString('en-NG') : 'Not checked out'],
-            ].map(([l,v]) => (
-              <div key={l} className="flex justify-between gap-5 text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium text-right">{v}</span></div>
-            ))}
-          </div>
-        )}
+        {active && <div className="flex flex-col gap-0.5">{[
+          ['Customer', custOf(active.customerId)?.name], ['Email', custOf(active.customerId)?.email], ['Phone', custOf(active.customerId)?.phone],
+          ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'], ['Room', roomOf(active.roomTypeId)?.name],
+          ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`], ['Guests', `${active.adults} adults, ${active.children} children`],
+          ['Amount', naira(active.amount)], ['Payment', active.paymentStatus], ['Special requests', active.specialRequests || 'None'],
+          ['Checked in at', (active as any).checkedInAt ? new Date((active as any).checkedInAt).toLocaleString('en-NG') : 'Not checked in'],
+          ['Checked out at', (active as any).checkedOutAt ? new Date((active as any).checkedOutAt).toLocaleString('en-NG') : 'Not checked out'],
+        ].map(([l,v]) => <div key={l} className="flex justify-between gap-5 text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium text-right">{v}</span></div>)}</div>}
       </Modal>
 
       <Modal open={showWalkIn} onClose={() => !creating && setShowWalkIn(false)} title="Create walk-in booking" subtitle="Reception can book for a guest without creating a guest account.">
@@ -210,15 +221,19 @@ export default function BookingManagement() {
         </div>
       </Modal>
 
-      <Modal open={!!confirmingPayment} onClose={() => !savingPayment && setConfirmingPayment(null)} title="Confirm payment" subtitle={confirmingPayment ? `${confirmingPayment.reference} · ${naira(confirmingPayment.amount)}` : undefined}>
+      <Modal open={!!confirmingPayment} onClose={() => !savingPayment && setConfirmingPayment(null)} title="Choose payment method" subtitle={confirmingPayment ? `${confirmingPayment.reference} · ${naira(confirmingPayment.amount)}` : undefined}>
         <div className="space-y-5">
-          <div className="rounded-xl bg-amber-50 text-amber-800 p-4 text-sm">Confirm that the guest has actually paid before marking this booking as paid. The selected method is stored against the guest's payment record for future analytics.</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl bg-amber-50 text-amber-800 p-4 text-sm">Choose how the guest is paying. Cash and POS are confirmed by reception. Paystack opens a secure hosted checkout and the booking is only marked paid after Paystack verification.</div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <button onClick={() => setPaymentMethod('Paystack')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'Paystack' ? 'border-gold-500 bg-gold-50' : 'border-black/10'}`}><CreditCard size={22} />Paystack</button>
             <button onClick={() => setPaymentMethod('Cash')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'Cash' ? 'border-navy-950 bg-navy-50' : 'border-black/10'}`}><Banknote size={22} />Cash</button>
             <button onClick={() => setPaymentMethod('POS')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'POS' ? 'border-navy-950 bg-navy-50' : 'border-black/10'}`}><CreditCard size={22} />POS</button>
           </div>
           {error && <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3">{error}</div>}
-          <div className="flex justify-end gap-3"><button onClick={() => setConfirmingPayment(null)} disabled={savingPayment} className="btn-outline">Cancel</button><button onClick={() => void confirmPayment()} disabled={!paymentMethod || savingPayment} className="btn-gold flex items-center gap-2">{savingPayment && <Loader2 size={15} className="animate-spin" />} Confirm {paymentMethod || 'payment'}</button></div>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setConfirmingPayment(null)} disabled={savingPayment} className="btn-outline">Cancel</button>
+            {paymentMethod === 'Paystack' ? <button onClick={() => void startPaystackPayment()} disabled={savingPayment} className="btn-gold flex items-center gap-2">{savingPayment && <Loader2 size={15} className="animate-spin" />} Continue to Paystack</button> : <button onClick={() => void confirmPayment()} disabled={!paymentMethod || savingPayment} className="btn-gold flex items-center gap-2">{savingPayment && <Loader2 size={15} className="animate-spin" />} Confirm {paymentMethod || 'payment'}</button>}
+          </div>
         </div>
       </Modal>
     </div>

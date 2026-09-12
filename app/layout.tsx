@@ -6,17 +6,20 @@ import ToastHost from '../components/ui/Toast'
 import RouteProgress from '../components/RouteProgress'
 import GuestEmailWatcher from '../components/GuestEmailWatcher'
 
-// Keep Tailwind's mobile breakpoints on the device width. Without an explicit
-// viewport the portals can render as a compressed desktop sidebar on phones.
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
 export const metadata: Metadata = {
-  keywords: ['hotel in Uromi', 'luxury hotel Edo State', 'Uromi accommodation', 'hotel rooms Uromi', 'restaurant in Uromi', 'event venue Uromi', 'short-let Uromi', 'Blue Pair Hotel'],
+  keywords: [
+    'Blue Pair Hotel', 'hotel in Nigeria', 'hotel in Uromi', 'hotel in Edo State', 'luxury hotel Nigeria',
+    'hotel with swimming pool in Nigeria', 'hotel with gym in Nigeria', 'hotel with pool and gym in Edo State',
+    'hotel rooms and suites Nigeria', 'hotel booking Nigeria', 'hotel accommodation Nigeria',
+    'hotel near Ekpoma', 'hotel near Auchi', 'hotel near Benin City', 'restaurant in Uromi', 'event venue Uromi', 'short-let Uromi',
+  ],
   category: 'hotel',
   formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),
   title: { default: `${SITE_NAME} — Luxury Hotel in Uromi, Edo State`, template: `%s | ${SITE_NAME}` },
-  description: "Blue Pair Hotel — Uromi's premier luxury hotel in Edo State. Rooms & suites, fine dining, an indoor pool, gym, VIP lounge and events. Book online.",
+  description: "Blue Pair Hotel is a premium hotel in Uromi, Edo State, Nigeria, offering rooms and suites, an indoor swimming pool, fitness gym, dining, VIP lounge, events and short-let accommodation. Book online.",
   openGraph: { siteName: SITE_NAME, images: [{ url: DEFAULT_OG_IMAGE }], locale: 'en_NG', type: 'website' },
   twitter: { card: 'summary_large_image' },
   icons: { icon: '/favicon.ico' },
