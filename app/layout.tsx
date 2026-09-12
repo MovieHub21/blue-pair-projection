@@ -4,6 +4,7 @@ import './globals.css'
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
 import ToastHost from '../components/ui/Toast'
 import RouteProgress from '../components/RouteProgress'
+import GuestEmailWatcher from '../components/GuestEmailWatcher'
 
 // Keep Tailwind's mobile breakpoints on the device width. Without an explicit
 // viewport the portals can render as a compressed desktop sidebar on phones.
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Suspense fallback={null}><RouteProgress /></Suspense>
+        <GuestEmailWatcher />
         {children}
         <ToastHost />
       </body>
