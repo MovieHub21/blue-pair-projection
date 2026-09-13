@@ -8,34 +8,56 @@ export async function GET(request: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL
   const adminUrl = `${baseUrl}/admin/bookings`
   const guestUrl = `${baseUrl}/booking`
+  const guestDashboard = `${baseUrl}/account/requests`
   if (!reference) return NextResponse.redirect(`${guestUrl}?payment=missing`)
 
   try {
     const secret = process.env.PAYSTACK_SECRET_KEY
     if (!secret) return NextResponse.redirect(`${guestUrl}?payment=not-configured`)
-
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-      headers: { Authorization: `Bearer ${secret}` },
-      cache: 'no-store',
-    })
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secret}` }, cache: 'no-store' })
     const result = await response.json()
     const transaction = result?.data
     if (!response.ok || !result?.status || transaction?.status !== 'success') return NextResponse.redirect(`${guestUrl}?payment=failed`)
 
     const admin = createSupabaseAdminClient()
-    const { data: payment } = await admin.from('payments').select('id,booking_ref,amount,customer_id').eq('reference', reference).maybeSingle()
+    const { data: payment } = await admin.from('payments').select('id,booking_ref,amount,customer_id,status').eq('reference', reference).maybeSingle()
     if (!payment) return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
-
-    const verifiedAmount = Number(transaction.amount)
-    if (verifiedAmount !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
+    if (Number(transaction.amount) !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
 
     const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
     const { error: paymentError } = await admin.from('payments').update({ status: 'success', method: 'Paystack', date: paidOn }).eq('id', payment.id)
     if (paymentError) throw paymentError
 
+    if (String(payment.booking_ref).startsWith('RS-')) {
+      const { data: order, error: orderLookupError } = await admin.from('room_service_orders').select('*').eq('reference', payment.booking_ref).maybeSingle()
+      if (orderLookupError) throw orderLookupError
+      if (!order) return NextResponse.redirect(`${guestDashboard}?payment=order-not-found`)
+      if (order.payment_status !== 'paid') {
+        const { error: orderError } = await admin.from('room_service_orders').update({ payment_status: 'paid', status: 'pending' }).eq('id', order.id)
+        if (orderError) throw orderError
+
+        const { data: customer } = await admin.from('customers').select('user_id').eq('id', order.customer_id).maybeSingle()
+        if (customer?.user_id) {
+          await admin.from('guest_notifications').insert({ id: `gn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, user_id: customer.user_id, type: 'room_service_order', title: 'Room-service order paid', body: `Your order ${order.reference} has been paid and sent to the restaurant for preparation.`, href: '/account/requests', metadata: { room_service_order_id: order.id, reference: order.reference, status: 'pending' } })
+        }
+
+        const { data: staffUsers } = await admin.from('user_roles').select('user_id,role').in('role', ['restaurant', 'reception'])
+        const staffNotifications = (staffUsers ?? []).map((staff: any) => ({
+          id: `gn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${staff.user_id.slice(0, 6)}`,
+          user_id: staff.user_id,
+          type: 'room_service_order',
+          title: 'New paid room-service order',
+          body: `${order.guest_name} · Room ${order.room} · ${order.reference} · ₦${Number(order.total).toLocaleString('en-NG')}`,
+          href: staff.role === 'restaurant' ? '/admin/restaurant/orders' : '/reception/room-service',
+          metadata: { room_service_order_id: order.id, reference: order.reference, status: 'pending', role: staff.role },
+        }))
+        if (staffNotifications.length) await admin.from('guest_notifications').insert(staffNotifications)
+      }
+      return NextResponse.redirect(`${guestDashboard}?payment=success&room_service=${encodeURIComponent(order.reference)}`)
+    }
+
     const { error: bookingError } = await admin.from('bookings').update({ payment_status: 'paid', status: 'confirmed' }).eq('reference', payment.booking_ref)
     if (bookingError) throw bookingError
-
     const { data: customer } = await admin.from('customers').select('user_id').eq('id', payment.customer_id).maybeSingle()
     const destination = customer?.user_id ? `${guestUrl}?payment=success&reference=${encodeURIComponent(reference)}` : `${adminUrl}?payment=success&reference=${encodeURIComponent(reference)}`
     return NextResponse.redirect(destination)
