@@ -27,16 +27,16 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-950 px-6 py-16">
       <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8">
-        <div className="flex items-center gap-2 font-display text-lg font-semibold mb-1"><span className="w-2 h-2 rounded-full bg-gold-500" />Blue Pair Hotel</div>
+        <div className="flex items-center gap-2 font-display text-lg font-semibold mb-1"><img src="/icon-192.png" alt="Blue Pair" className="w-8 h-8 rounded-lg object-cover" />Blue Pair Hotel</div>
         <p className="text-sm text-navy-400 mb-7">Sign in to manage your bookings</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
+        <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
         <label className="field-label">Password</label>
-        <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
+        <input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-2" placeholder="••••••••" />
+        <div className="flex justify-end mb-5"><Link href="/account/forgot-password" className="text-xs font-semibold text-navy-700 hover:text-gold-600">Forgot password?</Link></div>
         <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-xs text-navy-400 text-center mt-5">Don't have an account? <Link href="/account/register" className="text-navy-900 font-semibold">Register</Link></p>
-        <p className="text-[11px] text-navy-300 text-center mt-6">Staff member? <Link href="/staff/login" className="underline">Sign in here</Link></p>
       </form>
     </div>
   )
