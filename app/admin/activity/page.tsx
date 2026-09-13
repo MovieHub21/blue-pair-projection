@@ -26,7 +26,7 @@ function startOfWeekISO() {
 }
 
 function csvEscape(value: unknown) {
-  return `"${String(value ?? '').replaceAll('"', '""')}"`
+  return `"${String(value ?? '').replace(/"/g, '""')}"`
 }
 
 function prettyEntity(value: string) {
