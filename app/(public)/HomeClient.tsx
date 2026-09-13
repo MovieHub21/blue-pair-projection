@@ -18,15 +18,22 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
 
   return (
     <div>
-      <header className="relative min-h-[650px] h-[82vh] md:min-h-[720px] md:h-[88vh] max-h-[900px] text-white overflow-hidden bg-navy-950">
+      <header className="relative min-h-[720px] h-[88vh] md:min-h-[720px] md:h-[88vh] max-h-[900px] text-white overflow-hidden bg-navy-950">
         <div className="absolute inset-0 bg-hero opacity-35" style={{ backgroundImage: `url('${heroImage}')` }} role="img" aria-label="Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State" />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/90 to-navy-950/45" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/15 to-navy-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(199,154,62,.12),transparent_32%)]" />
-        <Hotel3DHero />
 
-        <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-center md:items-end pb-10 md:pb-28 pt-24 md:pt-0 pointer-events-none">
-          <div className="max-w-2xl pointer-events-auto">
+        <div className="absolute inset-y-0 right-0 z-[1] hidden w-[57%] md:block">
+          <Hotel3DHero />
+        </div>
+        <div className="absolute inset-x-0 bottom-0 z-[1] h-[55%] md:hidden">
+          <Hotel3DHero />
+        </div>
+        <div className="absolute inset-x-0 bottom-0 z-[2] h-[48%] bg-gradient-to-t from-navy-950 via-navy-950/35 to-transparent md:hidden" />
+
+        <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-center md:items-center pb-16 md:pb-0 pt-20 md:pt-0 pointer-events-none">
+          <div className="max-w-xl pointer-events-auto md:max-w-[43%]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 md:px-4 md:py-2 text-[9px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-4 md:mb-6">
               A place to arrive, relax & feel at home
             </div>
