@@ -16,24 +16,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, h4 {
-  @apply font-display;
-}
-
-::selection {
-  background: rgb(199 154 62 / 0.22);
-  color: #071536;
-}
-
+h1, h2, h3, h4 { @apply font-display; }
+::selection { background: rgb(199 154 62 / 0.22); color: #071536; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #0715360d; }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #18366f, #c79a3e);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #18366f, #c79a3e); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 .bg-hero { background-size: cover; background-position: center; }
 
 @layer components {
@@ -43,26 +30,11 @@ h1, h2, h3, h4 {
   .btn-outline { @apply btn border border-navy-900/20 text-navy-900 px-6 py-3 hover:border-gold-500 hover:text-navy-950 hover:bg-gold-50/50; }
   .btn-ghost-light { @apply btn bg-white/10 border border-white/30 text-white px-6 py-3 backdrop-blur-xl hover:bg-white/20 hover:border-white/50; }
   .btn-sm { @apply px-4 py-2 text-xs; }
-
-  .card {
-    @apply bg-white border border-black/5 rounded-xl2 shadow-card;
-    transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
-  }
-
+  .card { @apply bg-white border border-black/5 rounded-xl2 shadow-card; transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease; }
   .card:hover { @apply shadow-pop; }
-
-  .glass-card {
-    @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg;
-  }
-
-  .glass-light {
-    @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-card;
-  }
-
-  .glass-blue {
-    @apply bg-navy-950/70 backdrop-blur-xl border border-white/10 shadow-pop;
-  }
-
+  .glass-card { @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg; }
+  .glass-light { @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-card; }
+  .glass-blue { @apply bg-navy-950/70 backdrop-blur-xl border border-white/10 shadow-pop; }
   .tag { @apply text-[11px] px-2.5 py-1 rounded-full bg-blue-50 border border-blue-900/5 text-navy-700; }
   .pill { @apply inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full; }
   .pill-green { @apply pill bg-emerald-50 text-emerald-700; }
@@ -76,78 +48,33 @@ h1, h2, h3, h4 {
   .eyebrow { @apply font-body text-[11px] tracking-[0.16em] uppercase font-bold text-gold-600; }
   .section { @apply py-20 px-6 md:px-10; }
   .container-w { @apply max-w-7xl mx-auto; }
-
-  .public-site {
-    width: 100%;
-    max-width: 100vw;
-    overflow-x: clip;
-  }
-
+  .public-site { width: 100%; max-width: 100vw; overflow-x: clip; }
   .public-site section { position: relative; max-width: 100%; }
-
-  .public-site section:nth-of-type(even)::before {
-    content: '';
-    position: absolute;
-    width: 420px;
-    height: 420px;
-    top: 10%;
-    right: -260px;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgb(35 73 145 / 0.08), transparent 68%);
-    pointer-events: none;
-  }
-
+  .public-site section:nth-of-type(even)::before { content: ''; position: absolute; width: 420px; height: 420px; top: 10%; right: -260px; border-radius: 999px; background: radial-gradient(circle, rgb(35 73 145 / 0.08), transparent 68%); pointer-events: none; }
   .public-site .section > .container-w { position: relative; z-index: 1; }
   .public-site .section h2 { letter-spacing: -0.025em; }
   .public-site .section p { text-wrap: pretty; }
   .public-site .card { border-color: rgb(5 40 100 / 0.08); }
   .public-site .card:hover { transform: translateY(-3px); border-color: rgb(198 140 33 / 0.28); }
-
-  .scroll-reveal {
-    opacity: 0;
-    transform: translate3d(0, 28px, 0);
-    transition: opacity 700ms cubic-bezier(.22,1,.36,1), transform 700ms cubic-bezier(.22,1,.36,1);
-    will-change: opacity, transform;
-  }
-
+  .scroll-reveal { opacity: 0; transform: translate3d(0, 28px, 0); transition: opacity 700ms cubic-bezier(.22,1,.36,1), transform 700ms cubic-bezier(.22,1,.36,1); will-change: opacity, transform; }
   .scroll-reveal.is-visible { opacity: 1; transform: translate3d(0, 0, 0); }
   .scroll-reveal:nth-child(2) { transition-delay: 70ms; }
   .scroll-reveal:nth-child(3) { transition-delay: 120ms; }
   .scroll-reveal:nth-child(4) { transition-delay: 170ms; }
   .scroll-reveal:nth-child(5) { transition-delay: 220ms; }
-
   .public-site img { transition: transform 700ms cubic-bezier(.22,1,.36,1), filter 500ms ease; max-width: 100%; }
-  .public-site a img:hover,
-  .public-site .group:hover img { transform: scale(1.025); }
-
+  .public-site a img:hover, .public-site .group:hover img { transform: scale(1.025); }
   .luxury-divider { height: 1px; background: linear-gradient(90deg, transparent, rgb(198 140 33 / .45), transparent); }
   .portal-shell { background: linear-gradient(180deg, #fbfaf7 0%, #f6f3ed 100%); }
   .portal-shell .card { box-shadow: 0 14px 40px rgb(7 21 54 / .055); }
 }
 
 @media (max-width: 767px) {
-  input,
-  textarea,
-  select { font-size: 16px !important; }
-
-  /* Keep the public and guest hero compact on phones without changing desktop sizing. */
-  .public-site > div > header:first-child {
-    min-height: 560px;
-    height: 70vh;
-    max-height: 680px;
-  }
-
-  .public-site > div > header:first-child .container-w {
-    padding-bottom: 5rem;
-  }
-
-  .public-site > div > header:first-child h1 {
-    font-size: 2.25rem;
-  }
-
-  .portal-shell > div.flex-1 > main {
-    padding-bottom: 0.5rem;
-  }
+  input, textarea, select { font-size: 16px !important; }
+  .public-site > header:first-of-type { min-height: 560px; height: 70vh; max-height: 680px; }
+  .public-site > header:first-of-type .container-w { padding-bottom: 5rem; }
+  .public-site > header:first-of-type h1 { font-size: 2.25rem; }
+  .portal-shell > div.flex-1 > main { padding-bottom: 0.5rem; }
 }
 
 @media (max-width: 640px) {
@@ -158,10 +85,5 @@ h1, h2, h3, h4 {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
