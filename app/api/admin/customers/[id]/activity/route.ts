@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getMyPermissions } from '../../../../../lib/permissions'
-import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
+import { getMyPermissions } from '@/lib/permissions'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 function toTime(value: unknown) {
   const time = value ? new Date(String(value)).getTime() : 0
@@ -48,74 +48,12 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   })
 
   const activity = [
-    ...(bookingsResult.data ?? []).map((row: any) => ({
-      id: `booking-${row.id}`,
-      type: 'booking',
-      title: row.status === 'cancelled' ? 'Booking cancelled' : 'Booking activity',
-      description: `${row.reference} · ₦${Number(row.amount || 0).toLocaleString('en-NG')} · ${String(row.status || '').replace(/_/g, ' ')}`,
-      reference: row.reference,
-      status: row.status,
-      amount: Number(row.amount || 0),
-      occurredAt: row.created_at,
-      source: 'Booking',
-    })),
-    ...(paymentsResult.data ?? []).map((row: any) => ({
-      id: `payment-${row.id}`,
-      type: row.status === 'refunded' ? 'refund' : 'payment',
-      title: row.status === 'refunded' ? 'Payment refunded' : 'Payment recorded',
-      description: `${row.reference} · ${row.method || 'Payment'} · ${String(row.status || '').replace(/_/g, ' ')}`,
-      reference: row.reference,
-      bookingRef: row.booking_ref,
-      status: row.status,
-      amount: Number(row.amount || 0),
-      method: row.method,
-      occurredAt: row.date,
-      source: 'Payment',
-    })),
-    ...(requestsResult.data ?? []).map((row: any) => ({
-      id: `request-${row.id}`,
-      type: 'request',
-      title: 'Guest request',
-      description: row.message || String(row.type || 'Guest request').replace(/_/g, ' '),
-      reference: row.booking_ref || undefined,
-      status: row.status,
-      occurredAt: row.created_at,
-      source: 'Guest request',
-    })),
-    ...(roomServiceResult.data ?? []).map((row: any) => ({
-      id: `room-service-${row.id}`,
-      type: 'room_service',
-      title: 'Room-service order',
-      description: `${row.reference} · Room ${row.room} · ${String(row.status || '').replace(/_/g, ' ')}`,
-      reference: row.reference,
-      status: row.status,
-      amount: Number(row.total || 0),
-      paymentStatus: row.payment_status,
-      occurredAt: row.created_at,
-      source: 'Room service',
-    })),
-    ...(financeResult.data ?? []).map((row: any) => ({
-      id: `finance-${row.id}`,
-      type: row.transaction_type,
-      title: row.transaction_type === 'refund' ? 'Refund ledger entry' : row.transaction_type === 'sale' ? 'Income ledger entry' : 'Financial activity',
-      description: row.description || row.reference || 'Financial transaction',
-      reference: row.reference,
-      status: row.status,
-      amount: Number(row.amount || 0),
-      method: row.method,
-      occurredAt: row.occurred_at,
-      source: 'Finance',
-    })),
+    ...(bookingsResult.data ?? []).map((row: any) => ({ id: `booking-${row.id}`, type: 'booking', title: row.status === 'cancelled' ? 'Booking cancelled' : 'Booking activity', description: `${row.reference} · ₦${Number(row.amount || 0).toLocaleString('en-NG')} · ${String(row.status || '').replace(/_/g, ' ')}`, reference: row.reference, status: row.status, amount: Number(row.amount || 0), occurredAt: row.created_at, source: 'Booking' })),
+    ...(paymentsResult.data ?? []).map((row: any) => ({ id: `payment-${row.id}`, type: row.status === 'refunded' ? 'refund' : 'payment', title: row.status === 'refunded' ? 'Payment refunded' : 'Payment recorded', description: `${row.reference} · ${row.method || 'Payment'} · ${String(row.status || '').replace(/_/g, ' ')}`, reference: row.reference, bookingRef: row.booking_ref, status: row.status, amount: Number(row.amount || 0), method: row.method, occurredAt: row.date, source: 'Payment' })),
+    ...(requestsResult.data ?? []).map((row: any) => ({ id: `request-${row.id}`, type: 'request', title: 'Guest request', description: row.message || String(row.type || 'Guest request').replace(/_/g, ' '), reference: row.booking_ref || undefined, status: row.status, occurredAt: row.created_at, source: 'Guest request' })),
+    ...(roomServiceResult.data ?? []).map((row: any) => ({ id: `room-service-${row.id}`, type: 'room_service', title: 'Room-service order', description: `${row.reference} · Room ${row.room} · ${String(row.status || '').replace(/_/g, ' ')}`, reference: row.reference, status: row.status, amount: Number(row.total || 0), paymentStatus: row.payment_status, occurredAt: row.created_at, source: 'Room service' })),
+    ...(financeResult.data ?? []).map((row: any) => ({ id: `finance-${row.id}`, type: row.transaction_type, title: row.transaction_type === 'refund' ? 'Refund ledger entry' : row.transaction_type === 'sale' ? 'Income ledger entry' : 'Financial activity', description: row.description || row.reference || 'Financial transaction', reference: row.reference, status: row.status, amount: Number(row.amount || 0), method: row.method, occurredAt: row.occurred_at, source: 'Finance' })),
   ].sort((a, b) => toTime(b.occurredAt) - toTime(a.occurredAt))
 
-  return NextResponse.json({
-    customer: customerResult.data,
-    bookings: bookingsResult.data ?? [],
-    payments: paymentsResult.data ?? [],
-    requests: requestsResult.data ?? [],
-    roomServiceOrders: roomServiceResult.data ?? [],
-    financialTransactions: financeResult.data ?? [],
-    audit: relevantActivity,
-    activity,
-  })
+  return NextResponse.json({ customer: customerResult.data, bookings: bookingsResult.data ?? [], payments: paymentsResult.data ?? [], requests: requestsResult.data ?? [], roomServiceOrders: roomServiceResult.data ?? [], financialTransactions: financeResult.data ?? [], audit: relevantActivity, activity })
 }
