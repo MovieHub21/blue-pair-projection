@@ -23,9 +23,13 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/90 to-navy-950/45" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/15 to-navy-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(199,154,62,.12),transparent_32%)]" />
-        <div className="absolute inset-x-0 bottom-0 z-[1] h-[55%] md:hidden"><Hotel3DHero /></div>
-        <div className="absolute inset-x-0 bottom-0 z-[2] h-[48%] bg-gradient-to-t from-navy-950 via-navy-950/35 to-transparent md:hidden" />
-        <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-center md:items-center pb-16 md:pb-0 pt-20 md:pt-0 pointer-events-none">
+
+        <div className="absolute inset-x-0 bottom-0 z-[1] h-[48%] md:hidden bg-[radial-gradient(ellipse_at_center,rgba(199,154,62,.08),transparent_58%)]">
+          <Hotel3DHero />
+        </div>
+        <div className="absolute inset-x-0 bottom-0 z-[2] h-[42%] bg-gradient-to-t from-navy-950 via-navy-950/20 to-transparent md:hidden pointer-events-none" />
+
+        <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-start md:items-center pb-0 md:pb-0 pt-[7.25rem] md:pt-0 pointer-events-none">
           <div className="max-w-xl pointer-events-auto md:max-w-[43%]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 md:px-4 md:py-2 text-[9px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-4 md:mb-6">A place to arrive, relax & feel at home</div>
             <h1 className="text-[2.2rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-2xl">{headline || <>Welcome to <em className="italic text-gold-300 font-medium">Blue Pair.</em></>}</h1>
