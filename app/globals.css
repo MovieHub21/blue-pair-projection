@@ -98,10 +98,8 @@ h1, h2, h3, h4 {
   }
 
   .public-site .section > .container-w { position: relative; z-index: 1; }
-
   .public-site .section h2 { letter-spacing: -0.025em; }
   .public-site .section p { text-wrap: pretty; }
-
   .public-site .card { border-color: rgb(5 40 100 / 0.08); }
   .public-site .card:hover { transform: translateY(-3px); border-color: rgb(198 140 33 / 0.28); }
 
@@ -123,17 +121,32 @@ h1, h2, h3, h4 {
   .public-site .group:hover img { transform: scale(1.025); }
 
   .luxury-divider { height: 1px; background: linear-gradient(90deg, transparent, rgb(198 140 33 / .45), transparent); }
-
   .portal-shell { background: linear-gradient(180deg, #fbfaf7 0%, #f6f3ed 100%); }
   .portal-shell .card { box-shadow: 0 14px 40px rgb(7 21 54 / .055); }
 }
 
 @media (max-width: 767px) {
-  /* Prevent iOS/Safari from automatically zooming when a form control receives focus. */
   input,
   textarea,
-  select {
-    font-size: 16px !important;
+  select { font-size: 16px !important; }
+
+  /* Keep the public and guest hero compact on phones without changing desktop sizing. */
+  .public-site > div > header:first-child {
+    min-height: 560px;
+    height: 70vh;
+    max-height: 680px;
+  }
+
+  .public-site > div > header:first-child .container-w {
+    padding-bottom: 5rem;
+  }
+
+  .public-site > div > header:first-child h1 {
+    font-size: 2.25rem;
+  }
+
+  .portal-shell > div.flex-1 > main {
+    padding-bottom: 0.5rem;
   }
 }
 
