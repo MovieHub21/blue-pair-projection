@@ -16,8 +16,8 @@ export default function PublicNavbar() {
   async function handleSignOut() { setAccountOpen(false); await auth.signOut() }
   return (
     <nav className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-black/5">
-      <div className="container-w flex items-center justify-between py-4 px-6 md:px-10">
-        <Link href="/" className="flex items-center gap-2.5 font-display text-xl font-semibold text-navy-950"><img src="/icon-192.png" alt="Blue Pair" className="w-8 h-8 rounded-lg object-cover" />Blue Pair Hotel</Link>
+      <div className="container-w flex items-center justify-between py-3.5 px-5 md:px-10">
+        <Link href="/" aria-label="Blue Pair Hotel" className="flex items-center shrink-0"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-10 h-10 md:w-11 md:h-11 rounded-xl object-cover" /></Link>
         <div className="hidden lg:flex items-center gap-8 text-[13.5px] font-medium text-navy-700">
           <Link href="/rooms" className="opacity-75 hover:opacity-100">Rooms</Link><Link href="/about" className="opacity-75 hover:opacity-100">About</Link>
           <div className="relative" onMouseEnter={() => setExploreOpen(true)} onMouseLeave={() => setExploreOpen(false)}><button className="flex items-center gap-1 opacity-75 hover:opacity-100">Explore <ChevronDown size={14} /></button>{exploreOpen && <div className="absolute top-full left-0 pt-3 w-52"><div className="card p-2 grid gap-0.5">{explore.map(e => <Link key={e.href} href={e.href} className="px-3 py-2 rounded-lg text-sm hover:bg-cream-100">{e.label}</Link>)}</div></div>}</div>
