@@ -1,111 +1,25 @@
 'use client'
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
-import EditablePrice from '../../../components/admin/EditablePrice'
+import { useEffect,useMemo,useState } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import ImageUploader from '../../../components/admin/ImageUploader'
-import Modal from '../../../components/ui/Modal'
-import { Plus, Image as ImageIcon, Trash2 } from 'lucide-react'
 import type { RoomType } from '../../../data/mock'
 
-export default function RoomManagement() {
-  const { roomTypes, updateRoomTypePrice, toggleRoomTypeActive, addRoomType, setRoomTypeImages, rooms } = useStore()
-  const [showAdd, setShowAdd] = useState(false)
-  const [imagesFor, setImagesFor] = useState<string | null>(null)
-  const [draft, setDraft] = useState({ name: '', category: 'Standard', price: '', guests: '2', bedType: 'King bed', sizeSqm: '30' })
-  const [draftImages, setDraftImages] = useState<string[]>([])
-
-  const editing = roomTypes.find(rt => rt.id === imagesFor) ?? null
-
-  function submitAdd() {
-    const rt: RoomType = {
-      id: `rt_${Date.now()}`, slug: (draft.name || 'new-room').toLowerCase().replace(/\s+/g,'-'), name: draft.name || 'New Room Type',
-      category: draft.category as RoomType['category'], price: Number(draft.price) || 50000, guests: Number(draft.guests),
-      bedType: draft.bedType, sizeSqm: Number(draft.sizeSqm), amenities: ['Free WiFi','Air conditioning'],
-      images: draftImages.length ? draftImages : ['https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'],
-      description: 'A newly added room type — description pending final copy.', active: true,
-    }
-    addRoomType(rt)
-    setShowAdd(false)
-    setDraft({ name: '', category: 'Standard', price: '', guests: '2', bedType: 'King bed', sizeSqm: '30' })
-    setDraftImages([])
-  }
-
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Room Management</h1>
-        <button onClick={() => setShowAdd(true)} className="btn-primary btn-sm flex items-center gap-1.5"><Plus size={14}/>Add room</button>
-      </div>
-      <div className="card overflow-x-auto">
-        <table className="w-full text-sm min-w-[820px]">
-          <thead><tr className="text-left text-xs text-navy-400 border-b border-black/5">
-            <th className="p-4">Room type</th><th className="p-4">Category</th><th className="p-4">Price / night</th>
-            <th className="p-4">Guests</th><th className="p-4">Units</th><th className="p-4">Status</th><th className="p-4">Actions</th>
-          </tr></thead>
-          <tbody>
-            {roomTypes.map(rt => {
-              const unitCount = rooms.filter(r => r.roomTypeId === rt.id).length
-              return (
-                <tr key={rt.id} className="border-b border-black/5 last:border-none">
-                  <td className="p-4"><div className="flex items-center gap-3"><img src={rt.images[0]} className="w-12 h-12 rounded-lg object-cover" alt={rt.name} /><b>{rt.name}</b></div></td>
-                  <td className="p-4 text-navy-500">{rt.category}</td>
-                  <td className="p-4"><EditablePrice value={rt.price} onSave={v => updateRoomTypePrice(rt.id, v)} /></td>
-                  <td className="p-4 text-navy-500">{rt.guests}</td>
-                  <td className="p-4 text-navy-500">{unitCount || '—'}</td>
-                  <td className="p-4"><span className={rt.active ? 'pill-green' : 'pill-red'}>{rt.active ? 'Active' : 'Disabled'}</span></td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <button onClick={() => setImagesFor(rt.id)} className="text-xs font-semibold text-navy-900 flex items-center gap-1"><ImageIcon size={12}/>Photos ({rt.images.length})</button>
-                      <button onClick={() => toggleRoomTypeActive(rt.id)} className="text-xs font-semibold text-red-600">{rt.active ? 'Disable' : 'Enable'}</button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <Modal open={!!editing} onClose={() => setImagesFor(null)} title={editing ? `${editing.name} photos` : 'Photos'} subtitle="Upload photos from your device. The first photo is used as the main image on the website.">
-        {editing && (
-          <div>
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              {editing.images.map((src, i) => (
-                <div key={src + i} className="relative h-28 rounded-lg overflow-hidden group">
-                  <img src={src} className="w-full h-full object-cover" alt={`${editing.name} photo ${i+1}`} />
-                  {i === 0 && <span className="absolute bottom-1 left-1 text-[10px] bg-navy-950/80 text-white px-1.5 py-0.5 rounded">Main</span>}
-                  <button onClick={() => setRoomTypeImages(editing.id, editing.images.filter((_, j) => j !== i))}
-                    className="absolute top-1 right-1 w-7 h-7 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100"><Trash2 size={12} /></button>
-                </div>
-              ))}
-              {editing.images.length === 0 && <p className="col-span-3 text-sm text-navy-400">No photos yet.</p>}
-            </div>
-            <ImageUploader folder={`rooms/${editing.id}`} multiple label="Upload photos from device"
-              onUploaded={urls => setRoomTypeImages(editing.id, [...editing.images, ...urls])} />
-          </div>
-        )}
-      </Modal>
-
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add room type" subtitle="This will appear on the public Rooms page immediately.">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><label className="field-label">Room name</label><input className="field-input" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} placeholder="Garden Suite" /></div>
-          <div><label className="field-label">Category</label><select className="field-input" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}>
-            {['Standard','Deluxe','Executive','Premium','Suite','VIP Suite'].map(c=><option key={c}>{c}</option>)}
-          </select></div>
-          <div><label className="field-label">Price / night (₦)</label><input type="number" className="field-input" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})} placeholder="95000" /></div>
-          <div><label className="field-label">Guests</label><input type="number" className="field-input" value={draft.guests} onChange={e=>setDraft({...draft,guests:e.target.value})} /></div>
-          <div><label className="field-label">Bed type</label><input className="field-input" value={draft.bedType} onChange={e=>setDraft({...draft,bedType:e.target.value})} /></div>
-          <div><label className="field-label">Size (m²)</label><input type="number" className="field-input" value={draft.sizeSqm} onChange={e=>setDraft({...draft,sizeSqm:e.target.value})} /></div>
-          <div className="col-span-2">
-            <label className="field-label">Photos</label>
-            <div className="grid grid-cols-4 gap-2 mb-2">
-              {draftImages.map((src, i) => <div key={i} className="h-20 rounded-lg overflow-hidden"><img src={src} className="w-full h-full object-cover" alt="" /></div>)}
-            </div>
-            <ImageUploader folder="rooms/new" multiple label="Upload from device" onUploaded={urls => setDraftImages([...draftImages, ...urls])} />
-          </div>
-        </div>
-        <button onClick={submitAdd} className="btn-primary w-full justify-center mt-6">Add room type</button>
-      </Modal>
-    </div>
-  )
+type Unit={id:string;room_number:string;room_type_id:string;floor:string;status:string;name:string;slug:string;image_url:string|null}
+const cats=['Standard','Deluxe','Executive','Premium','Suite','VIP Suite']
+const slugify=(s:string)=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
+export default function RoomManagement(){
+ const [types,setTypes]=useState<RoomType[]>([]); const [units,setUnits]=useState<Unit[]>([]); const [open,setOpen]=useState<string|null>(null); const [showType,setShowType]=useState(false); const [showUnit,setShowUnit]=useState<string|null>(null)
+ const [draft,setDraft]=useState<any>({name:'',category:'Standard',price:'',guests:'2',bedType:'King bed',sizeSqm:'30',description:'',amenities:'Free WiFi, Air conditioning',images:[]}); const [unit,setUnit]=useState<any>({number:'',floor:'1',name:'',image:null})
+ const load=async()=>{const [{data:t},{data:r}]=await Promise.all([supabase.from('room_types').select('*').order('category').order('price'),supabase.from('rooms').select('*').order('room_number')]); setTypes((t??[]).map((x:any)=>({...x,bedType:x.bed_type,sizeSqm:x.size_sqm}))); setUnits(r??[])}
+ useEffect(()=>{void load()},[])
+ const grouped=useMemo(()=>cats.map(c=>({c,items:types.filter(t=>t.category===c)})).filter(x=>x.items.length),[types])
+ async function addType(){const slug=slugify(draft.name); const row={id:`rt_${Date.now()}`,slug,name:draft.name,category:draft.category,price:Number(draft.price)||0,guests:Number(draft.guests)||2,bed_type:draft.bedType,size_sqm:Number(draft.sizeSqm)||0,amenities:draft.amenities.split(',').map((x:string)=>x.trim()).filter(Boolean),images:draft.images,description:draft.description,active:true}; const {error}=await supabase.from('room_types').insert(row); if(!error){setShowType(false);setDraft({name:'',category:'Standard',price:'',guests:'2',bedType:'King bed',sizeSqm:'30',description:'',amenities:'Free WiFi, Air conditioning',images:[]});load()}}
+ async function addUnit(){if(!showUnit)return; const type=types.find(t=>t.id===showUnit); if(!type)return; const slug=slugify(`${unit.name||'room'}-${unit.number}`); const row={id:`room_${Date.now()}`,room_number:unit.number,room_type_id:type.id,floor:unit.floor||'1',status:'available',name:unit.name||`Room ${unit.number}`,slug,image_url:unit.image||null}; const {error}=await supabase.from('rooms').insert(row); if(!error){setShowUnit(null);setUnit({number:'',floor:'1',name:'',image:null});load()}}
+ return <div className="max-w-6xl"><div className="flex items-start justify-between gap-4 mb-8"><div><h1 className="text-2xl font-semibold">Room Management</h1><p className="text-sm text-navy-400 mt-1">Create room types first, then add the physical rooms that belong to each type.</p></div><button className="btn-primary btn-sm" onClick={()=>setShowType(true)}><Plus size={14}/>New room type</button></div>
+ {grouped.map(g=><section key={g.c} className="mb-8"><div className="flex items-center gap-3 mb-3"><h2 className="text-xs uppercase tracking-[.18em] text-navy-400">{g.c}</h2><span className="text-xs text-navy-300">{g.items.length} type{g.items.length!==1?'s':''}</span></div><div className="space-y-3">{g.items.map(t=>{const children=units.filter(u=>u.room_type_id===t.id); const is=open===t.id; return <div key={t.id} className="card overflow-hidden"><button onClick={()=>setOpen(is?null:t.id)} className="w-full p-4 flex items-center gap-4 text-left"><img src={t.images?.[0]} className="w-16 h-14 rounded-lg object-cover" alt=""/><div className="flex-1"><b>{t.name}</b><div className="text-xs text-navy-400 mt-1">₦{Number(t.price).toLocaleString()} / night · {t.guests} guests · {children.length} physical rooms</div></div><span className={t.active?'pill-green':'pill-red'}>{t.active?'Active':'Disabled'}</span>{is?<ChevronDown size={18}/>:<ChevronRight size={18}/>}</button>{is&&<div className="border-t border-black/5 bg-cream-50/50 p-4"><div className="grid md:grid-cols-2 gap-3">{children.map(r=><div key={r.id} className="bg-white border border-black/5 rounded-xl p-3 flex items-center gap-3"><img src={r.image_url||t.images?.[0]} className="w-14 h-12 rounded-lg object-cover" alt=""/><div className="flex-1"><b className="text-sm">{r.name}</b><div className="text-xs text-navy-400">Room {r.room_number} · Floor {r.floor}</div></div><span className={r.status==='available'?'pill-green':'pill-red'}>{r.status.replace('_',' ')}</span></div>)}</div><button className="btn-outline btn-sm mt-4" onClick={()=>setShowUnit(t.id)}><Plus size={13}/>Add room {t.name}</button></div>}</div>})}</div></section>)}
+ {grouped.length===0&&<div className="card p-12 text-center text-sm text-navy-400">No room types yet. Create your first type.</div>}
+ {showType&&<div className="fixed inset-0 z-50 bg-black/40 p-4 grid place-items-center"><div className="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-auto"><h2 className="text-xl font-semibold">Create room type</h2><p className="text-sm text-navy-400 mt-1 mb-6">Price, description and amenities belong to the type and are inherited by every physical room.</p><div className="grid md:grid-cols-2 gap-4"><input className="field-input md:col-span-2" placeholder="Room type name" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/><select className="field-input" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}>{cats.map(c=><option key={c}>{c}</option>)}</select><input className="field-input" type="number" placeholder="Price / night" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})}/><input className="field-input" type="number" placeholder="Guests" value={draft.guests} onChange={e=>setDraft({...draft,guests:e.target.value})}/><input className="field-input" placeholder="Bed type" value={draft.bedType} onChange={e=>setDraft({...draft,bedType:e.target.value})}/><input className="field-input" type="number" placeholder="Size m²" value={draft.sizeSqm} onChange={e=>setDraft({...draft,sizeSqm:e.target.value})}/><textarea className="field-input md:col-span-2 min-h-28" placeholder="Full room description" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/><input className="field-input md:col-span-2" placeholder="Amenities separated by commas" value={draft.amenities} onChange={e=>setDraft({...draft,amenities:e.target.value})}/><div className="md:col-span-2"><ImageUploader folder="rooms/types" multiple label="Upload room type photos" onUploaded={urls=>setDraft({...draft,images:[...draft.images,...urls]})}/></div></div><div className="flex gap-3 justify-end mt-6"><button className="btn-outline" onClick={()=>setShowType(false)}>Cancel</button><button className="btn-primary" onClick={addType}>Create room type</button></div></div></div>}
+ {showUnit&&<div className="fixed inset-0 z-50 bg-black/40 p-4 grid place-items-center"><div className="bg-white rounded-2xl w-full max-w-lg p-6"><h2 className="text-xl font-semibold">Add physical room</h2><p className="text-sm text-navy-400 mb-6">This room inherits its price, amenities and description from the selected type.</p><input className="field-input mb-3" placeholder="Room number e.g. 204" value={unit.number} onChange={e=>setUnit({...unit,number:e.target.value})}/><input className="field-input mb-3" placeholder="Room display name e.g. Garden View 204" value={unit.name} onChange={e=>setUnit({...unit,name:e.target.value})}/><input className="field-input mb-4" placeholder="Floor" value={unit.floor} onChange={e=>setUnit({...unit,floor:e.target.value})}/><ImageUploader folder={`rooms/${showUnit}`} label="Room-specific image" onUploaded={urls=>setUnit({...unit,image:urls[0]})}/><div className="flex gap-3 justify-end mt-6"><button className="btn-outline" onClick={()=>setShowUnit(null)}>Cancel</button><button className="btn-primary" onClick={addUnit}>Add room</button></div></div></div>}
+ </div>
 }
