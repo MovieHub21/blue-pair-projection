@@ -6,7 +6,7 @@ import { LogIn, LogOut, BedDouble, ClipboardList } from 'lucide-react'
 
 export default function ReceptionDashboard() {
   const { rooms, bookings } = useStore()
-  const arrivals = bookings.filter(b => ['confirmed','pending'].includes(b.status)).length
+  const arrivals = bookings.filter(b => b.status === 'confirmed' && b.paymentStatus === 'paid').length
   const departures = bookings.filter(b => b.status === 'checked_in').length
   const available = rooms.filter(r => r.status === 'available').length
 
