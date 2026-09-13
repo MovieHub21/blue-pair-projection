@@ -8,10 +8,11 @@ const platforms = [
 ] as const
 
 export default function SocialLinks({ content, className = '' }: { content: Record<string, string>; className?: string }) {
-  const links = platforms.flatMap(platform => {
+  type LinkItem = { key: string; label: string; icon: typeof Globe; url: string }
+  const links: LinkItem[] = platforms.flatMap(platform => {
     const enabled = content[`social_${platform.key}_enabled`] === 'true'
     const url = content[`social_${platform.key}_url`]
-    return enabled && url ? [{ ...platform, url }] : []
+    return enabled && url ? [{ key: platform.key, label: platform.label, icon: platform.icon, url }] : []
   })
 
   const otherEnabled = content.social_other_enabled === 'true' && !!content.social_other_url
