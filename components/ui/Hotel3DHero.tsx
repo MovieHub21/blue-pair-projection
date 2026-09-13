@@ -9,19 +9,28 @@ export default function Hotel3DHero() {
     const rect = event.currentTarget.getBoundingClientRect()
     const x = (event.clientX - rect.left) / rect.width - 0.5
     const y = (event.clientY - rect.top) / rect.height - 0.5
-    setTilt({ x: y * -3.5, y: x * 5 })
+
+    setTilt({
+      x: y * -7,
+      y: x * 10,
+    })
   }
+
+  const resetTilt = () => setTilt({ x: 0, y: 0 })
 
   return (
     <div
       className="absolute inset-0 flex items-center justify-center md:justify-end px-4 md:px-8 lg:px-14 pointer-events-none overflow-hidden"
       style={{ perspective: '1600px' }}
-      onPointerMove={handleMove}
-      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
     >
       <div
-        className="relative w-[330px] sm:w-[430px] md:w-[530px] lg:w-[620px] h-[420px] sm:h-[510px] md:h-[600px] transition-transform duration-500 ease-out pointer-events-auto"
-        style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotateZ(-1deg)`, transformStyle: 'preserve-3d' }}
+        className="relative w-[330px] sm:w-[430px] md:w-[530px] lg:w-[620px] h-[420px] sm:h-[510px] md:h-[600px] transition-transform duration-300 ease-out pointer-events-auto touch-none cursor-grab active:cursor-grabbing"
+        style={{
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotateZ(-1deg)`,
+          transformStyle: 'preserve-3d',
+        }}
+        onPointerMove={handleMove}
+        onPointerLeave={resetTilt}
         aria-label="Interactive three-dimensional Blue Pair hotel"
       >
         <div className="absolute inset-x-8 bottom-5 h-12 rounded-[50%] bg-black/45 blur-3xl" style={{ transform: 'translateZ(-80px)' }} />
