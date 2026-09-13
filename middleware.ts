@@ -22,7 +22,11 @@ export async function middleware(request: NextRequest) {
 
   const needsStaff = STAFF_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const needsGuest = GUEST_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
-  const isAuthPath = PUBLIC_PATHS.some(p => pathname.startsWith(p))
+  const isAuthPath = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+
+  // Login and registration pages are public. They must never redirect back
+  // to themselves when the visitor is not authenticated.
+  if (isAuthPath) return response
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
@@ -42,7 +46,7 @@ export async function middleware(request: NextRequest) {
     .eq('environment', environment)
     .maybeSingle()
 
-  if (siteSetting?.maintenance_mode && !needsStaff && !isAuthPath) {
+  if (siteSetting?.maintenance_mode && !needsStaff) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
