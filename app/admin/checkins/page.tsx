@@ -5,7 +5,7 @@ import StatusBadge from '../../../components/ui/StatusBadge'
 
 export default function CheckInManagement() {
   const { bookings, roomTypes, customers, rooms, checkInBooking } = useStore()
-  const arrivals = bookings.filter(b => ['confirmed','pending'].includes(b.status))
+  const arrivals = bookings.filter(b => b.status === 'confirmed' && b.paymentStatus === 'paid')
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
   const freeRoom = (roomTypeId: string) => rooms.find(r => r.roomTypeId === roomTypeId && r.status === 'available')
@@ -13,7 +13,7 @@ export default function CheckInManagement() {
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-1">Check-in Management</h1>
-      <p className="text-navy-400 text-sm mb-6">Today's arrivals — assign a room and check guests in.</p>
+      <p className="text-navy-400 text-sm mb-6">Today's arrivals — paid reservations only.</p>
       <div className="grid gap-4">
         {arrivals.map(b => {
           const room = freeRoom(b.roomTypeId)
@@ -34,7 +34,7 @@ export default function CheckInManagement() {
             </div>
           )
         })}
-        {arrivals.length === 0 && <div className="card p-10 text-center text-navy-400 text-sm">No arrivals pending check-in.</div>}
+        {arrivals.length === 0 && <div className="card p-10 text-center text-navy-400 text-sm">No paid arrivals pending check-in.</div>}
       </div>
     </div>
   )
