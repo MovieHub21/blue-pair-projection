@@ -1,7 +1,7 @@
 create table if not exists public.room_service_orders (
   id text primary key,
   reference text not null unique,
-  customer_id uuid not null references public.customers(id) on delete cascade,
+  customer_id text not null references public.customers(id) on delete cascade,
   booking_ref text not null default '',
   room text not null,
   guest_name text not null default '',
