@@ -23,52 +23,19 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/90 to-navy-950/45" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/15 to-navy-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(199,154,62,.12),transparent_32%)]" />
-
-        <div className="absolute inset-x-0 bottom-0 z-[1] h-[55%] md:hidden">
-          <Hotel3DHero />
-        </div>
+        <div className="absolute inset-x-0 bottom-0 z-[1] h-[55%] md:hidden"><Hotel3DHero /></div>
         <div className="absolute inset-x-0 bottom-0 z-[2] h-[48%] bg-gradient-to-t from-navy-950 via-navy-950/35 to-transparent md:hidden" />
-
         <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-center md:items-center pb-16 md:pb-0 pt-20 md:pt-0 pointer-events-none">
           <div className="max-w-xl pointer-events-auto md:max-w-[43%]">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 md:px-4 md:py-2 text-[9px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-4 md:mb-6">
-              A place to arrive, relax & feel at home
-            </div>
-            <h1 className="text-[2.2rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-2xl">
-              {headline || <>Welcome to <em className="italic text-gold-300 font-medium">Blue Pair.</em></>}
-            </h1>
-            <p className="mt-4 md:mt-6 max-w-xl text-sm md:text-lg text-white/80 leading-relaxed">
-              {subtitle || 'Come in, settle down and let us take care of the rest. Thoughtful rooms, warm hospitality, good food and spaces made for memorable stays in Uromi.'}
-            </p>
-            <div className="flex flex-wrap gap-2.5 md:gap-3 mt-6 md:mt-8">
-              <Link href="/booking" className="btn-gold px-5 py-3 md:px-6 md:py-3.5">Find your room</Link>
-              <Link href="/about" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 py-3 md:px-6 md:py-3.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 transition-colors">Take a look around <ArrowRight size={15} /></Link>
-            </div>
-            <div className="mt-5 md:mt-8 flex flex-wrap items-center gap-x-5 md:gap-x-6 gap-y-2 text-[11px] md:text-xs text-white/60">
-              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Uromi, Edo State</span>
-              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Rooms & suites</span>
-              <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Dining, pool & more</span>
-            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 md:px-4 md:py-2 text-[9px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-4 md:mb-6">A place to arrive, relax & feel at home</div>
+            <h1 className="text-[2.2rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-2xl">{headline || <>Welcome to <em className="italic text-gold-300 font-medium">Blue Pair.</em></>}</h1>
+            <p className="mt-4 md:mt-6 max-w-xl text-sm md:text-lg text-white/80 leading-relaxed">{subtitle || 'Come in, settle down and let us take care of the rest. Thoughtful rooms, warm hospitality, good food and spaces made for memorable stays in Uromi.'}</p>
+            <div className="flex flex-wrap gap-2.5 md:gap-3 mt-6 md:mt-8"><Link href="/rooms" className="btn-gold px-5 py-3 md:px-6 md:py-3.5">Find your room</Link><Link href="/about" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 py-3 md:px-6 md:py-3.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 transition-colors">Take a look around <ArrowRight size={15} /></Link></div>
+            <div className="mt-5 md:mt-8 flex flex-wrap items-center gap-x-5 md:gap-x-6 gap-y-2 text-[11px] md:text-xs text-white/60"><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Uromi, Edo State</span><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Rooms & suites</span><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Dining, pool & more</span></div>
           </div>
         </div>
       </header>
-
-      <div className="container-w px-5 md:px-10 relative z-20 -mt-10 md:-mt-12">
-        <div className="rounded-2xl bg-white shadow-pop border border-black/[0.06] p-4 md:p-5">
-          <div className="flex items-center justify-between gap-4 mb-4 px-1">
-            <div><span className="eyebrow">Plan your stay</span><h2 className="font-semibold text-base md:text-lg mt-1">When would you like to feel at home?</h2></div>
-            <span className="hidden sm:block text-xs text-navy-400">Best available rooms shown after search</span>
-          </div>
-          <div className="grid md:grid-cols-5 gap-3">
-            <div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="field-input" /></div>
-            <div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="field-input" /></div>
-            <div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Users size={13} /> Guests</label><select className="field-input"><option>2 adults, 0 children</option><option>1 adult</option><option>2 adults, 2 children</option></select></div>
-            <div className="md:px-3"><label className="field-label flex items-center gap-1.5"><BedDouble size={13} /> Room type</label><select className="field-input"><option>Any room</option>{roomTypes.map(r => <option key={r.id}>{r.name}</option>)}</select></div>
-            <div className="flex items-end"><button onClick={() => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center py-3.5">Search availability</button></div>
-          </div>
-        </div>
-      </div>
-
+      <div className="container-w px-5 md:px-10 relative z-20 -mt-10 md:-mt-12"><div className="rounded-2xl bg-white shadow-pop border border-black/[0.06] p-4 md:p-5"><div className="flex items-center justify-between gap-4 mb-4 px-1"><div><span className="eyebrow">Plan your stay</span><h2 className="font-semibold text-base md:text-lg mt-1">When would you like to feel at home?</h2></div><span className="hidden sm:block text-xs text-navy-400">Best available rooms shown after search</span></div><div className="grid md:grid-cols-5 gap-3"><div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-in</label><input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)} className="field-input" /></div><div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Calendar size={13} /> Check-out</label><input type="date" value={checkOut} onChange={e => setCheckOut(e.target.value)} className="field-input" /></div><div className="md:px-3"><label className="field-label flex items-center gap-1.5"><Users size={13} /> Guests</label><select className="field-input"><option>2 adults, 0 children</option><option>1 adult</option><option>2 adults, 2 children</option></select></div><div className="md:px-3"><label className="field-label flex items-center gap-1.5"><BedDouble size={13} /> Room type</label><select className="field-input"><option>Any room</option>{roomTypes.map(r => <option key={r.id}>{r.name}</option>)}</select></div><div className="flex items-end"><button onClick={() => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center py-3.5">Search availability</button></div></div></div></div>
       <section className="section"><div className="container-w"><div className="flex justify-between items-end mb-10 flex-wrap gap-4"><SectionHeading eyebrow="Featured stays" title="Rooms guests choose most" /><Link href="/rooms" className="text-sm font-semibold flex items-center gap-1.5 text-navy-900">View all rooms →</Link></div><div className="grid md:grid-cols-3 gap-6">{roomTypes.slice(0, 3).map(r => <RoomCard key={r.id} room={r} />)}</div></div></section>
       <section className="section bg-navy-950 text-white"><div className="container-w"><SectionHeading eyebrow="On the property" title="Everything a Uromi stay needs" light center subtitle="From sunrise laps in the indoor pool to late dinners at the Blue Pair Restaurant." /><div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">{[{ icon: Waves, name: 'Indoor Pool', to: '/pool' },{ icon: Dumbbell, name: 'Fitness Gym', to: '/gym' },{ icon: UtensilsCrossed, name: 'Blue Pair Restaurant', to: '/dining' },{ icon: PartyPopper, name: 'The Club', to: '/club' },{ icon: Wifi, name: 'VIP Lounge', to: '/vip-lounge' },{ icon: Car, name: 'VIP Parking', to: '/parking' }].map(a => <Link href={a.to} key={a.name} className="bg-white/5 border border-white/10 rounded-xl2 p-6 hover:bg-white/10 transition-colors"><div className="w-11 h-11 rounded-full bg-gold-500/15 text-gold-300 flex items-center justify-center mb-4"><a.icon size={19} /></div><div className="font-semibold text-[15px]">{a.name}</div><div className="text-white/40 text-xs mt-1 flex items-center gap-1">Explore <ArrowRight size={12} /></div></Link>)}</div></div></section>
       <section className="section"><div className="container-w grid lg:grid-cols-2 gap-16 items-center"><div className="relative h-[440px] rounded-xl2 overflow-hidden"><img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1000&q=80" alt="Blue Pair Hotel exterior, Uromi, Edo State" className="w-full h-full object-cover" /><div className="absolute bottom-5 left-5 bg-navy-950/90 backdrop-blur text-white rounded-xl2 px-6 py-5 flex gap-7"><div><b className="font-display text-2xl block">60</b><span className="text-[11px] text-white/60 uppercase">Rooms &amp; suites</span></div><div><b className="font-display text-2xl block">12</b><span className="text-[11px] text-white/60 uppercase">Years in Uromi</span></div><div><b className="font-display text-2xl block">4.8</b><span className="text-[11px] text-white/60 uppercase">Guest rating</span></div></div></div><div><span className="eyebrow">Blue Pair Signature</span><h2 className="text-3xl md:text-4xl font-semibold mt-3 mb-5">A homegrown luxury brand, built for Edo State</h2><p className="text-navy-500 text-[15px] leading-relaxed">Blue Pair Hotel opened its doors in Uromi with one goal — to bring genuinely world-class hospitality to Esan North-East. Every room, every plate at the restaurant, and every event on the Club terrace is built around that promise.</p><Link href="/about" className="btn-outline mt-7">Our story</Link></div></div></section>
