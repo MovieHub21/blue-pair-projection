@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getMyPermissions } from '../../../../../../lib/permissions'
-import { createSupabaseAdminClient } from '../../../../../../lib/supabase/admin'
+import { getMyPermissions } from '../../../../../lib/permissions'
+import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 
 function toTime(value: unknown) {
   const time = value ? new Date(String(value)).getTime() : 0
