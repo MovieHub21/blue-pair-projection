@@ -30,7 +30,7 @@ function csvEscape(value: unknown) {
 }
 
 function prettyEntity(value: string) {
-  return value.replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return value.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 function actionTone(action: string) {
