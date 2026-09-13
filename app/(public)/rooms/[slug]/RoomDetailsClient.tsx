@@ -2,13 +2,13 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, BedDouble, Ruler, CheckCircle2, Star, ArrowRight } from 'lucide-react'
+import { Users, BedDouble, Ruler, CheckCircle2, ArrowRight } from 'lucide-react'
 import { naira, todayISO, addDaysISO } from '../../../../lib/format'
 import RoomCard from '../../../../components/ui/RoomCard'
 import type { RoomType } from '../../../../data/mock'
 
 type Unit={id:string;room_number:string;name:string;slug:string;image_url?:string|null;status:string;floor?:string}
-export default function RoomDetailsClient({room,units,others}:{room:RoomType;units:Unit[];others:RoomType[]}){
+export default function RoomDetailsClient({room,units,others,availability}:{room:RoomType;units:Unit[];others:RoomType[];availability:Record<string,number>}){
  const router=useRouter(); const [checkIn,setCheckIn]=useState(todayISO()); const [checkOut,setCheckOut]=useState(addDaysISO(2));
  const available=units.filter(u=>u.status==='available'); const selected=available[0]; const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
  return <div className="container-w px-6 md:px-10 py-8">
@@ -25,6 +25,6 @@ export default function RoomDetailsClient({room,units,others}:{room:RoomType;uni
    </div>
    <aside className="card p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>{selected?<button onClick={()=>router.push(`/booking?room=${room.slug}&unit=${selected.id}&checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center mt-5">Book an available room</button>:<div className="mt-5 rounded-xl bg-red-50 text-red-700 text-sm p-4">No rooms of this type are available right now.</div>}</aside>
   </div>
-  <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} available={r.active}/>)}</div>
+  <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} availableCount={availability[r.id] ?? 0}/>)}</div>
  </div>
 }
