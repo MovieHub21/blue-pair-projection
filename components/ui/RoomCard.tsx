@@ -3,13 +3,17 @@ import { Users, BedDouble, Ruler } from 'lucide-react'
 import { naira } from '../../lib/format'
 import type { RoomType } from '../../data/mock'
 
-export default function RoomCard({ room, available = true }: { room: RoomType; available?: boolean }) {
+export default function RoomCard({ room, availableCount }: { room: RoomType; availableCount?: number }) {
+  const hasLiveCount = typeof availableCount === 'number'
+  const count = hasLiveCount ? availableCount : 0
+  const available = hasLiveCount ? count > 0 : true
+
   return (
     <div className="card overflow-hidden flex flex-col group">
       <div className="relative h-56 overflow-hidden">
         <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <span className={'absolute top-3.5 left-3.5 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>
-          {available ? '● Available' : '● Fully booked'}
+          {available ? `${count} available` : 'Sold out'}
         </span>
         <span className="absolute top-3.5 right-3.5 tag bg-white/95">{room.category}</span>
       </div>
@@ -31,7 +35,7 @@ export default function RoomCard({ room, available = true }: { room: RoomType; a
         </div>
         <div className="flex gap-2 mt-auto pt-2">
           <Link href={`/rooms/${room.slug}`} className="btn-outline btn-sm flex-1 justify-center">View room</Link>
-          <Link href={`/booking?room=${room.slug}`} className="btn-primary btn-sm flex-1 justify-center">Book now</Link>
+          <Link href={`/booking?room=${room.slug}`} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>Book now</Link>
         </div>
       </div>
     </div>
