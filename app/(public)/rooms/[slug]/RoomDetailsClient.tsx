@@ -1,88 +1,30 @@
 'use client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Users, BedDouble, Ruler, Star, CheckCircle2, Calendar } from 'lucide-react'
-import { naira , todayISO, addDaysISO} from '../../../../lib/format'
+import { useRouter } from 'next/navigation'
+import { Users, BedDouble, Ruler, CheckCircle2, Star, ArrowRight } from 'lucide-react'
+import { naira, todayISO, addDaysISO } from '../../../../lib/format'
 import RoomCard from '../../../../components/ui/RoomCard'
 import type { RoomType } from '../../../../data/mock'
 
-export default function RoomDetailsClient({ room, others }: { room: RoomType; others: RoomType[] }) {
-  const router = useRouter()
-  const [checkIn, setCheckIn] = useState(todayISO())
-  const [checkOut, setCheckOut] = useState(addDaysISO(2))
-  const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
-  const subtotal = room.price * nights
-  const tax = Math.round(subtotal * 0.075)
-  const total = subtotal + tax
-
-  return (
-    <div>
-      <div className="container-w px-6 md:px-10 pt-6">
-        <div className="text-xs text-navy-400 mb-4">Home / Rooms &amp; Suites / {room.name}</div>
-        <div className="grid grid-cols-1 md:grid-cols-[1.6fr,1fr] gap-2.5 h-[440px] rounded-xl2 overflow-hidden">
-          <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover" />
-          <div className="hidden md:grid grid-rows-2 gap-2.5">
-            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=80" alt={`${room.name} bathroom, Blue Pair Hotel`} className="w-full h-full object-cover" />
-            <div className="relative">
-              <img src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=700&q=80" alt={`${room.name} interior, Blue Pair Hotel`} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-navy-950/55 flex items-center justify-center text-white text-sm font-semibold">+6 photos</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section className="section pb-24">
-        <div className="container-w grid lg:grid-cols-[1.6fr,1fr] gap-14 items-start">
-          <div>
-            <span className="eyebrow">{room.category}</span>
-            <div className="flex justify-between items-start mt-2 gap-4 flex-wrap">
-              <h1 className="text-3xl md:text-4xl font-semibold">{room.name}</h1>
-              <div className="flex items-center gap-1 text-gold-500 text-sm whitespace-nowrap">
-                {'★★★★★'.split('').map((s,i)=><Star key={i} size={14} fill="currentColor" />)}
-                <span className="text-navy-400 ml-1.5">(186 reviews)</span>
-              </div>
-            </div>
-            <p className="text-navy-500 mt-4 leading-relaxed max-w-xl">{room.description}</p>
-
-            <div className="flex flex-wrap gap-8 py-6 mt-6 border-y border-black/10">
-              <div className="flex items-center gap-2.5"><Users size={18} className="text-gold-500" /><div><b className="block text-sm">{room.guests} guests</b><span className="text-xs text-navy-400">Max occupancy</span></div></div>
-              <div className="flex items-center gap-2.5"><BedDouble size={18} className="text-gold-500" /><div><b className="block text-sm">{room.bedType}</b><span className="text-xs text-navy-400">Bed configuration</span></div></div>
-              <div className="flex items-center gap-2.5"><Ruler size={18} className="text-gold-500" /><div><b className="block text-sm">{room.sizeSqm} m²</b><span className="text-xs text-navy-400">Room size</span></div></div>
-            </div>
-
-            <h4 className="text-lg font-semibold mt-8 mb-4">Amenities</h4>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {room.amenities.map(a => <div key={a} className="flex items-center gap-2.5 text-sm text-navy-700"><CheckCircle2 size={16} className="text-gold-500" />{a}</div>)}
-            </div>
-
-            <h4 className="text-lg font-semibold mt-10 mb-2">Check-in / check-out</h4>
-            <p className="text-sm text-navy-500">Check-in from 2:00 PM · Check-out by 12:00 PM. Early check-in and late check-out available on request.</p>
-          </div>
-
-          <aside className="card p-6 sticky top-24">
-            <div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night before taxes</span></div>
-            <div className="h-px bg-black/10 my-5" />
-            <label className="field-label flex items-center gap-1.5"><Calendar size={13}/>Check-in</label>
-            <input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)} className="field-input mb-4" />
-            <label className="field-label flex items-center gap-1.5"><Calendar size={13}/>Check-out</label>
-            <input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4" />
-            <label className="field-label">Guests</label>
-            <select className="field-input">{Array.from({length: room.guests}, (_,i)=>i+1).map(n=><option key={n}>{n} guest{n>1?'s':''}</option>)}</select>
-            <button onClick={() => router.push(`/booking?room=${room.slug}&checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center mt-5">Reserve this room</button>
-            <p className="text-[11px] text-navy-400 text-center mt-2.5">You won't be charged yet</p>
-            <div className="h-px bg-black/10 my-5" />
-            <div className="flex justify-between text-sm text-navy-500 py-1.5"><span>{naira(room.price)} × {nights} nights</span><span>{naira(subtotal)}</span></div>
-            <div className="flex justify-between text-sm text-navy-500 py-1.5"><span>Taxes &amp; fees</span><span>{naira(tax)}</span></div>
-            <div className="flex justify-between text-base font-semibold pt-3 mt-2 border-t border-black/10"><span>Total</span><b className="font-display text-lg">{naira(total)}</b></div>
-          </aside>
-        </div>
-
-        <h4 className="text-xl font-semibold mt-20 mb-6">Similar rooms</h4>
-        <div className="grid md:grid-cols-3 gap-6">
-          {others.map(r => <RoomCard key={r.id} room={r} />)}
-        </div>
-      </section>
-    </div>
-  )
+type Unit={id:string;room_number:string;name:string;slug:string;image_url?:string|null;status:string;floor?:string}
+export default function RoomDetailsClient({room,units,others}:{room:RoomType;units:Unit[];others:RoomType[]}){
+ const router=useRouter(); const [checkIn,setCheckIn]=useState(todayISO()); const [checkOut,setCheckOut]=useState(addDaysISO(2));
+ const available=units.filter(u=>u.status==='available'); const selected=available[0]; const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
+ return <div className="container-w px-6 md:px-10 py-8">
+  <div className="text-xs text-navy-400 mb-5">Home / Rooms & Suites / {room.name}</div>
+  <div className="grid lg:grid-cols-[1.35fr,.65fr] gap-10 items-start">
+   <div>
+    <div className="h-[420px] rounded-2xl overflow-hidden"><img src={room.images[0]} className="w-full h-full object-cover" alt={room.name}/></div>
+    <span className="eyebrow mt-8 inline-block">{room.category}</span><h1 className="text-3xl md:text-4xl font-semibold mt-2">{room.name}</h1>
+    <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
+    <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{room.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{room.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{room.sizeSqm} m²</b></div></div>
+    <h3 className="text-lg font-semibold mb-4">Amenities</h3><div className="grid sm:grid-cols-2 gap-3 mb-10">{room.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div>
+    <div className="flex items-center justify-between mb-4"><div><h2 className="text-2xl font-semibold">Choose your room</h2><p className="text-sm text-navy-400 mt-1">{available.length} of {units.length} rooms currently available</p></div></div>
+    <div className="space-y-3">{units.map(u=>{const ok=u.status==='available'; return <div key={u.id} className="card p-4 flex items-center gap-4"><img src={u.image_url||room.images[0]} className="w-24 h-20 rounded-lg object-cover" alt={u.name||`Room ${u.room_number}`}/><div className="flex-1"><b className="block">{u.name||`Room ${u.room_number}`}</b><span className="text-xs text-navy-400">Room {u.room_number} · Floor {u.floor||'—'}</span></div><span className={ok?'pill-green':'pill-red'}>{ok?'Available':u.status.replace('_',' ')}</span>{ok&&<Link href={`/rooms/${room.slug}/${u.slug}`} className="btn-outline btn-sm">View <ArrowRight size={13}/></Link>}</div>})}</div>
+   </div>
+   <aside className="card p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>{selected?<button onClick={()=>router.push(`/booking?room=${room.slug}&unit=${selected.id}&checkin=${checkIn}&checkout=${checkOut}`)} className="btn-primary w-full justify-center mt-5">Book an available room</button>:<div className="mt-5 rounded-xl bg-red-50 text-red-700 text-sm p-4">No rooms of this type are available right now.</div>}</aside>
+  </div>
+  <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} available={r.active}/>)}</div>
+ </div>
 }
