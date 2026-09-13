@@ -71,16 +71,54 @@ h1, h2, h3, h4 { @apply font-display; }
 
 @media (max-width: 767px) {
   input, textarea, select { font-size: 16px !important; }
-  .public-site > header:first-of-type { min-height: 560px; height: 70vh; max-height: 680px; }
-  .public-site > header:first-of-type .container-w { padding-bottom: 5rem; }
-  .public-site > header:first-of-type h1 { font-size: 2.25rem; }
+  .public-site > header:first-of-type { min-height: 520px; height: 68vh; max-height: 640px; }
+  .public-site > header:first-of-type .container-w { padding-bottom: 3.5rem; }
+  .public-site > header:first-of-type h1 { font-size: 2rem; line-height: 1.08; }
   .portal-shell > div.flex-1 > main { padding-bottom: 0.5rem; }
+
+  /* Compact mobile pass: desktop/tablet remain unchanged. */
+  .public-site .section { padding-top: 2.75rem; padding-bottom: 2.75rem; padding-left: 1rem; padding-right: 1rem; }
+  .public-site .container-w { width: 100%; }
+  .public-site .section h2 { font-size: 1.65rem; line-height: 1.12; }
+  .public-site .section h3 { font-size: 1.15rem; line-height: 1.2; }
+  .public-site .section p { font-size: 0.9rem; line-height: 1.5; }
+  .public-site .card { border-radius: 0.9rem; }
+  .public-site .card > .p-8 { padding: 1.15rem; }
+  .public-site .card > .p-7 { padding: 1.05rem; }
+  .public-site .card > .p-6 { padding: 1rem; }
+  .public-site .card > .p-5 { padding: 0.9rem; }
+  .public-site .gap-8 { gap: 1.25rem; }
+  .public-site .gap-10 { gap: 1.5rem; }
+  .public-site .gap-12 { gap: 1.75rem; }
+  .public-site .gap-16 { gap: 2rem; }
+  .public-site .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem; }
+  .public-site .space-y-10 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+  .public-site .space-y-12 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.75rem; }
+  .public-site .btn { min-height: 2.75rem; }
+  .public-site .btn-primary,
+  .public-site .btn-gold,
+  .public-site .btn-outline,
+  .public-site .btn-ghost-light { padding: 0.65rem 1rem; font-size: 0.8rem; }
+  .public-site .field-input { height: 2.75rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+  .public-site .tag { padding: 0.2rem 0.55rem; }
+  .public-site .pill { padding: 0.2rem 0.6rem; }
+
+  .portal-shell main { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .portal-shell .card { border-radius: 0.85rem; }
+  .portal-shell .card > .p-8,
+  .portal-shell .card > .p-7,
+  .portal-shell .card > .p-6 { padding: 1rem; }
+  .portal-shell .gap-8 { gap: 1rem; }
+  .portal-shell .gap-10 { gap: 1.25rem; }
 }
 
 @media (max-width: 640px) {
-  .section { @apply py-14 px-4; }
-  .public-site section:nth-of-type(even)::before { width: 260px; height: 260px; right: -180px; }
-  .btn { @apply min-h-11; }
+  .section { @apply py-11 px-3.5; }
+  .public-site section:nth-of-type(even)::before { width: 220px; height: 220px; right: -155px; }
+  .public-site .section h2 { font-size: 1.5rem; }
+  .public-site .eyebrow { font-size: 9px; letter-spacing: 0.13em; }
+  .public-site .grid { min-width: 0; }
+  .public-site img { max-width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
