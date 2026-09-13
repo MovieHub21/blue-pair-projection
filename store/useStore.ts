@@ -251,8 +251,8 @@ export const useStore = create<StoreState>((set, get) => ({
         bookingRef: booking.reference,
         customer: customerName,
         amount: booking.amount,
-        method: 'cash',
-        status: 'successful',
+        method: 'Cash',
+        status: 'success',
         date: paidOn,
       }
       set(s => ({ payments: [payment, ...s.payments] }))
@@ -415,7 +415,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
   toggleStaffStatus: (id) => {
     const current = get().staff.find(s => s.id === id)?.status
-    const next = current === 'active' ? 'inactive' : 'active'
+    const next = current === 'active' ? 'disabled' : 'active'
     set(s => ({ staff: s.staff.map(m => m.id === id ? { ...m, status: next } : m) }))
     save('staff', { status: next }, id)
   },

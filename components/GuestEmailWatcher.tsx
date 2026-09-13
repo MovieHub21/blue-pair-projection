@@ -31,7 +31,7 @@ export default function GuestEmailWatcher() {
         const old = previousBookings.get(booking.id)
         if (!old) continue
         if (old.paymentStatus !== 'paid' && booking.paymentStatus === 'paid') void sendGuestTransactionalEmail('payment_successful', { bookingId: booking.id })
-        else if (old.paymentStatus !== 'failed' && booking.paymentStatus === 'failed') void sendGuestTransactionalEmail('payment_failed', { bookingId: booking.id })
+        else if (String(old.paymentStatus) !== 'failed' && String(booking.paymentStatus) === 'failed') void sendGuestTransactionalEmail('payment_failed', { bookingId: booking.id })
         else if (old.status !== 'cancelled' && booking.status === 'cancelled') void sendGuestTransactionalEmail('booking_cancelled', { bookingId: booking.id })
         else if (old.status !== 'checked_in' && booking.status === 'checked_in') void sendGuestTransactionalEmail('checkin_welcome', { bookingId: booking.id })
         else if (old.status !== 'checked_out' && booking.status === 'checked_out') void sendGuestTransactionalEmail('checkout_thank_you', { bookingId: booking.id })

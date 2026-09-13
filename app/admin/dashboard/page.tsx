@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
   const rangeStart = range === 'week' ? weekStart : range === 'month' ? `${today.slice(0, 7)}-01` : `${today.slice(0, 4)}-01-01`
 
   const stats = useMemo(() => {
-    const paid = payments.filter(p => p.status === 'success' || p.status === 'successful')
+    const paid = payments.filter(p => p.status === 'success')
     const revenue = paid.filter(p => dateInRange(p.date, rangeStart, today)).reduce((sum, p) => sum + Number(p.amount || 0), 0)
     const periodBookings = bookings.filter(b => dateInRange(b.createdAt || b.checkIn, rangeStart, today) && b.status !== 'cancelled')
     const checkIns = bookings.filter(b => dateInRange(b.checkIn, rangeStart, today)).length
@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
   }, [payments, bookings, rooms, maintenanceTickets, guestRequests, rangeStart, today])
 
   const revenueByDay = useMemo(() => {
-    const paid = payments.filter(p => (p.status === 'success' || p.status === 'successful') && p.date >= rangeStart && p.date <= today)
+    const paid = payments.filter(p => p.status === 'success' && p.date >= rangeStart && p.date <= today)
     const map: Record<string, number> = {}
     paid.forEach(p => { map[p.date] = (map[p.date] || 0) + Number(p.amount || 0) })
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).slice(-7).map(([date, value]) => ({ day: date.slice(5), value }))
