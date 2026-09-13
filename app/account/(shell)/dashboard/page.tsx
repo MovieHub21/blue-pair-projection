@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, MapPin } from 'lucide-react'
+import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, MapPin, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { naira, formatDate } from '../../../../lib/format'
 import StatusBadge from '../../../../components/ui/StatusBadge'
@@ -14,6 +14,18 @@ export default async function DashboardPage() {
   const firstName = (profile?.name || 'there').split(' ')[0]
   const hasCheckedIn = bookings.some((b: any) => b.checkedInAt || b.checked_in_at || b.status === 'checked_in' || b.status === 'checked_out')
 
+  const hotelGuide = [
+    { icon: BedDouble, title: 'Rooms & suites', text: 'View rooms, suites and available stays.', href: '/rooms' },
+    { icon: UtensilsCrossed, title: 'Dining', text: 'Restaurant, food, drinks and room service.', href: '/dining' },
+    { icon: Waves, title: 'Pool', text: 'Explore the indoor pool and pool experience.', href: '/pool' },
+    { icon: Dumbbell, title: 'Fitness gym', text: 'Keep your routine going during your stay.', href: '/gym' },
+    { icon: PartyPopper, title: 'Club & events', text: 'Discover entertainment and event spaces.', href: '/club' },
+    { icon: Sparkles, title: 'VIP & amenities', text: 'Lounge, parking and other guest amenities.', href: '/vip-lounge' },
+    { icon: Image, title: 'Gallery', text: 'See the hotel, spaces and atmosphere.', href: '/gallery' },
+    { icon: Tag, title: 'Offers', text: 'See current packages and special offers.', href: '/offers' },
+    { icon: MapPinned, title: 'Find us', text: 'Location, contact and directions.', href: '/contact' },
+  ]
+
   return (
     <div>
       <LiveDateTime />
@@ -22,32 +34,13 @@ export default async function DashboardPage() {
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85')" }} role="img" aria-label="A welcoming Blue Pair hotel room" />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/95 via-navy-950/65 to-navy-950/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-navy-950/10" />
-
-        <div className="relative z-10 w-full p-5 md:p-10 lg:p-12">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 text-[9px] md:text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-3 md:mb-5">
-              Welcome home
-            </div>
-            <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>
-            <p className="text-sm md:text-lg text-white/85 leading-relaxed mt-3 md:mt-5 max-w-xl">Your Blue Pair space is ready. Settle in, keep an eye on your stay, request anything you need, or simply explore what is waiting for you.</p>
-
-            {upcoming ? (
-              <div className="mt-5 md:mt-7 inline-flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md px-3.5 py-3 md:px-5 md:py-3.5">
-                <div className="flex items-center gap-2.5 text-sm"><CalendarDays size={17} className="text-gold-300" /><span>Next stay</span></div>
-                <div className="hidden sm:block h-5 w-px bg-white/20" />
-                <div className="text-sm font-semibold">{upcoming.room?.name ?? 'Your room'}</div>
-                <div className="text-xs text-white/65">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</div>
-              </div>
-            ) : (
-              <Link href="/rooms" className="inline-flex items-center gap-2 mt-5 md:mt-7 rounded-lg bg-gold-500 px-4 py-2.5 md:px-5 md:py-3 text-sm font-semibold text-navy-950 hover:bg-gold-400 transition-colors">Plan a stay <ArrowRight size={15} /></Link>
-            )}
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 md:mt-6 text-[11px] md:text-xs text-white/60">
-              <span className="flex items-center gap-1.5"><MapPin size={13} className="text-gold-300" /> Uromi, Edo State</span>
-              <span>Hospitality made personal</span>
-            </div>
-          </div>
-        </div>
+        <div className="relative z-10 w-full p-5 md:p-10 lg:p-12"><div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 text-[9px] md:text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-3 md:mb-5">Welcome home</div>
+          <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>
+          <p className="text-sm md:text-lg text-white/85 leading-relaxed mt-3 md:mt-5 max-w-xl">Your Blue Pair space is ready. Settle in, keep an eye on your stay, request anything you need, or simply explore what is waiting for you.</p>
+          {upcoming ? <div className="mt-5 md:mt-7 inline-flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md px-3.5 py-3 md:px-5 md:py-3.5"><div className="flex items-center gap-2.5 text-sm"><CalendarDays size={17} className="text-gold-300" /><span>Next stay</span></div><div className="hidden sm:block h-5 w-px bg-white/20" /><div className="text-sm font-semibold">{upcoming.room?.name ?? 'Your room'}</div><div className="text-xs text-white/65">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</div></div> : <Link href="/rooms" className="inline-flex items-center gap-2 mt-5 md:mt-7 rounded-lg bg-gold-500 px-4 py-2.5 md:px-5 md:py-3 text-sm font-semibold text-navy-950 hover:bg-gold-400 transition-colors">Plan a stay <ArrowRight size={15} /></Link>}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 md:mt-6 text-[11px] md:text-xs text-white/60"><span className="flex items-center gap-1.5"><MapPin size={13} className="text-gold-300" /> Uromi, Edo State</span><span>Hospitality made personal</span></div>
+        </div></div>
       </section>
 
       <div className="grid grid-cols-3 gap-3 mb-8">
@@ -56,18 +49,17 @@ export default async function DashboardPage() {
         <Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link>
       </div>
 
-      {upcoming && (
-        <div className="card p-6 flex flex-col md:flex-row gap-5 mb-8">
-          {upcoming.room?.images?.[0] && <img src={upcoming.room.images[0]} alt={upcoming.room.name} className="w-full md:w-40 h-40 rounded-xl2 object-cover" />}
-          <div className="flex-1">
-            <span className="eyebrow">Upcoming stay</span>
-            <div className="flex justify-between items-start gap-3 mt-1"><h3 className="text-xl font-semibold">{upcoming.room?.name ?? 'Room'}</h3><StatusBadge status={upcoming.status} /></div>
-            <p className="text-sm text-navy-500 mt-1.5">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)} · {upcoming.adults} adults</p>
-            <p className="text-xs text-navy-400 mt-1">Ref: {upcoming.reference}</p>
-            <div className="flex gap-2 mt-4"><Link href="/account/bookings" className="btn-outline btn-sm">View details</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div>
-          </div>
+      <section className="mb-8">
+        <div className="flex items-end justify-between gap-4 mb-4">
+          <div><span className="eyebrow">Discover Blue Pair</span><h2 className="text-xl md:text-2xl font-semibold mt-1">Everything the hotel has to offer</h2><p className="text-sm text-navy-500 mt-1">Explore the hotel without leaving your guest space.</p></div>
+          <Link href="/" className="hidden sm:flex text-sm font-semibold items-center gap-1.5 text-navy-900">Full website <ArrowRight size={14} /></Link>
         </div>
-      )}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {hotelGuide.map(item => <Link key={item.title} href={item.href} className="group card p-4 md:p-5 hover:-translate-y-0.5 hover:shadow-pop transition-all"><div className="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-600 flex items-center justify-center mb-3"><item.icon size={19} /></div><div className="font-semibold text-sm">{item.title}</div><p className="text-[11px] md:text-xs text-navy-400 leading-relaxed mt-1">{item.text}</p><span className="text-[11px] font-semibold text-navy-800 inline-flex items-center gap-1 mt-3">Explore <ArrowRight size={11} /></span></Link>)}
+        </div>
+      </section>
+
+      {upcoming && <div className="card p-6 flex flex-col md:flex-row gap-5 mb-8">{upcoming.room?.images?.[0] && <img src={upcoming.room.images[0]} alt={upcoming.room.name} className="w-full md:w-40 h-40 rounded-xl2 object-cover" />}<div className="flex-1"><span className="eyebrow">Upcoming stay</span><div className="flex justify-between items-start gap-3 mt-1"><h3 className="text-xl font-semibold">{upcoming.room?.name ?? 'Room'}</h3><StatusBadge status={upcoming.status} /></div><p className="text-sm text-navy-500 mt-1.5">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)} · {upcoming.adults} adults</p><p className="text-xs text-navy-400 mt-1">Ref: {upcoming.reference}</p><div className="flex gap-2 mt-4"><Link href="/account/bookings" className="btn-outline btn-sm">View details</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div></div>}
 
       {bookings.length === 0 && <div className="card p-8 text-center mb-8"><p className="text-sm text-navy-500 mb-4">You don't have any bookings yet.</p><Link href="/rooms" className="btn-primary">Browse rooms</Link></div>}
 
