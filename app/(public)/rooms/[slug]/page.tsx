@@ -12,7 +12,7 @@ export const revalidate = 0
 export async function generateStaticParams(){ return (await getRoomTypes()).map(r=>({slug:r.slug})) }
 export async function generateMetadata({params}:{params:{slug:string}}):Promise<Metadata>{
  const room=await getRoomTypeBySlug(params.slug); if(!room)return buildMetadata({title:'Room Not Found',description:'This room type could not be found.',path:`/rooms/${params.slug}`,noindex:true})
- return buildMetadata({title:`${room.name} in Uromi, Edo State — ₦${room.price.toLocaleString()}/night | Blue Pair Hotel`,description:`${room.description} Sleeps ${room.guests}, ${room.bedType}, ${room.sizeSqm}m². Explore available ${room.name} rooms at Blue Pair Hotel, Uromi, Edo State.`,keywords:`${room.name.toLowerCase()} uromi, ${room.category.toLowerCase()} room edo state, blue pair hotel ${room.category.toLowerCase()}, hotel room uromi price`,path:`/rooms/${room.slug}`,image:room.images[0]})
+ return buildMetadata({title:`${room.name} in Uromi, Edo State — ₦${room.price.toLocaleString()}/night | Blue Pair Hotel`,description:`${room.description} Sleeps ${room.guests}, ${room.bedType}, ${room.sizeSqm}m². Explore available ${room.name} rooms at Blue Pair Hotel, Uromi, Edo State.`,keywords:`${room.name.toLowerCase()} uromi, blue pair hotel ${room.name.toLowerCase()}, hotel room uromi price`,path:`/rooms/${room.slug}`,image:room.images[0]})
 }
 export default async function RoomDetailsPage({params}:{params:{slug:string}}){
  const room=await getRoomTypeBySlug(params.slug); if(!room)notFound()
