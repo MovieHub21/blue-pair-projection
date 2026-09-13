@@ -63,27 +63,16 @@ export default function NotificationBell() {
     const setupRealtime = async () => {
       const { data } = await supabase.auth.getUser()
       if (!mounted || !data.user) return
-
-      // Configure all postgres_changes callbacks before subscribe().
-      // Supabase Realtime does not allow adding callbacks after a channel
-      // has already been subscribed.
       channel = supabase
         .channel(`guest-notifications-${data.user.id}`)
         .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'guest_notifications',
-          filter: `user_id=eq.${data.user.id}`,
-        }, () => {
-          void load()
-        })
-
+          event: 'INSERT', schema: 'public', table: 'guest_notifications', filter: `user_id=eq.${data.user.id}`,
+        }, () => { void load() })
       channel.subscribe()
     }
 
     void load()
     void setupRealtime()
-
     const onFocus = () => void load()
     window.addEventListener('focus', onFocus)
     return () => {
@@ -109,76 +98,27 @@ export default function NotificationBell() {
 
   return (
     <div className="relative">
-      <button
-        onClick={() => setOpen(value => !value)}
-        aria-label={unread ? `${unread} unread notifications` : 'Notifications'}
-        aria-expanded={open}
-        className="relative w-9 h-9 rounded-full flex items-center justify-center text-navy-600 hover:bg-cream-100 transition-colors"
-      >
+      <button onClick={() => setOpen(value => !value)} aria-label={unread ? `${unread} unread notifications` : 'Notifications'} aria-expanded={open} className="relative w-9 h-9 rounded-full flex items-center justify-center text-navy-600 hover:bg-cream-100 transition-colors">
         <Bell size={18} />
-        {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-gold-500 text-[9px] font-bold text-navy-950 flex items-center justify-center ring-2 ring-white">
-            {unread > 9 ? '9+' : unread}
-          </span>
-        )}
+        {unread > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-gold-500 text-[9px] font-bold text-navy-950 flex items-center justify-center ring-2 ring-white">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
       {open && (
         <>
           <button aria-label="Close notifications" className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-[min(380px,calc(100vw-24px))] z-50 bg-white rounded-2xl shadow-pop border border-black/5 overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-black/5 flex items-center justify-between">
-              <div>
-                <div className="font-display font-semibold text-navy-950">Your notifications</div>
-                <div className="text-[11px] text-navy-400 mt-0.5">Updates about your stay and requests</div>
-              </div>
-              {visibleUnread > 0 && (
-                <button onClick={markAllRead} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy-500 hover:text-navy-900">
-                  <CheckCheck size={13} /> Mark all read
-                </button>
-              )}
+          <div className="fixed left-3 right-3 top-[60px] md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[380px] z-50 bg-white rounded-2xl shadow-pop border border-black/5 overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-black/5 flex items-center justify-between gap-3">
+              <div className="min-w-0"><div className="font-display font-semibold text-navy-950">Your notifications</div><div className="text-[11px] text-navy-400 mt-0.5">Updates about your stay and requests</div></div>
+              {visibleUnread > 0 && <button onClick={markAllRead} className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-navy-500 hover:text-navy-900 shrink-0"><CheckCheck size={13} /> Mark all read</button>}
             </div>
-
             <div className="max-h-[430px] overflow-y-auto">
-              {loading ? (
-                <div className="p-8 text-center text-sm text-navy-400">Loading your updates…</div>
-              ) : items.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="mx-auto w-11 h-11 rounded-full bg-cream-100 flex items-center justify-center text-navy-400"><Bell size={19} /></div>
-                  <div className="mt-3 text-sm font-semibold text-navy-800">You’re all caught up</div>
-                  <div className="mt-1 text-xs text-navy-400">We’ll let you know when something needs your attention.</div>
-                </div>
-              ) : items.map(item => {
+              {loading ? <div className="p-8 text-center text-sm text-navy-400">Loading your updates…</div> : items.length === 0 ? <div className="p-8 text-center"><div className="mx-auto w-11 h-11 rounded-full bg-cream-100 flex items-center justify-center text-navy-400"><Bell size={19} /></div><div className="mt-3 text-sm font-semibold text-navy-800">You’re all caught up</div><div className="mt-1 text-xs text-navy-400">We’ll let you know when something needs your attention.</div></div> : items.map(item => {
                 const Icon = iconMap[item.type] || Bell
-                const content = (
-                  <div className={`flex gap-3 px-4 py-3.5 hover:bg-cream-100/70 transition-colors ${!item.read_at ? 'bg-blue-50/40' : ''}`}>
-                    <div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${!item.read_at ? 'bg-navy-950 text-gold-400' : 'bg-cream-100 text-navy-500'}`}>
-                      <Icon size={16} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start gap-2">
-                        <div className="text-[13px] font-semibold text-navy-900 leading-5 flex-1">{item.title}</div>
-                        {!item.read_at && <span className="mt-1.5 w-2 h-2 rounded-full bg-gold-500 shrink-0" />}
-                      </div>
-                      <div className="text-xs text-navy-500 leading-5 mt-0.5">{item.body}</div>
-                      <div className="text-[10px] text-navy-400 mt-1.5">{timeAgo(item.created_at)}</div>
-                    </div>
-                    {item.href && <ChevronRight size={15} className="shrink-0 mt-2 text-navy-300" />}
-                  </div>
-                )
-                return item.href ? (
-                  <Link key={item.id} href={item.href} onClick={() => { void markRead(item.id); setOpen(false) }}>{content}</Link>
-                ) : (
-                  <button key={item.id} className="w-full text-left" onClick={() => void markRead(item.id)}>{content}</button>
-                )
+                const content = <div className={`flex gap-3 px-4 py-3.5 hover:bg-cream-100/70 transition-colors ${!item.read_at ? 'bg-blue-50/40' : ''}`}><div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center ${!item.read_at ? 'bg-navy-950 text-gold-400' : 'bg-cream-100 text-navy-500'}`}><Icon size={16} /></div><div className="min-w-0 flex-1"><div className="flex items-start gap-2"><div className="text-[13px] font-semibold text-navy-900 leading-5 flex-1 break-words">{item.title}</div>{!item.read_at && <span className="mt-1.5 w-2 h-2 rounded-full bg-gold-500 shrink-0" />}</div><div className="text-xs text-navy-500 leading-5 mt-0.5 break-words">{item.body}</div><div className="text-[10px] text-navy-400 mt-1.5">{timeAgo(item.created_at)}</div></div>{item.href && <ChevronRight size={15} className="shrink-0 mt-2 text-navy-300" />}</div>
+                return item.href ? <Link key={item.id} href={item.href} onClick={() => { void markRead(item.id); setOpen(false) }}>{content}</Link> : <button key={item.id} className="w-full text-left" onClick={() => void markRead(item.id)}>{content}</button>
               })}
             </div>
-
-            <div className="border-t border-black/5 p-2">
-              <Link href="/account/notifications" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-navy-600 hover:bg-cream-100">
-                See all notifications <ChevronRight size={13} />
-              </Link>
-            </div>
+            <div className="border-t border-black/5 p-2"><Link href="/account/notifications" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-navy-600 hover:bg-cream-100">See all notifications <ChevronRight size={13} /></Link></div>
           </div>
         </>
       )}
