@@ -18,32 +18,31 @@ export default async function DashboardPage() {
     <div>
       <LiveDateTime />
 
-      <section className="relative overflow-hidden rounded-[1.5rem] min-h-[430px] md:min-h-[470px] mb-7 text-white flex items-end shadow-pop">
+      <section className="relative overflow-hidden rounded-[1.5rem] min-h-[360px] md:min-h-[470px] mb-7 text-white flex items-end shadow-pop">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85')" }} role="img" aria-label="A welcoming Blue Pair hotel room" />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/95 via-navy-950/65 to-navy-950/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-navy-950/10" />
 
-        <div className="relative z-10 w-full p-7 md:p-10 lg:p-12">
+        <div className="relative z-10 w-full p-5 md:p-10 lg:p-12">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-2 text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-5">
-              
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 text-[9px] md:text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-3 md:mb-5">
               Welcome home
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>
-            <p className="text-base md:text-lg text-white/85 leading-relaxed mt-5 max-w-xl">Your Blue Pair space is ready. Settle in, keep an eye on your stay, request anything you need, or simply explore what is waiting for you.</p>
+            <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>
+            <p className="text-sm md:text-lg text-white/85 leading-relaxed mt-3 md:mt-5 max-w-xl">Your Blue Pair space is ready. Settle in, keep an eye on your stay, request anything you need, or simply explore what is waiting for you.</p>
 
             {upcoming ? (
-              <div className="mt-7 inline-flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md px-4 py-3.5 md:px-5">
+              <div className="mt-5 md:mt-7 inline-flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md px-3.5 py-3 md:px-5 md:py-3.5">
                 <div className="flex items-center gap-2.5 text-sm"><CalendarDays size={17} className="text-gold-300" /><span>Next stay</span></div>
                 <div className="hidden sm:block h-5 w-px bg-white/20" />
                 <div className="text-sm font-semibold">{upcoming.room?.name ?? 'Your room'}</div>
                 <div className="text-xs text-white/65">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</div>
               </div>
             ) : (
-              <Link href="/rooms" className="inline-flex items-center gap-2 mt-7 rounded-lg bg-gold-500 px-5 py-3 text-sm font-semibold text-navy-950 hover:bg-gold-400 transition-colors">Plan a stay <ArrowRight size={15} /></Link>
+              <Link href="/rooms" className="inline-flex items-center gap-2 mt-5 md:mt-7 rounded-lg bg-gold-500 px-4 py-2.5 md:px-5 md:py-3 text-sm font-semibold text-navy-950 hover:bg-gold-400 transition-colors">Plan a stay <ArrowRight size={15} /></Link>
             )}
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-6 text-xs text-white/60">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 md:mt-6 text-[11px] md:text-xs text-white/60">
               <span className="flex items-center gap-1.5"><MapPin size={13} className="text-gold-300" /> Uromi, Edo State</span>
               <span>Hospitality made personal</span>
             </div>
