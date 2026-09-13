@@ -1,6 +1,6 @@
 import { buildMetadata } from '../../lib/buildMetadata'
 import { SITE_NAME } from '../../lib/siteConfig'
-import { getRoomTypes, getOffers, getGalleryImages, getSiteContent } from '../../lib/data'
+import { getRoomTypes, getRooms, getOffers, getGalleryImages, getSiteContent } from '../../lib/data'
 import { getPublishedGuestReviews } from '../../lib/reviews'
 import HomeClient from './HomeClient'
 import GuestReviews from '../../components/public/GuestReviews'
@@ -12,10 +12,13 @@ export const metadata = buildMetadata({
   path: '/',
 })
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function HomePage() {
-  const [roomTypes, offers, gallery, content, reviews] = await Promise.all([getRoomTypes(), getOffers(true), getGalleryImages(), getSiteContent(), getPublishedGuestReviews(8)])
+  const [roomTypes, rooms, offers, gallery, content, reviews] = await Promise.all([getRoomTypes(), getRooms(), getOffers(true), getGalleryImages(), getSiteContent(), getPublishedGuestReviews(8)])
   return <>
-    <HomeClient roomTypes={roomTypes} offers={offers} gallery={gallery} headline={content.home_headline} subtitle={content.home_subtitle} />
+    <HomeClient roomTypes={roomTypes} rooms={rooms} offers={offers} gallery={gallery} headline={content.home_headline} subtitle={content.home_subtitle} />
     <GuestReviews reviews={reviews} />
   </>
 }
