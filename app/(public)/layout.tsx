@@ -2,6 +2,7 @@ import PublicNavbar from '../../components/layout/PublicNavbar'
 import PublicFooter from '../../components/layout/PublicFooter'
 import PublicMotion from '../../components/layout/PublicMotion'
 import JsonLd from '../../components/JsonLd'
+import BackButton from '../../components/ui/BackButton'
 import { getSiteContent } from '../../lib/data'
 import { SITE_NAME, SITE_URL, SITE_PHONE, SITE_ADDRESS, SITE_GEO, DEFAULT_OG_IMAGE } from '../../lib/siteConfig'
 
@@ -39,6 +40,13 @@ export default async function PublicRouteLayout({ children }: { children: React.
     <div className="public-site">
       <JsonLd data={hotelJsonLd} />
       <PublicNavbar />
+      <div className="pointer-events-none fixed inset-x-0 top-[76px] z-30">
+        <div className="container-w px-4 md:px-10">
+          <div className="pointer-events-auto w-fit">
+            <BackButton fallback="/" />
+          </div>
+        </div>
+      </div>
       <PublicMotion />
       {children}
       <PublicFooter content={content} />
