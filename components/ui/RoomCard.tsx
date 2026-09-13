@@ -15,7 +15,6 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
         <span className={'absolute top-3.5 left-3.5 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>
           {available ? `${count} available` : 'Sold out'}
         </span>
-        <span className="absolute top-3.5 right-3.5 tag bg-white/95">{room.category}</span>
       </div>
       <div className="p-5 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-3">
@@ -35,7 +34,7 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
         </div>
         <div className="flex gap-2 mt-auto pt-2">
           <Link href={`/rooms/${room.slug}`} className="btn-outline btn-sm flex-1 justify-center">View room</Link>
-          <Link href={`/booking?room=${room.slug}`} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>Book now</Link>
+          <Link href={`/booking?room=${room.slug}`} aria-disabled={!available} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>{available ? 'Book now' : 'Sold out'}</Link>
         </div>
       </div>
     </div>
