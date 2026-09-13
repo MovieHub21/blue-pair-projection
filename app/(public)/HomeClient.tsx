@@ -24,9 +24,6 @@ export default function HomeClient({ roomTypes, offers, gallery, headline, subti
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/15 to-navy-950/60" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(199,154,62,.12),transparent_32%)]" />
 
-        <div className="absolute inset-y-0 right-0 z-[1] hidden w-[57%] md:block">
-          <Hotel3DHero />
-        </div>
         <div className="absolute inset-x-0 bottom-0 z-[1] h-[55%] md:hidden">
           <Hotel3DHero />
         </div>
