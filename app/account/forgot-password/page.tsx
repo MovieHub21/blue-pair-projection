@@ -2,8 +2,6 @@
 
 import { useState, Suspense } from 'react'
 import Link from 'next/link'
-import { supabase } from '../../../lib/supabase/client'
-import { SITE_URL } from '../../../lib/siteConfig'
 import { Loader2, ArrowLeft, Mail } from 'lucide-react'
 
 function ForgotPasswordForm() {
@@ -16,15 +14,16 @@ function ForgotPasswordForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${SITE_URL}/auth/callback?next=/account/reset-password`,
-    })
-    setLoading(false)
-    if (error) {
-      setError(error.message)
-      return
+    try {
+      const response = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim() }) })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Unable to send the reset link.')
+      setSent(true)
+    } catch (error: any) {
+      setError(error.message || 'Unable to send the reset link.')
+    } finally {
+      setLoading(false)
     }
-    setSent(true)
   }
 
   return (
@@ -33,7 +32,6 @@ function ForgotPasswordForm() {
         <Link href="/account/login" className="inline-flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-900 mb-6"><ArrowLeft size={14} /> Back to sign in</Link>
         <div className="flex items-center gap-2 font-display text-lg font-semibold mb-1"><img src="/icon-192.png" alt="Blue Pair" className="w-8 h-8 rounded-lg object-cover" />Blue Pair Hotel</div>
         <p className="text-sm text-navy-400 mb-7">Reset your guest account password</p>
-
         {sent ? (
           <div className="text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4"><Mail size={21} /></div>
