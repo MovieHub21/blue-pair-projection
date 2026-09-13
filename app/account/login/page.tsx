@@ -14,21 +14,18 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+    e.preventDefault(); setError(null); setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) { setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message); return }
-    router.push(params.get('redirect') || '/account/dashboard')
-    router.refresh()
+    router.push(params.get('redirect') || '/account/dashboard'); router.refresh()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-navy-950 px-6 py-16">
-      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8">
-        <div className="flex items-center gap-2 font-display text-lg font-semibold mb-1"><img src="/icon-192.png" alt="Blue Pair" className="w-8 h-8 rounded-lg object-cover" />Blue Pair Hotel</div>
-        <p className="text-sm text-navy-400 mb-7">Sign in to manage your bookings</p>
+    <div className="min-h-screen flex items-center justify-center bg-navy-950 px-5 py-12 sm:px-6 sm:py-16">
+      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-7 sm:p-8">
+        <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
+        <p className="text-sm text-navy-400 mb-7 text-center">Sign in to manage your bookings</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Email</label>
         <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
@@ -42,6 +39,4 @@ function LoginForm() {
   )
 }
 
-export default function LoginPage() {
-  return <Suspense><LoginForm /></Suspense>
-}
+export default function LoginPage() { return <Suspense><LoginForm /></Suspense> }
