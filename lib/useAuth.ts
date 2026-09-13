@@ -75,8 +75,37 @@ export function useAuth(): AuthState {
 export async function ensureCustomer(userId: string, name: string, email: string, phone: string) {
   const { data: existing } = await supabase.from('customers').select('id').eq('user_id', userId).maybeSingle()
   if (existing) return (existing as any).id as string
+
+  const normalizedEmail = email.trim().toLowerCase()
+  if (normalizedEmail) {
+    const { data: emailCustomer, error: emailLookupError } = await supabase
+      .from('customers')
+      .select('id,user_id,name,email,phone')
+      .ilike('email', normalizedEmail)
+      .maybeSingle()
+
+    if (emailLookupError) {
+      console.error('customer email lookup failed', emailLookupError.message)
+    } else if (emailCustomer) {
+      // Walk-in customers are created with user_id = null. Claim that customer
+      // when the guest later creates an account with the same email so all of
+      // their existing bookings/payments immediately appear in the account.
+      if (!emailCustomer.user_id) {
+        const { error } = await supabase
+          .from('customers')
+          .update({ user_id: userId, name, phone })
+          .eq('id', emailCustomer.id)
+          .is('user_id', null)
+        if (!error) return emailCustomer.id as string
+        console.error('walk-in customer linking failed', error.message)
+      } else if (emailCustomer.user_id === userId) {
+        return emailCustomer.id as string
+      }
+    }
+  }
+
   const id = `c_${Date.now()}`
-  const { error } = await supabase.from('customers').insert({ id, user_id: userId, name, email, phone })
+  const { error } = await supabase.from('customers').insert({ id, user_id: userId, name, email: normalizedEmail, phone })
   if (error) console.error('customer create failed', error.message)
   return id
 }
