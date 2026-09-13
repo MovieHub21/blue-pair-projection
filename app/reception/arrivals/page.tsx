@@ -5,7 +5,7 @@ import StatusBadge from '../../../components/ui/StatusBadge'
 
 export default function Arrivals() {
   const { bookings, roomTypes, customers, rooms, checkInBooking } = useStore()
-  const arrivals = bookings.filter(b => ['confirmed','pending'].includes(b.status))
+  const arrivals = bookings.filter(b => b.status === 'confirmed' && b.paymentStatus === 'paid')
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
   const freeRoom = (roomTypeId: string) => rooms.find(r => r.roomTypeId === roomTypeId && r.status === 'available')
