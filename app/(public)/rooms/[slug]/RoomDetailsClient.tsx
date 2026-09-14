@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Users, BedDouble, Ruler, CheckCircle2, ArrowRight } from 'lucide-react'
 import { naira, todayISO, addDaysISO } from '../../../../lib/format'
 import RoomCard from '../../../../components/ui/RoomCard'
+import ImageCarousel from '../../../../components/ui/ImageCarousel'
 import type { RoomType } from '../../../../data/mock'
 
 type Unit={id:string;room_number:string;name:string;slug:string;image_url?:string|null;status:string;floor?:string}
@@ -15,7 +16,7 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
   <div className="text-xs text-navy-400 mb-5">Home / Rooms & Suites / {room.name}</div>
   <div className="grid lg:grid-cols-[1.35fr,.65fr] gap-10 items-start">
    <div>
-    <div className="h-[420px] rounded-2xl overflow-hidden"><img src={room.images[0]} className="w-full h-full object-cover" alt={room.name}/></div>
+    <ImageCarousel images={room.images} alt={room.name} className="h-[420px] rounded-2xl" showArrows showDots showCounter />
     <h1 className="text-3xl md:text-4xl font-semibold mt-8">{room.name}</h1>
     <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
     <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{room.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{room.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{room.sizeSqm} m²</b></div></div>
