@@ -3,12 +3,13 @@ import { useRef, useState } from 'react'
 import { Upload, Loader2 } from 'lucide-react'
 import { uploadImage } from '../../lib/upload'
 
-export default function ImageUploader({ folder, onUploaded, label = 'Upload image', className, multiple }: {
+export default function ImageUploader({ folder, onUploaded, label = 'Upload image', className, multiple, maxFiles }: {
   folder: string
   onUploaded: (urls: string[]) => void
   label?: string
   className?: string
   multiple?: boolean
+  maxFiles?: number
 }) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
@@ -16,11 +17,16 @@ export default function ImageUploader({ folder, onUploaded, label = 'Upload imag
 
   async function handle(files: FileList | null) {
     if (!files || files.length === 0) return
+    const selected = Array.from(files).slice(0, Math.max(0, maxFiles ?? files.length))
+    if (selected.length === 0) return
     setBusy(true); setError(null)
     try {
       const urls: string[] = []
-      for (const file of Array.from(files)) urls.push(await uploadImage(file, folder))
+      for (const file of selected) urls.push(await uploadImage(file, folder))
       onUploaded(urls)
+      if (maxFiles !== undefined && files.length > maxFiles) {
+        setError(`Only ${maxFiles} image${maxFiles === 1 ? '' : 's'} can be added at a time.`)
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Upload failed')
     } finally {
@@ -29,12 +35,14 @@ export default function ImageUploader({ folder, onUploaded, label = 'Upload imag
     }
   }
 
+  const disabled = busy || maxFiles === 0
+
   return (
     <div className={className}>
       <input ref={input} type="file" accept="image/*" multiple={multiple} className="hidden"
         onChange={e => handle(e.target.files)} />
-      <button type="button" disabled={busy} onClick={() => input.current?.click()}
-        className="btn-outline btn-sm flex items-center gap-1.5 disabled:opacity-60">
+      <button type="button" disabled={disabled} onClick={() => input.current?.click()}
+        className="btn-outline btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
         {busy ? 'Uploading…' : label}
       </button>
