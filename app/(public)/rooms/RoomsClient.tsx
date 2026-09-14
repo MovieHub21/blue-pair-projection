@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react'
 import {useSearchParams} from 'next/navigation'
 import Link from 'next/link'
-import {ArrowLeft,ArrowRight,ChevronDown,SlidersHorizontal} from 'lucide-react'
+import {ArrowLeft,ArrowRight,ChevronDown,SlidersHorizontal,Users,Maximize2} from 'lucide-react'
 import type {RoomType,Room} from '../../../data/mock'
 
 export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];rooms:Room[]}){
@@ -44,10 +44,7 @@ export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];room
    const item=el as HTMLElement
    const itemCenter=item.offsetLeft+item.offsetWidth/2
    const nextDistance=Math.abs(itemCenter-center)
-   if(nextDistance<distance){
-    distance=nextDistance
-    closest=item.getAttribute('data-room-type')||undefined
-   }
+   if(nextDistance<distance){distance=nextDistance;closest=item.getAttribute('data-room-type')||undefined}
   })
   if(closest&&closest!==type) setType(closest)
  },[type])
@@ -77,73 +74,54 @@ export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];room
 
    <div className="sm:hidden">
     <div className="flex items-center justify-between mb-2.5 px-0.5">
-     <div>
-      <p className="text-[10px] uppercase tracking-[0.16em] text-navy-400 font-semibold">Room types</p>
-      <p className="text-xs text-navy-500 mt-0.5">Swipe to explore</p>
-     </div>
+     <div><p className="text-[10px] uppercase tracking-[0.16em] text-navy-400 font-semibold">Room types</p><p className="text-xs text-navy-500 mt-0.5">Swipe to explore</p></div>
      <label className="relative shrink-0">
       <SlidersHorizontal size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
       <select value={price} onChange={e=>setPrice(e.target.value)} aria-label="Sort rooms by price" className="h-8 appearance-none rounded-lg border border-black/10 bg-white pl-7 pr-7 text-[10px] font-semibold text-navy-800 outline-none">
        <option value="all">Price</option><option value="low">Lowest first</option><option value="high">Highest first</option>
-      </select>
-      <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
+      </select><ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
      </label>
     </div>
-
     <div className="relative -mx-6 overflow-hidden">
      <div ref={carouselRef} onScroll={handleCarouselScroll} className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory overscroll-x-contain px-[14vw] pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {types.map((name,index)=>{
-       const roomType=roomTypes.find(r=>r.name===name)
-       const available=availableForType(name)
-       const active=type===name
-       const image=roomType?.images?.[0]
-       return <button
-        key={name}
-        type="button"
-        data-room-type={name}
-        aria-pressed={active}
-        onClick={()=>scrollToType(name)}
-        className={'relative shrink-0 w-[72vw] max-w-[285px] min-h-[72px] snap-center snap-always rounded-2xl border text-left transition-all duration-300 ease-out '+(active?'bg-navy-950 text-white border-navy-950 shadow-[0_10px_28px_rgba(8,24,48,0.18)] scale-100':'bg-white text-navy-800 border-black/10 opacity-70 scale-[.94] shadow-sm')}
-       >
-        <div className="flex items-center gap-3 p-2.5">
-         <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-navy-100">
-          {image?<img src={image} alt="" className={'w-full h-full object-cover transition '+(active?'':'grayscale-[20%]')}/>:<div className="w-full h-full bg-navy-100"/>}
-          {active&&<span className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-xl"/>}
-         </div>
-         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-           <span className="text-sm font-semibold truncate">{name}</span>
-           {index===0&&<span className={'text-[8px] uppercase tracking-[.12em] font-bold '+(active?'text-white/55':'text-navy-400')}>All</span>}
-          </div>
-          <div className={'flex items-center gap-2 mt-1 text-[10px] '+(active?'text-white/65':'text-navy-400')}>
-           <span>{available} available</span>
-           {roomType&&<><span>•</span><span>From ₦{Number(roomType.price).toLocaleString()}</span></>}
-          </div>
-         </div>
-         <span className={'w-7 h-7 rounded-full flex items-center justify-center shrink-0 '+(active?'bg-white/10 text-white':'bg-navy-50 text-navy-500')}>
-          {active?<ArrowRight size={13}/>:<ArrowRight size={12}/>} 
-         </span>
-        </div>
+       const roomType=roomTypes.find(r=>r.name===name); const available=availableForType(name); const active=type===name; const image=roomType?.images?.[0]
+       return <button key={name} type="button" data-room-type={name} aria-pressed={active} onClick={()=>scrollToType(name)} className={'relative shrink-0 w-[72vw] max-w-[285px] min-h-[72px] snap-center snap-always rounded-2xl border text-left transition-all duration-300 ease-out '+(active?'bg-navy-950 text-white border-navy-950 shadow-[0_10px_28px_rgba(8,24,48,0.18)] scale-100':'bg-white text-navy-800 border-black/10 opacity-70 scale-[.94] shadow-sm')}>
+        <div className="flex items-center gap-3 p-2.5"><div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-navy-100">{image?<img src={image} alt="" className="w-full h-full object-cover"/>:<div className="w-full h-full bg-navy-100"/>}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="text-sm font-semibold truncate">{name}</span>{index===0&&<span className={'text-[8px] uppercase tracking-[.12em] font-bold '+(active?'text-white/55':'text-navy-400')}>All</span>}</div><div className={'flex items-center gap-2 mt-1 text-[10px] '+(active?'text-white/65':'text-navy-400')}><span>{available} available</span>{roomType&&<><span>•</span><span>From ₦{Number(roomType.price).toLocaleString()}</span></>}</div></div><span className={'w-7 h-7 rounded-full flex items-center justify-center shrink-0 '+(active?'bg-white/10 text-white':'bg-navy-50 text-navy-500')}><ArrowRight size={13}/></span></div>
        </button>
       })}
      </div>
-     {types.length>1&&<>
-      <button type="button" onClick={()=>scrollToType(types[Math.max(0,types.indexOf(type)-1)])} aria-label="Previous room type" className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowLeft size={12}/></button>
-      <button type="button" onClick={()=>scrollToType(types[Math.min(types.length-1,types.indexOf(type)+1)])} aria-label="Next room type" className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowRight size={12}/></button>
-     </>}
+     {types.length>1&&<><button type="button" onClick={()=>scrollToType(types[Math.max(0,types.indexOf(type)-1)])} aria-label="Previous room type" className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowLeft size={12}/></button><button type="button" onClick={()=>scrollToType(types[Math.min(types.length-1,types.indexOf(type)+1)])} aria-label="Next room type" className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowRight size={12}/></button></>}
     </div>
-    {types.length>1&&<div className="flex items-center justify-center gap-1 mt-2.5" aria-hidden="true">
-     {types.map(name=><span key={name} className={'h-1 rounded-full transition-all duration-300 '+(type===name?'w-4 bg-navy-950':'w-1 bg-navy-200')}/>) }
-    </div>}
+    {types.length>1&&<div className="flex items-center justify-center gap-1 mt-2.5" aria-hidden="true">{types.map(name=><span key={name} className={'h-1 rounded-full transition-all duration-300 '+(type===name?'w-4 bg-navy-950':'w-1 bg-navy-200')}/>)}</div>}
    </div>
   </div>
 
-  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-16 sm:pb-20">
-   {filtered.map(r=>{
+  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 lg:gap-6 pb-16 sm:pb-20">
+   {filtered.map((r,index)=>{
     const count=rooms.filter(x=>x.roomTypeId===r.id&&x.status==='available').length
-    return <Link href={`/rooms/${r.slug}`} key={r.id} className="card overflow-hidden group">
-     <div className="relative h-52 sm:h-60 overflow-hidden"><img src={r.images[0]} className="w-full h-full object-cover group-hover:scale-[1.03] transition" alt={r.name}/><span className={'absolute top-2.5 left-2.5 '+(count?'pill-green':'pill-red')+' bg-white/95'}>{count?`${count} available`:'Sold out'}</span></div>
-     <div className="p-4 sm:p-5"><div className="flex items-center justify-between gap-2"><h2 className="text-base sm:text-xl font-semibold">{r.name}</h2><b className="font-display text-sm sm:text-lg shrink-0">₦{Number(r.price).toLocaleString()}<span className="font-body text-[9px] sm:text-xs text-navy-400">/night</span></b></div><p className="text-xs sm:text-sm text-navy-500 mt-1.5 sm:mt-2 line-clamp-2">{r.description}</p><div className="flex items-center justify-end mt-3 sm:mt-5"><span className="text-xs sm:text-sm font-semibold flex items-center gap-1">View rooms <ArrowRight size={13}/></span></div></div>
+    const featured=index===0
+    return <Link href={`/rooms/${r.slug}`} key={r.id} className={featured?'group md:col-span-12':''}>
+     <article className={'group overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_10px_35px_rgba(8,24,48,0.06)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(8,24,48,0.11)] '+(featured?'md:grid md:grid-cols-[1.35fr_.65fr] md:min-h-[390px]':'md:col-span-6 lg:col-span-4')}>
+      <div className={'relative overflow-hidden '+(featured?'h-64 md:h-full':'h-52 sm:h-60')}>
+       <img src={r.images[0]} className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.035]" alt={r.name}/>
+       <div className="absolute inset-0 bg-gradient-to-t from-navy-950/55 via-transparent to-transparent opacity-80"/>
+       <span className={'absolute top-4 left-4 '+(count?'pill-green':'pill-red')+' bg-white/95'}>{count?`${count} available`:'Sold out'}</span>
+       {featured&&<span className="absolute bottom-4 left-4 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] uppercase tracking-[.16em] font-semibold px-3 py-1.5">Signature room</span>}
+      </div>
+      <div className={'flex flex-col '+(featured?'p-5 sm:p-7 md:p-9 justify-center':'p-4 sm:p-5')}>
+       <div className="flex items-start justify-between gap-4">
+        <div><p className="text-[9px] uppercase tracking-[.16em] text-navy-400 font-semibold mb-1">{featured?'Featured stay':'Blue Pair rooms'}</p><h2 className={featured?'text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight':'text-base sm:text-xl font-semibold'}>{r.name}</h2></div>
+        <b className={'font-display shrink-0 '+(featured?'text-base sm:text-lg':'text-sm sm:text-lg')}>₦{Number(r.price).toLocaleString()}<span className="font-body text-[9px] sm:text-xs text-navy-400">/night</span></b>
+       </div>
+       <p className={'text-xs sm:text-sm text-navy-500 mt-2 leading-relaxed '+(featured?'line-clamp-4 max-w-xl':'line-clamp-2')}>{r.description}</p>
+       <div className="grid grid-cols-2 gap-2 mt-4 max-w-xs">
+        <div className="rounded-xl bg-navy-50 px-3 py-2"><div className="flex items-center gap-1.5 text-navy-400"><Users size={12}/><span className="text-[9px] uppercase tracking-wider">Guests</span></div><p className="text-xs font-semibold mt-1">Up to {r.guests}</p></div>
+        <div className="rounded-xl bg-navy-50 px-3 py-2"><div className="flex items-center gap-1.5 text-navy-400"><Maximize2 size={12}/><span className="text-[9px] uppercase tracking-wider">Space</span></div><p className="text-xs font-semibold mt-1">{r.size}</p></div>
+       </div>
+       <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-black/[0.07]"><span className="text-[10px] text-navy-400">{count} of {rooms.filter(x=>x.roomTypeId===r.id).length} rooms available</span><span className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">Explore room <ArrowRight size={14} className="transition-transform group-hover:translate-x-1"/></span></div>
+      </div>
+     </article>
     </Link>
    })}
   </div>
