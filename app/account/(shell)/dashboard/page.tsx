@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const heroImages = upcoming?.room?.images?.length
     ? upcoming.room.images
     : ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85']
-  const roomName = upcoming?.room?.name || 'Your Blue Pair stay'
+  const roomName = upcoming?.roomNumber ? `Room ${upcoming.roomNumber}` : (upcoming?.room?.name || 'Your Blue Pair stay')
 
   return (
     <div>
