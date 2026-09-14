@@ -36,19 +36,19 @@ export default async function DashboardPage() {
     <div>
       <GuestDateWeather />
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[430px] md:min-h-[500px] mb-5 md:mb-7 text-white shadow-pop">
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[380px] md:min-h-[440px] mb-5 md:mb-7 text-white shadow-pop">
         <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={5500} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/80 via-navy-950/35 to-navy-950/10 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950/75 via-transparent to-navy-950/20 pointer-events-none" />
         <div className="absolute inset-y-0 left-0 w-full md:w-[62%] bg-[radial-gradient(ellipse_at_18%_32%,rgba(8,18,41,0.42),transparent_70%)] pointer-events-none" />
 
-        <div className="relative z-10 flex min-h-[430px] md:min-h-[500px] flex-col p-5 md:p-10 pointer-events-none">
+        <div className="relative z-10 flex min-h-[380px] md:min-h-[440px] flex-col p-5 md:p-10 pointer-events-none">
           <div className="flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
             <span className="rounded-full border border-white/10 bg-navy-950/50 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-white/80 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.25)]">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
           </div>
 
-          <div className="flex flex-1 items-start pt-12 sm:pt-16 md:pt-20">
+          <div className="flex flex-1 items-start pt-8 sm:pt-10 md:pt-14">
             <div className="pointer-events-auto max-w-xl rounded-xl border border-white/10 bg-navy-950/48 px-4 py-3.5 sm:px-5 sm:py-4 backdrop-blur-[5px] shadow-[0_10px_35px_rgba(0,0,0,0.18)]">
               <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">{upcoming ? 'Your current reservation' : 'Your Blue Pair experience'}</p>
               <h1 className="font-display text-[2rem] sm:text-4xl md:text-5xl font-medium leading-[1.05] tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)]">{upcoming ? roomName : 'A stay made personal.'}</h1>
