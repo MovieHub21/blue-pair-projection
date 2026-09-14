@@ -1,39 +1,143 @@
 'use client'
-import {useMemo,useState} from 'react'
+import {useCallback,useEffect,useMemo,useRef,useState} from 'react'
 import {useSearchParams} from 'next/navigation'
 import Link from 'next/link'
-import {ChevronDown,ArrowRight,SlidersHorizontal} from 'lucide-react'
+import {ArrowLeft,ArrowRight,ChevronDown,SlidersHorizontal} from 'lucide-react'
 import type {RoomType,Room} from '../../../data/mock'
 
 export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];rooms:Room[]}){
- const params=useSearchParams(); const[type,setType]=useState('All'); const[price,setPrice]=useState('all')
- const types=['All',...roomTypes.map(r=>r.name)]
+ const params=useSearchParams();
+ const[type,setType]=useState('All');
+ const[price,setPrice]=useState('all');
+ const carouselRef=useRef<HTMLDivElement>(null);
+ const rafRef=useRef<number|null>(null);
+ const types=['All',...roomTypes.map(r=>r.name)];
+
  const filtered=useMemo(()=>{
   const byType=type==='All'?roomTypes:roomTypes.filter(r=>r.name===type)
   if(price==='low') return [...byType].sort((a,b)=>Number(a.price)-Number(b.price))
   if(price==='high') return [...byType].sort((a,b)=>Number(b.price)-Number(a.price))
   return byType
  },[roomTypes,type,price])
+
+ const availableForType=(name:string)=>{
+  if(name==='All') return rooms.filter(r=>r.status==='available').length
+  const roomType=roomTypes.find(r=>r.name===name)
+  return roomType?rooms.filter(r=>r.roomTypeId===roomType.id&&r.status==='available').length:0
+ }
+
+ const scrollToType=useCallback((name:string)=>{
+  setType(name)
+  const container=carouselRef.current
+  if(!container) return
+  const target=Array.from(container.children).find(el=>el.getAttribute('data-room-type')===name) as HTMLElement|undefined
+  target?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})
+ },[])
+
+ const syncTypeToScroll=useCallback(()=>{
+  const container=carouselRef.current
+  if(!container) return
+  const center=container.scrollLeft+container.clientWidth/2
+  let closest:string|undefined
+  let distance=Infinity
+  Array.from(container.children).forEach(el=>{
+   const item=el as HTMLElement
+   const itemCenter=item.offsetLeft+item.offsetWidth/2
+   const nextDistance=Math.abs(itemCenter-center)
+   if(nextDistance<distance){
+    distance=nextDistance
+    closest=item.getAttribute('data-room-type')||undefined
+   }
+  })
+  if(closest&&closest!==type) setType(closest)
+ },[type])
+
+ const handleCarouselScroll=()=>{
+  if(rafRef.current) cancelAnimationFrame(rafRef.current)
+  rafRef.current=requestAnimationFrame(syncTypeToScroll)
+ }
+
+ useEffect(()=>()=>{if(rafRef.current) cancelAnimationFrame(rafRef.current)},[])
+
  return <div className="container-w px-6 md:px-10 py-8">
   {params.get('checkin')&&<div className="mb-5 text-xs sm:text-sm bg-emerald-50 text-emerald-700 rounded-xl px-4 py-2.5 font-medium">Showing availability for {params.get('checkin')} → {params.get('checkout')}</div>}
-  <div className="mb-7 sm:mb-10 flex items-center gap-2">
-   <div className="hidden sm:flex flex-wrap gap-2 flex-1">
-    {types.map(t=><button key={t} onClick={()=>setType(t)} className={'px-3.5 py-2 rounded-full text-xs border '+(type===t?'bg-navy-950 text-white border-navy-950':'border-black/15 text-navy-700')}>{t}</button>)}
+
+  <div className="mb-7 sm:mb-10">
+   <div className="hidden sm:flex items-center gap-2">
+    <div className="flex flex-wrap gap-2 flex-1">
+     {types.map(t=><button key={t} onClick={()=>setType(t)} className={'px-3.5 py-2 rounded-full text-xs border '+(type===t?'bg-navy-950 text-white border-navy-950':'border-black/15 text-navy-700')}>{t}</button>)}
+    </div>
+    <label className="relative shrink-0">
+     <select value={price} onChange={e=>setPrice(e.target.value)} className="h-9 appearance-none rounded-lg border border-black/10 bg-white pl-3 pr-8 text-xs font-medium text-navy-800 outline-none">
+      <option value="all">Price</option><option value="low">Lowest first</option><option value="high">Highest first</option>
+     </select>
+     <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
+    </label>
    </div>
-   <label className="sm:hidden flex-1 relative">
-    <SlidersHorizontal size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
-    <select value={type} onChange={e=>setType(e.target.value)} className="w-full h-9 appearance-none rounded-lg border border-black/10 bg-white pl-9 pr-8 text-xs font-medium text-navy-800 outline-none">
-     {types.map(t=><option key={t} value={t}>{t==='All'?'All room types':t}</option>)}
-    </select>
-    <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
-   </label>
-   <label className="relative shrink-0">
-    <select value={price} onChange={e=>setPrice(e.target.value)} className="h-9 appearance-none rounded-lg border border-black/10 bg-white pl-3 pr-8 text-xs font-medium text-navy-800 outline-none">
-     <option value="all">Price</option><option value="low">Lowest first</option><option value="high">Highest first</option>
-    </select>
-    <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
-   </label>
+
+   <div className="sm:hidden">
+    <div className="flex items-center justify-between mb-2.5 px-0.5">
+     <div>
+      <p className="text-[10px] uppercase tracking-[0.16em] text-navy-400 font-semibold">Room types</p>
+      <p className="text-xs text-navy-500 mt-0.5">Swipe to explore</p>
+     </div>
+     <label className="relative shrink-0">
+      <SlidersHorizontal size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
+      <select value={price} onChange={e=>setPrice(e.target.value)} aria-label="Sort rooms by price" className="h-8 appearance-none rounded-lg border border-black/10 bg-white pl-7 pr-7 text-[10px] font-semibold text-navy-800 outline-none">
+       <option value="all">Price</option><option value="low">Lowest first</option><option value="high">Highest first</option>
+      </select>
+      <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-navy-500 pointer-events-none"/>
+     </label>
+    </div>
+
+    <div className="relative -mx-6 overflow-hidden">
+     <div ref={carouselRef} onScroll={handleCarouselScroll} className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory overscroll-x-contain px-[14vw] pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {types.map((name,index)=>{
+       const roomType=roomTypes.find(r=>r.name===name)
+       const available=availableForType(name)
+       const active=type===name
+       const image=roomType?.images?.[0]
+       return <button
+        key={name}
+        type="button"
+        data-room-type={name}
+        aria-pressed={active}
+        onClick={()=>scrollToType(name)}
+        className={'relative shrink-0 w-[72vw] max-w-[285px] min-h-[72px] snap-center snap-always rounded-2xl border text-left transition-all duration-300 ease-out '+(active?'bg-navy-950 text-white border-navy-950 shadow-[0_10px_28px_rgba(8,24,48,0.18)] scale-100':'bg-white text-navy-800 border-black/10 opacity-70 scale-[.94] shadow-sm')}
+       >
+        <div className="flex items-center gap-3 p-2.5">
+         <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-navy-100">
+          {image?<img src={image} alt="" className={'w-full h-full object-cover transition '+(active?'':'grayscale-[20%]')}/>:<div className="w-full h-full bg-navy-100"/>}
+          {active&&<span className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-xl"/>}
+         </div>
+         <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+           <span className="text-sm font-semibold truncate">{name}</span>
+           {index===0&&<span className={'text-[8px] uppercase tracking-[.12em] font-bold '+(active?'text-white/55':'text-navy-400')}>All</span>}
+          </div>
+          <div className={'flex items-center gap-2 mt-1 text-[10px] '+(active?'text-white/65':'text-navy-400')}>
+           <span>{available} available</span>
+           {roomType&&<><span>•</span><span>From ₦{Number(roomType.price).toLocaleString()}</span></>}
+          </div>
+         </div>
+         <span className={'w-7 h-7 rounded-full flex items-center justify-center shrink-0 '+(active?'bg-white/10 text-white':'bg-navy-50 text-navy-500')}>
+          {active?<ArrowRight size={13}/>:<ArrowRight size={12}/>} 
+         </span>
+        </div>
+       </button>
+      })}
+     </div>
+     {types.length>1&&<>
+      <button type="button" onClick={()=>scrollToType(types[Math.max(0,types.indexOf(type)-1)])} aria-label="Previous room type" className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowLeft size={12}/></button>
+      <button type="button" onClick={()=>scrollToType(types[Math.min(types.length-1,types.indexOf(type)+1)])} aria-label="Next room type" className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/95 border border-black/10 shadow-sm flex items-center justify-center text-navy-700"><ArrowRight size={12}/></button>
+     </>}
+    </div>
+    {types.length>1&&<div className="flex items-center justify-center gap-1 mt-2.5" aria-hidden="true">
+     {types.map(name=><span key={name} className={'h-1 rounded-full transition-all duration-300 '+(type===name?'w-4 bg-navy-950':'w-1 bg-navy-200')}/>) }
+    </div>}
+   </div>
   </div>
+
   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-16 sm:pb-20">
    {filtered.map(r=>{
     const count=rooms.filter(x=>x.roomTypeId===r.id&&x.status==='available').length
