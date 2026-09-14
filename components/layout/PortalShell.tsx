@@ -21,9 +21,7 @@ export default function PortalShell({ portalName, portalTag, groups, userName, u
     <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950/95 text-white backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-3.5 py-2.5">
       <button onClick={() => setOpen(true)} aria-label="Open navigation" className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-white/80 hover:bg-white/10 active:bg-white/10"><Menu size={20} strokeWidth={1.7} /></button>
       <Link href="/" aria-label="Blue Pair Signature Hotels" className="flex min-w-0 items-center gap-2.5 px-2">
-        <span className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 p-[1.5px] shadow-[0_0_18px_-5px_rgba(197,160,89,.5)]">
-          <span className="w-full h-full rounded-[6px] bg-navy-950 flex items-center justify-center font-display font-bold text-[11px] text-gold-300 tracking-tight">BP</span>
-        </span>
+        <img src="/icon-192.png" alt="Blue Pair Signature Hotels" className="w-8 h-8 shrink-0 rounded-lg object-cover" />
         <span className="min-w-0 text-left leading-none">
           <span className="block truncate font-display text-[13px] font-semibold uppercase tracking-[0.16em] text-white">Blue Pair</span>
           <span className="block truncate mt-0.5 text-[7px] font-semibold uppercase tracking-[0.22em] text-gold-400">Signature Hotels</span>
