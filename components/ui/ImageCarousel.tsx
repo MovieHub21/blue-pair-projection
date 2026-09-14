@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PointerEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Props = {
@@ -45,13 +46,13 @@ export default function ImageCarousel({
   const previous = () => setIndex(current => (current - 1 + safeSlides.length) % safeSlides.length)
   const next = () => setIndex(current => (current + 1) % safeSlides.length)
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (safeSlides.length < 2) return
     startX.current = event.clientX
     dragging.current = true
   }
 
-  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (!dragging.current || startX.current === null) return
     const distance = event.clientX - startX.current
     if (Math.abs(distance) >= 45) distance < 0 ? next() : previous()
@@ -65,13 +66,7 @@ export default function ImageCarousel({
   }
 
   return (
-    <div
-      className={`relative overflow-hidden touch-pan-y select-none ${className}`}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerCancel}
-    >
+    <div className={`relative overflow-hidden touch-pan-y select-none ${className}`} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onPointerLeave={handlePointerCancel}>
       <div className="flex h-full transition-transform duration-500 ease-out" style={{ transform: `translate3d(-${index * 100}%,0,0)` }}>
         {safeSlides.map((src, i) => (
           <div key={`${src}-${i}`} className="relative h-full w-full shrink-0">
@@ -80,12 +75,7 @@ export default function ImageCarousel({
         ))}
       </div>
 
-      {safeSlides.length > 1 && showArrows && (
-        <>
-          <button type="button" onClick={previous} aria-label="Previous image" className="absolute left-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronLeft size={18} /></button>
-          <button type="button" onClick={next} aria-label="Next image" className="absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronRight size={18} /></button>
-        </>
-      )}
+      {safeSlides.length > 1 && showArrows && <><button type="button" onClick={previous} aria-label="Previous image" className="absolute left-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronLeft size={18} /></button><button type="button" onClick={next} aria-label="Next image" className="absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronRight size={18} /></button></>}
 
       {safeSlides.length > 1 && showCounter && <span className="absolute right-3 top-3 rounded-full border border-white/15 bg-navy-950/60 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-md">{index + 1} / {safeSlides.length}</span>}
 
