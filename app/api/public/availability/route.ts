@@ -6,6 +6,15 @@ function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
+  // Physical room lifecycle is authoritative for what guests can do.
+  // Occupied rooms are taken — never offer a reservation for them.
+  if (room.status === 'occupied') return { status: 'taken', availableFrom: null }
+
+  // Cleaning/maintenance rooms can be reserved, but cannot be booked/paid for yet.
+  if (room.status === 'cleaning' || room.status === 'cleaning_required' || room.status === 'maintenance') {
+    return { status: 'availableSoon', availableFrom: null }
+  }
+
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
   const overlapping = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (overlapping.length) {
@@ -13,15 +22,8 @@ function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: stri
     return { status: 'taken', availableFrom: latest.check_out }
   }
 
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
-  const current = paid.filter(b => b.check_in <= today && b.check_out > today).sort((a, b) => b.check_out.localeCompare(a.check_out))[0]
-  if (current) {
-    if (current.check_out < checkIn) return { status: 'available', availableFrom: current.check_out }
-    return { status: 'availableSoon', availableFrom: current.check_out }
-  }
-
   if (room.status === 'available') return { status: 'available', availableFrom: checkIn }
-  return { status: 'availableSoon', availableFrom: null }
+  return { status: 'taken', availableFrom: null }
 }
 
 export async function GET(request: Request) {
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
     if (!validDate(checkIn) || !validDate(checkOut) || !checkIn || !checkOut || checkIn >= checkOut) return NextResponse.json({ error: 'Valid check-in and check-out dates are required.' }, { status: 400 })
 
     const db = createSupabaseAdminClient()
-    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,floor').order('room_number')
+    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,images,floor').order('room_number')
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
@@ -66,12 +68,10 @@ export async function GET(request: Request) {
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
       if (ownReservation) {
-        // The database room status is authoritative. Once staff marks the room
-        // available, the guest's pending reservation becomes payable immediately.
         const roomIsOpen = room.status === 'available' && state.status === 'available'
         return {
           ...room,
-          guest_status: roomIsOpen ? 'reserved' : 'reserved',
+          guest_status: 'reserved',
           available_from: state.availableFrom,
           reservation_id: ownReservation.id,
           payment_ready: roomIsOpen || readyIds.has(ownReservation.id),
