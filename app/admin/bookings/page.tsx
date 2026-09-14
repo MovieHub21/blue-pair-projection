@@ -6,12 +6,20 @@ import { useStore } from '../../../store/useStore'
 import { naira, formatDate, nightsBetween, todayISO, addDaysISO } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Modal from '../../../components/ui/Modal'
-import { Search, UserRoundPlus, CreditCard, Banknote, Loader2 } from 'lucide-react'
+import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Plus, Check, X } from 'lucide-react'
 import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatcher'
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
 
 type PaymentMethod = 'Paystack' | 'Cash' | 'POS'
+type ExtraService = { id: string; name: string; price: number }
+
+const EXTRA_SERVICES: ExtraService[] = [
+  { id: 'laundry', name: 'Laundry Service', price: 5000 },
+  { id: 'feeding', name: 'Full stay Feeding', price: 17000 },
+  { id: 'gym', name: 'Gym House', price: 1500 },
+  { id: 'game', name: 'Game House', price: 5000 },
+]
 
 const emptyWalkIn = {
   name: '', email: '', phone: '', roomTypeId: '', checkIn: todayISO(), checkOut: addDaysISO(1),
@@ -30,6 +38,8 @@ export default function BookingManagement() {
   const [confirmingPayment, setConfirmingPayment] = useState<typeof bookings[0] | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
   const [savingPayment, setSavingPayment] = useState(false)
+  const [editingExtras, setEditingExtras] = useState<ExtraService[]>([])
+  const [savingExtras, setSavingExtras] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -61,6 +71,39 @@ export default function BookingManagement() {
   const walkInSubtotal = (walkInRoom?.price ?? 0) * walkInNights
   const walkInTax = Math.round(walkInSubtotal * 0.075)
   const walkInTotal = walkInSubtotal + walkInTax
+
+  function openBooking(booking: typeof bookings[0]) {
+    setActive(booking)
+    setEditingExtras(booking.extraServices ?? [])
+    setError(null)
+  }
+
+  function toggleExtra(service: ExtraService) {
+    setEditingExtras(current => current.some(x => x.id === service.id) ? current.filter(x => x.id !== service.id) : [...current, service])
+  }
+
+  async function saveBookingExtras() {
+    if (!active) return
+    setSavingExtras(true)
+    setError(null)
+    try {
+      const room = roomOf(active.roomTypeId)
+      const nights = Math.max(1, nightsBetween(active.checkIn, active.checkOut))
+      const roomSubtotal = (room?.price ?? 0) * nights
+      const extrasTotal = editingExtras.reduce((sum, item) => sum + Number(item.price), 0)
+      const total = roomSubtotal + extrasTotal + Math.round((roomSubtotal + extrasTotal) * 0.075)
+      const { error: dbError } = await supabase.from('bookings').update({ extra_services: editingExtras, amount: total }).eq('id', active.id)
+      if (dbError) throw new Error(dbError.message)
+      const updated = { ...active, extraServices: editingExtras, amount: total }
+      setActive(updated)
+      pushToast('Extra services and booking total updated', 'success')
+      await loadAll()
+    } catch (e: any) {
+      setError(e?.message || 'Unable to update extra services.')
+    } finally {
+      setSavingExtras(false)
+    }
+  }
 
   async function createWalkIn() {
     setError(null)
@@ -174,7 +217,7 @@ export default function BookingManagement() {
               <td className="p-4 text-navy-500">{roomOf(b.roomTypeId)?.name}</td><td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td><td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
               <td className="p-4 font-display">{naira(b.amount)}</td><td className="p-4"><StatusBadge status={b.paymentStatus} /></td><td className="p-4"><StatusBadge status={b.status} /></td>
               <td className="p-4"><div className="flex gap-2 flex-wrap">
-                <button onClick={() => setActive(b)} className="text-xs font-semibold text-navy-900">View</button>
+                <button onClick={() => openBooking(b)} className="text-xs font-semibold text-navy-900">View</button>
                 {b.paymentStatus !== 'paid' && b.status !== 'cancelled' && <button onClick={() => { setConfirmingPayment(b); setPaymentMethod(null); setError(null) }} className="text-xs font-semibold text-gold-700">Payment</button>}
                 {b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
                 {b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
@@ -187,14 +230,27 @@ export default function BookingManagement() {
       </div>
 
       <Modal open={!!active} onClose={() => setActive(null)} title="Booking details" subtitle={active?.reference}>
-        {active && <div className="flex flex-col gap-0.5">{[
-          ['Customer', custOf(active.customerId)?.name], ['Email', custOf(active.customerId)?.email], ['Phone', custOf(active.customerId)?.phone],
-          ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'], ['Room', roomOf(active.roomTypeId)?.name],
-          ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`], ['Guests', `${active.adults} adults, ${active.children} children`],
-          ['Amount', naira(active.amount)], ['Payment', active.paymentStatus], ['Special requests', active.specialRequests || 'None'],
-          ['Checked in at', (active as any).checkedInAt ? new Date((active as any).checkedInAt).toLocaleString('en-NG') : 'Not checked in'],
-          ['Checked out at', (active as any).checkedOutAt ? new Date((active as any).checkedOutAt).toLocaleString('en-NG') : 'Not checked out'],
-        ].map(([l,v]) => <div key={l} className="flex justify-between gap-5 text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium text-right">{v}</span></div>)}</div>}
+        {active && <div className="space-y-5">
+          <div className="flex flex-col gap-0.5">{[
+            ['Customer', custOf(active.customerId)?.name], ['Email', custOf(active.customerId)?.email], ['Phone', custOf(active.customerId)?.phone],
+            ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'], ['Room', roomOf(active.roomTypeId)?.name],
+            ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`], ['Guests', `${active.adults} adults, ${active.children} children`],
+            ['Payment', active.paymentStatus], ['Special requests', active.specialRequests || 'None'],
+            ['Checked in at', (active as any).checkedInAt ? new Date((active as any).checkedInAt).toLocaleString('en-NG') : 'Not checked in'],
+            ['Checked out at', (active as any).checkedOutAt ? new Date((active as any).checkedOutAt).toLocaleString('en-NG') : 'Not checked out'],
+          ].map(([l,v]) => <div key={l} className="flex justify-between gap-5 text-sm py-2 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium text-right">{v}</span></div>)}</div>
+
+          <div className="rounded-2xl border border-black/10 p-4">
+            <div className="flex items-start justify-between gap-4 mb-3"><div><h3 className="text-sm font-semibold">Extra services</h3><p className="text-xs text-navy-400 mt-1">Reception can add or remove services after the booking has been created.</p></div><span className="text-xs font-semibold">{naira(editingExtras.reduce((sum, x) => sum + x.price, 0))}</span></div>
+            <div className="grid sm:grid-cols-2 gap-2">{EXTRA_SERVICES.map(service => { const selected = editingExtras.some(x => x.id === service.id); return <button key={service.id} type="button" onClick={() => toggleExtra(service)} className={`rounded-xl border p-3 flex items-center gap-3 text-left transition ${selected ? 'border-navy-950 bg-navy-950 text-white' : 'border-black/10 bg-white hover:border-black/20'}`}><span className="flex-1"><b className="block text-xs">{service.name}</b><span className={`text-[10px] ${selected ? 'text-white/60' : 'text-navy-400'}`}>{naira(service.price)}</span></span>{selected ? <Check size={15}/> : <Plus size={15} className="text-navy-400"/>}</button> })}</div>
+            <div className="flex justify-between text-sm mt-4 pt-3 border-t border-black/10"><span>Current booking total</span><b>{naira(active.amount)}</b></div>
+            <div className="flex justify-between text-sm mt-1"><span>New total after services</span><b>{naira((roomOf(active.roomTypeId)?.price ?? 0) * Math.max(1, nightsBetween(active.checkIn, active.checkOut)) + editingExtras.reduce((sum, x) => sum + x.price, 0) + Math.round(((roomOf(active.roomTypeId)?.price ?? 0) * Math.max(1, nightsBetween(active.checkIn, active.checkOut)) + editingExtras.reduce((sum, x) => sum + x.price, 0)) * 0.075))}</b></div>
+            {error && <div className="mt-3 rounded-xl bg-red-50 text-red-700 text-xs p-3">{error}</div>}
+            <div className="flex justify-end mt-4"><button onClick={() => void saveBookingExtras()} disabled={savingExtras} className="btn-gold flex items-center gap-2">{savingExtras && <Loader2 size={14} className="animate-spin"/>}{savingExtras ? 'Saving…' : 'Save services & total'}</button></div>
+          </div>
+
+          <div className="rounded-xl bg-navy-50 p-3 text-xs text-navy-500">If a paid booking is changed after payment, the booking total is updated for the front desk. Any additional balance can be collected separately at reception.</div>
+        </div>}
       </Modal>
 
       <Modal open={showWalkIn} onClose={() => !creating && setShowWalkIn(false)} title="Create walk-in booking" subtitle="Reception can book for a guest without creating a guest account.">
