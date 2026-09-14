@@ -176,6 +176,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string
+          extra_services: Json
           id: string
           payment_status: string
           reference: string
@@ -196,6 +197,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id: string
+          extra_services?: Json
           id?: string
           payment_status?: string
           reference: string
@@ -216,6 +218,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          extra_services?: Json
           id?: string
           payment_status?: string
           reference?: string
@@ -1084,12 +1087,76 @@ export type Database = {
         }
         Relationships: []
       }
+      room_service_orders: {
+        Row: {
+          attended_at: string | null
+          booking_ref: string
+          created_at: string
+          customer_id: string
+          delivered_at: string | null
+          guest_name: string
+          id: string
+          items: Json
+          notes: string
+          payment_reference: string | null
+          payment_status: string
+          reference: string
+          room: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          attended_at?: string | null
+          booking_ref?: string
+          created_at?: string
+          customer_id: string
+          delivered_at?: string | null
+          guest_name?: string
+          id: string
+          items?: Json
+          notes?: string
+          payment_reference?: string | null
+          payment_status?: string
+          reference: string
+          room: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          attended_at?: string | null
+          booking_ref?: string
+          created_at?: string
+          customer_id?: string
+          delivered_at?: string | null
+          guest_name?: string
+          id?: string
+          items?: Json
+          notes?: string
+          payment_reference?: string | null
+          payment_status?: string
+          reference?: string
+          room?: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_service_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_types: {
         Row: {
           active: boolean
           amenities: string[]
           bed_type: string
-          category: string
           created_at: string
           description: string
           guests: number
@@ -1104,7 +1171,6 @@ export type Database = {
           active?: boolean
           amenities?: string[]
           bed_type?: string
-          category: string
           created_at?: string
           description?: string
           guests?: number
@@ -1119,7 +1185,6 @@ export type Database = {
           active?: boolean
           amenities?: string[]
           bed_type?: string
-          category?: string
           created_at?: string
           description?: string
           guests?: number
@@ -1136,22 +1201,31 @@ export type Database = {
         Row: {
           floor: string
           id: string
+          image_url: string | null
+          name: string
           room_number: string
           room_type_id: string
+          slug: string
           status: string
         }
         Insert: {
           floor?: string
           id: string
+          image_url?: string | null
+          name?: string
           room_number: string
           room_type_id: string
+          slug?: string
           status?: string
         }
         Update: {
           floor?: string
           id?: string
+          image_url?: string | null
+          name?: string
           room_number?: string
           room_type_id?: string
+          slug?: string
           status?: string
         }
         Relationships: [
