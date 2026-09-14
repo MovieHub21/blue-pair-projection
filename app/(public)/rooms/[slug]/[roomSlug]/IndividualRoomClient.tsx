@@ -30,18 +30,18 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
         <button
           type="button"
           onClick={() => setSelected(selected)}
-          className="group relative min-h-[360px] md:min-h-[500px] overflow-hidden rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
+          className="group relative h-[240px] sm:h-[300px] md:h-[500px] overflow-hidden rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
           aria-label={`View ${name}, photo ${selected + 1}`}
         >
           <Image src={mainImage} alt={`${name}, photo ${selected + 1}`} fill priority className="object-cover transition duration-700 group-hover:scale-[1.025]" sizes="(max-width: 768px) 100vw, 65vw" />
           <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-white/5 pointer-events-none" />
-          <div className="absolute left-4 bottom-4 rounded-full border border-white/20 bg-navy-950/70 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+          <div className="absolute left-3 bottom-3 md:left-4 md:bottom-4 rounded-full border border-white/20 bg-navy-950/70 px-2.5 py-1.5 md:px-3 md:py-1.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
             Photo {selected + 1} of {images.length}
           </div>
         </button>
 
         {sideImages.length > 0 && (
-          <div className={`grid gap-2.5 md:gap-3 ${sideImages.length > 1 ? 'grid-rows-2' : ''}`}>
+          <div className="flex md:grid gap-2.5 md:gap-3 overflow-x-auto md:overflow-visible pb-0.5 md:pb-0 md:grid-rows-2">
             {sideImages.map((image, sideIndex) => {
               const actualIndex = images.findIndex(value => value === image)
               return (
@@ -49,23 +49,24 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
                   key={`${image}-${actualIndex}`}
                   type="button"
                   onClick={() => setSelected(actualIndex)}
-                  className="group relative min-h-[170px] md:min-h-0 overflow-hidden rounded-[1.25rem] border border-black/10 bg-navy-950 text-left"
+                  className="group relative shrink-0 w-[92px] h-[68px] sm:w-[112px] sm:h-[78px] md:w-auto md:h-auto md:min-h-0 overflow-hidden rounded-xl md:rounded-[1.25rem] border border-black/10 bg-navy-950 text-left"
                   aria-label={`View ${name}, photo ${actualIndex + 1}`}
                 >
-                  <Image src={image} alt={`${name}, photo ${actualIndex + 1}`} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 768px) 100vw, 35vw" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-950/35 via-transparent to-transparent" />
-                  <span className="absolute right-3 bottom-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-navy-950 shadow-sm backdrop-blur-sm">
+                  <Image src={image} alt={`${name}, photo ${actualIndex + 1}`} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 768px) 112px, 35vw" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-transparent" />
+                  <span className="absolute inset-x-1.5 bottom-1.5 md:right-3 md:inset-x-auto md:bottom-3 rounded-full bg-white/90 px-2 py-1 text-[9px] md:text-[10px] font-semibold text-navy-950 shadow-sm backdrop-blur-sm text-center">
                     View {actualIndex + 1}
                   </span>
                 </button>
               )
             })}
+            <span className="self-center shrink-0 text-[9px] font-medium uppercase tracking-[0.12em] text-navy-400 md:hidden">Tap a photo</span>
           </div>
         )}
       </div>
 
       {images.length > 1 && (
-        <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1">
+        <div className="hidden md:flex items-center gap-2 mt-3 overflow-x-auto pb-1">
           {images.map((image, index) => (
             <button
               key={`${image}-thumb-${index}`}
