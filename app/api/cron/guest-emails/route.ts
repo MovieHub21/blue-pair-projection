@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
-import { preArrivalEmail, checkInReminderEmail, checkoutReminderEmail, reviewRequestEmail } from '../../../../lib/email/templates'
+import { preArrivalEmail, checkInReminderEmail, checkoutReminderEmail, reviewRequestEmail, reservationReadyEmail } from '../../../../lib/email/templates'
 
 function dateOnly(value: string) { return new Date(`${value}T00:00:00Z`) }
 function diffDays(from: string, to: string) { return Math.round((dateOnly(to).getTime() - dateOnly(from).getTime()) / 86400000) }
@@ -107,11 +107,9 @@ export async function GET(request: Request) {
       if (!recipient) continue
       const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bluepairhotel.com'
       const paymentUrl = `${site}/account/bookings`
-      const subject = 'Your Blue Pair room is available — payment can now secure it'
-      const html = `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2 style="margin-bottom:8px">Your room is ready to secure</h2><p>Hello ${customer?.name || 'Guest'},</p><p>Room ${room.room_number} at Blue Pair Hotel is now showing as <strong>available</strong> for your stay from <strong>${booking.check_in}</strong> to <strong>${booking.check_out}</strong>.</p><p>Your reservation is still unpaid, so it does not hold the room exclusively. <strong>The first successful payment secures the room.</strong></p><p><a href="${paymentUrl}" style="display:inline-block;background:#c79a3e;color:#0a1229;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Open my booking &amp; pay</a></p><p style="font-size:13px;color:#667085">Reservation reference: ${booking.reference} · Room ${room.room_number}</p></div>`
-      const text = `Hello ${customer?.name || 'Guest'}, room ${room.room_number} at Blue Pair Hotel is now available for ${booking.check_in} to ${booking.check_out}. Your reservation is unpaid and does not exclusively hold the room. The first successful payment secures it. Open ${paymentUrl} to pay. Reference: ${booking.reference}.`
-      const result = await sendResendEmail({to:recipient,subject,html,text})
-      const { error: logError } = await supabase.from('email_logs').insert({dedupe_key:dedupeKey,event:'reservation_ready',booking_id:booking.id,recipient,subject,resend_id:result.id??null})
+      const email = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, checkIn: booking.check_in, checkOut: booking.check_out, paymentUrl })
+      const result = await sendResendEmail({to:recipient,subject:email.subject,html:email.html,text:email.text})
+      const { error: logError } = await supabase.from('email_logs').insert({dedupe_key:dedupeKey,event:'reservation_ready',booking_id:booking.id,recipient,subject:email.subject,resend_id:result.id??null})
       if (logError) { console.error('[guest-email-cron] reservation-ready log failed', logError.message); continue }
       sent++
       if (customer?.user_id) {
