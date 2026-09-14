@@ -8,7 +8,6 @@ import CancelBookingButton from '../CancelBookingButton'
 import type { RoomType, Booking } from '../../../../data/mock'
 
 type BookingWithRoom = Booking & { room: RoomType | null; roomNumber?: string | null }
-
 type PaymentReadiness = { ready: boolean; checking: boolean }
 
 export default function MyBookingsClient({ bookings }: { bookings: BookingWithRoom[] }) {
@@ -21,18 +20,29 @@ export default function MyBookingsClient({ bookings }: { bookings: BookingWithRo
     let cancelled = false
     const pending = bookings.filter(b => b.paymentStatus !== 'paid' && b.status !== 'cancelled' && b.room?.id && b.roomId)
     if (!pending.length) return
-    setReadiness(Object.fromEntries(pending.map(b => [b.id, { ready: false, checking: true }])))
-    Promise.all(pending.map(async b => {
-      try {
-        const response = await fetch(`/api/public/availability?checkin=${encodeURIComponent(b.checkIn)}&checkout=${encodeURIComponent(b.checkOut)}&roomTypeId=${encodeURIComponent(b.room!.id)}`, { cache:'no-store' })
-        const data = response.ok ? await response.json() : null
-        const room = data?.rooms?.find((r:any) => r.id === b.roomId)
-        return [b.id, { ready: Boolean(room?.payment_ready), checking: false }] as const
-      } catch {
-        return [b.id, { ready: false, checking: false }] as const
-      }
-    })).then(results => { if (!cancelled) setReadiness(Object.fromEntries(results)) })
-    return () => { cancelled = true }
+
+    const checkReadiness = async () => {
+      const initial = Object.fromEntries(pending.map(b => [b.id, { ready: false, checking: true }]))
+      if (!cancelled) setReadiness(initial)
+      const results = await Promise.all(pending.map(async b => {
+        try {
+          const response = await fetch(`/api/public/availability?checkin=${encodeURIComponent(b.checkIn)}&checkout=${encodeURIComponent(b.checkOut)}&roomTypeId=${encodeURIComponent(b.room!.id)}&_=${Date.now()}`, { cache:'no-store' })
+          const data = response.ok ? await response.json() : null
+          const room = data?.rooms?.find((r:any) => r.id === b.roomId)
+          return [b.id, { ready: Boolean(room?.payment_ready), checking: false }] as const
+        } catch {
+          return [b.id, { ready: false, checking: false }] as const
+        }
+      }))
+      if (!cancelled) setReadiness(Object.fromEntries(results))
+    }
+
+    void checkReadiness()
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void checkReadiness() }, 15000)
+    const onFocus = () => void checkReadiness()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
   }, [bookings])
 
   async function payForBooking(booking: BookingWithRoom) {
