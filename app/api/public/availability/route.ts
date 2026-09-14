@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 
 function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
-function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
+function guestStatus(room: any, bookings: any[], checkIn: string) {
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
-  const overlapping = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
+  const overlapping = paid.filter(b => overlaps(checkIn, '9999-12-31', b.check_in, b.check_out))
   if (overlapping.length) {
     const latest = overlapping.reduce((a, b) => a.check_out > b.check_out ? a : b)
     return { status: 'taken', availableFrom: latest.check_out }
@@ -34,17 +35,37 @@ export async function GET(request: Request) {
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
-      db.from('bookings').select('id,room_id,room_type_id,check_in,check_out,status,payment_status').in('status', ['confirmed', 'checked_in']),
+      db.from('bookings').select('id,room_id,room_type_id,check_in,check_out,status,payment_status').in('status', ['pending', 'confirmed', 'checked_in']),
     ])
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
 
-    const result = (rooms ?? []).map(room => ({ ...room, ...(() => { const state = guestStatus(room, (bookings ?? []).filter(b => b.room_id === room.id), checkIn, checkOut); return { guest_status: state.status, available_from: state.availableFrom } })() }))
-    const byType: Record<string, { available: number; availableSoon: number; taken: number; earliestAvailable: string | null }> = {}
+    let currentCustomerId: string | null = null
+    try {
+      const authDb = createSupabaseServerClient()
+      const { data: { user } } = await authDb.auth.getUser()
+      if (user) {
+        const { data: customer } = await db.from('customers').select('id').eq('user_id', user.id).maybeSingle()
+        currentCustomerId = customer?.id ?? null
+      }
+    } catch { /* Availability remains public when the visitor is signed out. */ }
+
+    const result = (rooms ?? []).map(room => {
+      const roomBookings = (bookings ?? []).filter(b => b.room_id === room.id)
+      const ownReservation = currentCustomerId
+        ? roomBookings.find(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out))
+        : null
+      if (ownReservation) return { ...room, guest_status: 'reserved', available_from: null, reservation_id: ownReservation.id }
+      const state = guestStatus(room, roomBookings, checkIn)
+      return { ...room, guest_status: state.status, available_from: state.availableFrom }
+    })
+
+    const byType: Record<string, { available: number; availableSoon: number; taken: number; reserved: number; earliestAvailable: string | null }> = {}
     for (const room of result) {
-      const row = byType[room.room_type_id] ?? { available: 0, availableSoon: 0, taken: 0, earliestAvailable: null }
+      const row = byType[room.room_type_id] ?? { available: 0, availableSoon: 0, taken: 0, reserved: 0, earliestAvailable: null }
       if (room.guest_status === 'available') row.available++
       else if (room.guest_status === 'availableSoon') row.availableSoon++
+      else if (room.guest_status === 'reserved') row.reserved++
       else row.taken++
       if (room.available_from && (!row.earliestAvailable || room.available_from < row.earliestAvailable)) row.earliestAvailable = room.available_from
       byType[room.room_type_id] = row
