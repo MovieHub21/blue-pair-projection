@@ -4,10 +4,9 @@ import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import { naira, formatDate, todayISO } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
-import { supabase } from '../../../lib/supabase/client'
 
 export default function CheckOutManagement() {
-  const { bookings, roomTypes, customers, rooms, checkOutBooking } = useStore()
+  const { bookings, roomTypes, customers, rooms, checkOutBooking, pushToast } = useStore()
   const [note, setNote] = useState<Record<string,string>>({})
   const today = todayISO()
   const departures = bookings.filter(b => b.status === 'checked_in' && b.checkOut >= today).sort((a, b) => a.checkOut.localeCompare(b.checkOut))
@@ -16,8 +15,11 @@ export default function CheckOutManagement() {
   const physicalRoom = (id?: string) => rooms.find(r => r.id === id)
 
   async function checkout(id: string) {
+    const response = await fetch('/api/admin/room-lifecycle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'checkout', bookingId: id }) })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) { pushToast(data.error || 'Could not check out guest.', 'error'); return }
     checkOutBooking(id)
-    await supabase.from('bookings').update({ checked_out_at: new Date().toISOString() }).eq('id', id)
+    pushToast('Guest checked out. Housekeeping has been notified.', 'success')
   }
 
   return (
