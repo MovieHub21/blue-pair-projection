@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import EditablePrice from '../../../components/admin/EditablePrice'
 import Modal from '../../../components/ui/Modal'
+import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import ImageUploader from '../../../components/admin/ImageUploader'
 import { Plus } from 'lucide-react'
 import type { BillboardSpace } from '../../../data/mock'
@@ -13,6 +14,7 @@ export default function BillboardManagement() {
   const { billboards, addBillboard, updateBillboard, toggleBillboardAvailable, deleteBillboard } = useStore()
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<BillboardSpace | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<BillboardSpace | null>(null)
   const [draft, setDraft] = useState({ location: '', dimensions: '', price: '', image: DEFAULT_IMAGE })
   const [editDraft, setEditDraft] = useState({ location: '', dimensions: '', price: '', image: '' })
 
@@ -35,10 +37,6 @@ export default function BillboardManagement() {
     setEditing(null)
   }
 
-  function remove(id: string) {
-    if (confirm('Delete this billboard space?')) deleteBillboard(id)
-  }
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
@@ -56,7 +54,7 @@ export default function BillboardManagement() {
                 <EditablePrice value={b.price} onSave={v => updateBillboard(b.id, { price: v })} />
                 <button onClick={() => toggleBillboardAvailable(b.id)} className={b.available ? 'pill-green' : 'pill-red'}>{b.available ? 'Available' : 'Reserved'}</button>
               </div>
-              <div className="flex gap-2 mt-3"><button onClick={() => openEdit(b)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => remove(b.id)} className="text-xs font-semibold text-red-600">Delete</button></div>
+              <div className="flex gap-2 mt-3"><button onClick={() => openEdit(b)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => setDeleteTarget(b)} className="text-xs font-semibold text-red-600">Delete</button></div>
             </div>
           </div>
         ))}
@@ -70,13 +68,7 @@ export default function BillboardManagement() {
             <div><label className="field-label">Dimensions</label><input className="field-input" value={draft.dimensions} onChange={e=>setDraft({...draft,dimensions:e.target.value})} placeholder="20ft x 10ft" /></div>
             <div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})} /></div>
           </div>
-          <div>
-            <label className="field-label">Photo</label>
-            <div className="flex items-center gap-4">
-              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={draft.image} className="w-full h-full object-cover" alt="" /></div>
-              <ImageUploader folder="billboards/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
-            </div>
-          </div>
+          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={draft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder="billboards/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} /></div></div>
         </div>
         <button onClick={submit} className="btn-primary w-full justify-center mt-6">Add space</button>
       </Modal>
@@ -84,20 +76,12 @@ export default function BillboardManagement() {
       <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit billboard space">
         <div className="grid gap-4">
           <div><label className="field-label">Location</label><input className="field-input" value={editDraft.location} onChange={e=>setEditDraft({...editDraft,location:e.target.value})} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label">Dimensions</label><input className="field-input" value={editDraft.dimensions} onChange={e=>setEditDraft({...editDraft,dimensions:e.target.value})} /></div>
-            <div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={editDraft.price} onChange={e=>setEditDraft({...editDraft,price:e.target.value})} /></div>
-          </div>
-          <div>
-            <label className="field-label">Photo</label>
-            <div className="flex items-center gap-4">
-              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={editDraft.image} className="w-full h-full object-cover" alt="" /></div>
-              <ImageUploader folder={`billboards/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
-            </div>
-          </div>
+          <div className="grid grid-cols-2 gap-4"><div><label className="field-label">Dimensions</label><input className="field-input" value={editDraft.dimensions} onChange={e=>setEditDraft({...editDraft,dimensions:e.target.value})} /></div><div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={editDraft.price} onChange={e=>setEditDraft({...editDraft,price:e.target.value})} /></div></div>
+          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={editDraft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder={`billboards/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} /></div></div>
         </div>
         <button onClick={saveEdit} className="btn-primary w-full justify-center mt-6">Save changes</button>
       </Modal>
+      <DeleteConfirmDialog open={!!deleteTarget} itemName={deleteTarget?.location} description="This billboard space will be permanently removed from management." onCancel={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) deleteBillboard(deleteTarget.id) }} />
     </div>
   )
 }
