@@ -101,8 +101,8 @@ export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];room
    {filtered.map((r,index)=>{
     const count=rooms.filter(x=>x.roomTypeId===r.id&&x.status==='available').length
     const featured=index===0
-    return <Link href={`/rooms/${r.slug}`} key={r.id} className={featured?'group md:col-span-12':''}>
-     <article className={'group overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_10px_35px_rgba(8,24,48,0.06)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(8,24,48,0.11)] '+(featured?'md:grid md:grid-cols-[1.35fr_.65fr] md:min-h-[390px]':'md:col-span-6 lg:col-span-4')}>
+    return <Link href={`/rooms/${r.slug}`} key={r.id} className={featured?'group md:col-span-12':'group md:col-span-6 lg:col-span-4'}>
+     <article className={'group overflow-hidden rounded-[1.35rem] border border-black/[0.07] bg-white shadow-[0_10px_35px_rgba(8,24,48,0.06)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(8,24,48,0.11)] '+(featured?'md:grid md:grid-cols-[1.35fr_.65fr] md:min-h-[390px]':'')}>
       <div className={'relative overflow-hidden '+(featured?'h-64 md:h-full':'h-52 sm:h-60')}>
        <img src={r.images[0]} className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.035]" alt={r.name}/>
        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/55 via-transparent to-transparent opacity-80"/>
@@ -117,7 +117,7 @@ export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];room
        <p className={'text-xs sm:text-sm text-navy-500 mt-2 leading-relaxed '+(featured?'line-clamp-4 max-w-xl':'line-clamp-2')}>{r.description}</p>
        <div className="grid grid-cols-2 gap-2 mt-4 max-w-xs">
         <div className="rounded-xl bg-navy-50 px-3 py-2"><div className="flex items-center gap-1.5 text-navy-400"><Users size={12}/><span className="text-[9px] uppercase tracking-wider">Guests</span></div><p className="text-xs font-semibold mt-1">Up to {r.guests}</p></div>
-        <div className="rounded-xl bg-navy-50 px-3 py-2"><div className="flex items-center gap-1.5 text-navy-400"><Maximize2 size={12}/><span className="text-[9px] uppercase tracking-wider">Space</span></div><p className="text-xs font-semibold mt-1">{r.size}</p></div>
+        <div className="rounded-xl bg-navy-50 px-3 py-2"><div className="flex items-center gap-1.5 text-navy-400"><Maximize2 size={12}/><span className="text-[9px] uppercase tracking-wider">Space</span></div><p className="text-xs font-semibold mt-1">{r.sizeSqm} m²</p></div>
        </div>
        <div className="flex items-center justify-between gap-3 mt-5 pt-4 border-t border-black/[0.07]"><span className="text-[10px] text-navy-400">{count} of {rooms.filter(x=>x.roomTypeId===r.id).length} rooms available</span><span className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">Explore room <ArrowRight size={14} className="transition-transform group-hover:translate-x-1"/></span></div>
       </div>
