@@ -13,7 +13,7 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
       <div className="relative h-56 overflow-hidden">
         <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <span className={'absolute top-3.5 left-3.5 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>
-          {available ? `${count} available` : 'Sold out'}
+          {available ? `${count} available` : 'Fully booked'}
         </span>
       </div>
       <div className="p-5 flex flex-col gap-3 flex-1">
@@ -34,7 +34,7 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
         </div>
         <div className="flex gap-2 mt-auto pt-2">
           <Link href={`/rooms/${room.slug}`} className="btn-outline btn-sm flex-1 justify-center">View room</Link>
-          <Link href={`/booking?room=${room.slug}`} aria-disabled={!available} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>{available ? 'Book now' : 'Sold out'}</Link>
+          <Link href={`/booking?room=${room.slug}`} aria-disabled={!available} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>{available ? 'Book now' : 'Fully booked'}</Link>
         </div>
       </div>
     </div>
