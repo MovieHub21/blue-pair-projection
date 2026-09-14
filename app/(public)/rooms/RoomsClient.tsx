@@ -112,7 +112,7 @@ export default function RoomsClient({roomTypes,rooms}:{roomTypes:RoomType[];room
       <div className={'relative overflow-hidden '+(featured?'h-64 md:h-full':middle?'h-56 sm:h-64 md:h-64':paired?'h-52 sm:h-60 md:h-full '+(reversed?'md:order-2':'md:order-1'):'h-52 sm:h-60 md:h-56')}>
        <img src={r.images[0]} className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.035]" alt={r.name}/>
        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent opacity-85"/>
-       <span className={'absolute top-4 left-4 '+(count?'pill-green':'pill-red')+' bg-white/95'}>{count?`${count} available`:'Sold out'}</span>
+       <span className={'absolute top-4 left-4 '+(count?'pill-green':'pill-red')+' bg-white/95'}>{count?`${count} available`:'Fully booked'}</span>
        {featured&&<span className="absolute bottom-4 left-4 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] uppercase tracking-[.16em] font-semibold px-3 py-1.5">Signature room</span>}
       </div>
       <div className={'flex flex-col min-w-0 '+(featured?'p-5 sm:p-7 md:p-9 justify-center':middle?'p-4 sm:p-5 md:p-5':paired?'p-5 sm:p-6 md:p-7 justify-center '+(reversed?'md:order-1':'md:order-2'):'p-4 sm:p-5 md:p-7 justify-center')}>
