@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       </div>
 
       <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[260px] md:min-h-[340px] text-white shadow-pop">
-        <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={5500} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+        <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/60 via-navy-950/25 to-navy-950/10 pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-cream-50 via-cream-50/80 to-transparent pointer-events-none" />
       </section>
