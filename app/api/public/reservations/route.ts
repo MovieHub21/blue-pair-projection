@@ -18,7 +18,6 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const { roomTypeId, roomId, checkIn, checkOut, adults = 2, children = 0, amount } = body ?? {}
-
     if (!roomTypeId || !validDate(checkIn) || !validDate(checkOut) || checkIn >= checkOut) {
       return NextResponse.json({ error: 'Valid room and stay dates are required.' }, { status: 400 })
     }
@@ -28,22 +27,9 @@ export async function POST(request: Request) {
       db.from('room_types').select('id,price').eq('id', roomTypeId).maybeSingle(),
       db.from('bookings').select('id,room_id,check_in,check_out,status,payment_status').in('status', ['confirmed', 'checked_in']).eq('payment_status', 'paid'),
     ])
-
     if (roomTypeError) throw roomTypeError
     if (bookingsError) throw bookingsError
     if (!roomType) return NextResponse.json({ error: 'That room type could not be found.' }, { status: 404 })
-
-    let selectedRoomId: string | null = roomId || null
-    if (selectedRoomId) {
-      const { data: room } = await db.from('rooms').select('id,room_type_id,status').eq('id', selectedRoomId).maybeSingle()
-      if (!room || room.room_type_id !== roomTypeId) return NextResponse.json({ error: 'That room is no longer available.' }, { status: 409 })
-      const conflict = (paidBookings ?? []).some(b => b.room_id === selectedRoomId && overlaps(checkIn, checkOut, b.check_in, b.check_out))
-      if (conflict) return NextResponse.json({ error: 'That room has just been secured by another guest. Please choose another room.' }, { status: 409 })
-    } else {
-      const { data: rooms } = await db.from('rooms').select('id,status').eq('room_type_id', roomTypeId).order('room_number')
-      const freeRoom = (rooms ?? []).find(room => room.status === 'available' && !(paidBookings ?? []).some(b => b.room_id === room.id && overlaps(checkIn, checkOut, b.check_in, b.check_out)))
-      selectedRoomId = freeRoom?.id ?? null
-    }
 
     const { data: existingCustomer } = await db.from('customers').select('id').eq('user_id', user.id).maybeSingle()
     let customerId = existingCustomer?.id as string | undefined
@@ -55,9 +41,7 @@ export async function POST(request: Request) {
         : { data: null as any }
       if (emailCustomer && (!emailCustomer.user_id || emailCustomer.user_id === user.id)) {
         customerId = emailCustomer.id
-        if (!emailCustomer.user_id) {
-          await db.from('customers').update({ user_id: user.id }).eq('id', customerId).is('user_id', null)
-        }
+        if (!emailCustomer.user_id) await db.from('customers').update({ user_id: user.id }).eq('id', customerId).is('user_id', null)
       }
     }
 
@@ -71,6 +55,31 @@ export async function POST(request: Request) {
         phone: user.user_metadata?.phone || '',
       })
       if (error) throw error
+    }
+
+    const { data: existingReservation } = await db.from('bookings')
+      .select('id,reference')
+      .eq('customer_id', customerId)
+      .eq('room_type_id', roomTypeId)
+      .eq('status', 'pending')
+      .neq('payment_status', 'paid')
+      .gte('check_out', checkIn)
+      .lte('check_in', checkOut)
+      .limit(1)
+      .maybeSingle()
+    if (existingReservation) return NextResponse.json({ booking: existingReservation, alreadyReserved: true }, { status: 200 })
+
+    let selectedRoomId: string | null = roomId || null
+    const { data: rooms } = await db.from('rooms').select('id,status,room_type_id').eq('room_type_id', roomTypeId).order('room_number')
+
+    if (selectedRoomId) {
+      const room = (rooms ?? []).find(r => r.id === selectedRoomId)
+      if (!room) return NextResponse.json({ error: 'That room could not be found.' }, { status: 404 })
+      const paidConflict = (paidBookings ?? []).some(b => b.room_id === selectedRoomId && overlaps(checkIn, checkOut, b.check_in, b.check_out))
+      if (paidConflict) return NextResponse.json({ error: 'That room has just been secured by another guest. Please choose another room.' }, { status: 409 })
+    } else {
+      const freeRoom = (rooms ?? []).find(room => room.status === 'available' && !(paidBookings ?? []).some(b => b.room_id === room.id && overlaps(checkIn, checkOut, b.check_in, b.check_out)))
+      selectedRoomId = freeRoom?.id ?? null
     }
 
     const reference = `BPH-${Math.floor(24900 + Math.random() * 900)}`
@@ -87,7 +96,7 @@ export async function POST(request: Request) {
       amount: Number(amount) || Number(roomType.price) * Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)),
       payment_status: 'pending',
       status: 'pending',
-    }).select('id,reference').single()
+    }).select('id,reference,room_id').single()
 
     if (bookingError) throw bookingError
     return NextResponse.json({ booking }, { status: 201 })
