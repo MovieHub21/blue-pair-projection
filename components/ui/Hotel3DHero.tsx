@@ -127,29 +127,46 @@ function createScene(THREE: any, canvas: HTMLCanvasElement) {
   let currentY = 0
   let disposed = false
   let lastInteraction = performance.now()
+  const isMobile = () => canvas.clientWidth < 768
+
   const pointerMove = (event: PointerEvent) => {
+    if (isMobile()) return
     const rect = canvas.getBoundingClientRect()
     if (!rect.width || !rect.height) return
     targetX = ((event.clientX - rect.left) / rect.width - 0.5) * 0.9
     targetY = ((event.clientY - rect.top) / rect.height - 0.5) * 0.45
     lastInteraction = performance.now()
   }
-  const pointerLeave = () => { targetX = 0; targetY = 0; lastInteraction = performance.now() }
+  const pointerLeave = () => {
+    if (isMobile()) return
+    targetX = 0
+    targetY = 0
+    lastInteraction = performance.now()
+  }
   canvas.addEventListener('pointermove', pointerMove)
   canvas.addEventListener('pointerleave', pointerLeave)
 
   const animate = () => {
     if (disposed) return
     raf = requestAnimationFrame(animate)
-    const idle = performance.now() - lastInteraction > 2200
-    if (idle) targetX += Math.sin(performance.now() * 0.00018) * 0.0006
-    currentX += (targetX - currentX) * 0.045
-    currentY += (targetY - currentY) * 0.045
-    hotel.rotation.y = currentX * 0.32
-    hotel.rotation.x = currentY * -0.08
-    const mobile = canvas.clientWidth < 768
-    camera.position.x += ((mobile ? 10 : 13) + currentX * (mobile ? 2.5 : 4) - camera.position.x) * 0.025
-    camera.position.y += ((mobile ? 8.4 : 9) - currentY * (mobile ? 1 : 2) - camera.position.y) * 0.025
+    const mobile = isMobile()
+
+    if (mobile) {
+      // Mobile is intentionally hands-free: touching the model never captures the page scroll.
+      // A gentle continuous turn keeps the architectural view alive without feeling sluggish.
+      hotel.rotation.y += 0.0018
+      currentY += (0 - currentY) * 0.045
+    } else {
+      const idle = performance.now() - lastInteraction > 2200
+      if (idle) targetX += Math.sin(performance.now() * 0.00018) * 0.0006
+      currentX += (targetX - currentX) * 0.045
+      currentY += (targetY - currentY) * 0.045
+      hotel.rotation.y = currentX * 0.32
+      hotel.rotation.x = currentY * -0.08
+    }
+
+    camera.position.x += ((mobile ? 10 : 13) + (mobile ? 0 : currentX * 4) - camera.position.x) * 0.025
+    camera.position.y += ((mobile ? 8.4 : 9) - currentY * (mobile ? 0 : 2) - camera.position.y) * 0.025
     camera.lookAt(0, 6.4, 0)
     renderer.render(scene, camera)
   }
@@ -191,7 +208,7 @@ export default function Hotel3DHero({ className = '' }: ThreeCanvasProps) {
       <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(7,21,54,.28)_75%,rgba(7,21,54,.72)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-navy-950/55 via-navy-950/15 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-navy-950/75 via-navy-950/25 to-transparent" />
-      <canvas ref={canvasRef} aria-label="Interactive three-dimensional Blue Pair hotel visualization" className={`relative z-[1] h-full w-full touch-none transition-opacity duration-700 ${state === 'fallback' ? 'opacity-0' : 'opacity-100'}`} />
+      <canvas ref={canvasRef} aria-label="Interactive three-dimensional Blue Pair hotel visualization" className={`relative z-[1] h-full w-full touch-auto transition-opacity duration-700 ${state === 'fallback' ? 'opacity-0' : 'opacity-100'}`} />
       {state === 'loading' && <div className="absolute inset-0 z-20 grid place-items-center"><div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-white/45 backdrop-blur">Building the scene…</div></div>}
       {state === 'fallback' && <div className="absolute inset-0 z-20 grid place-items-center p-8 text-center"><div className="max-w-xs rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"><div className="text-[10px] uppercase tracking-[0.22em] text-[#e2bd69]">Blue Pair</div><p className="mt-2 text-xs leading-relaxed text-white/50">The interactive architectural view is unavailable on this device.</p></div></div>}
     </div>
