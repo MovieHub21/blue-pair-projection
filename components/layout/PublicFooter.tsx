@@ -26,7 +26,7 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
           <div>
             <h5 className="text-white text-xs font-bold uppercase tracking-wider mb-4">Guest</h5>
             <div className="flex flex-col gap-2.5 text-sm">
-              <Link href="/account/login" className="hover:text-white">Manage booking</Link><Link href="/booking" className="hover:text-white">Book a room</Link><Link href="/billboard" className="hover:text-white">Advertising</Link><Link href="/parking" className="hover:text-white">Parking</Link>
+              <Link href="/account/bookings" className="hover:text-white">Manage booking</Link><Link href="/booking" className="hover:text-white">Book a room</Link><Link href="/billboard" className="hover:text-white">Advertising</Link><Link href="/parking" className="hover:text-white">Parking</Link>
             </div>
           </div>
           <div>
