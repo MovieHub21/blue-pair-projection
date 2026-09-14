@@ -9,14 +9,14 @@ import { naira, todayISO, addDaysISO } from '../../../../../lib/format'
 import { useAuth } from '../../../../../lib/useAuth'
 import type { RoomType } from '../../../../../data/mock'
 
-type Unit = { id:string; room_number:string; name?:string|null; slug:string; image_url?:string|null; floor?:string; status:string }
+type Unit = { id:string; room_number:string; name?:string|null; slug:string; image_url?:string|null; images?:string[]|null; floor?:string; status:string }
 type GuestStatus = 'available'|'availableSoon'|'taken'|'reserved'
 
 export default function IndividualRoomClient({ type, unit }: { type: RoomType; unit: Unit }) {
   const router = useRouter(); const params = useSearchParams(); const auth = useAuth()
   const [checkIn, setCheckIn] = useState(params.get('checkin') || todayISO()); const [checkOut, setCheckOut] = useState(params.get('checkout') || addDaysISO(2)); const [status, setStatus] = useState<GuestStatus | null>(null); const [availableFrom, setAvailableFrom] = useState<string|null>(null); const [paymentReady, setPaymentReady] = useState(false); const [checking, setChecking] = useState(true); const [reserving, setReserving] = useState(false); const [reserved, setReserved] = useState(false); const [error, setError] = useState<string|null>(null)
   const name = unit.name || `Room ${unit.room_number}`
-  const gallery = useMemo(() => Array.from(new Set([unit.image_url, ...(type.images || [])].filter(Boolean) as string[])), [unit.image_url, type.images])
+  const gallery = useMemo(() => Array.from(new Set([...(unit.images || []), unit.image_url, ...(type.images || [])].filter(Boolean) as string[])), [unit.images, unit.image_url, type.images])
   const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)); const total = type.price * nights; const tax = Math.round(total * .075)
 
   useEffect(() => {
