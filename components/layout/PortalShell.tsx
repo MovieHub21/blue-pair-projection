@@ -18,10 +18,18 @@ export default function PortalShell({ portalName, portalTag, groups, userName, u
   const portalHome = groups[0]?.items[0]?.href || '/'
   async function signOut() { setMenuOpen(false); await supabase.auth.signOut(); router.push('/'); router.refresh() }
   return <div className="portal-shell min-h-screen flex">
-    <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950 text-white flex items-center justify-between px-4 py-3.5">
-      <button onClick={() => setOpen(true)} aria-label="Open navigation" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/10"><Menu size={20} /></button>
-      <Link href="/" aria-label="Blue Pair Hotel" className="flex items-center shrink-0"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-8 h-8 rounded-lg object-cover" /></Link>
-      <div className="flex items-center gap-1"><div className="[&_button]:text-white [&_button:hover]:bg-white/10"><NotificationBell /></div><button onClick={() => setMenuOpen(v => !v)} aria-label="Open user menu" aria-expanded={menuOpen} className="w-8 h-8 shrink-0 rounded-full bg-gold-500 text-navy-950 text-[11px] font-bold flex items-center justify-center">{userName.split(' ').map(n => n[0]).join('')}</button></div>
+    <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950/95 text-white backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-3.5 py-2.5">
+      <button onClick={() => setOpen(true)} aria-label="Open navigation" className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-white/80 hover:bg-white/10 active:bg-white/10"><Menu size={20} strokeWidth={1.7} /></button>
+      <Link href="/" aria-label="Blue Pair Signature Hotels" className="flex min-w-0 items-center gap-2.5 px-2">
+        <span className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-gold-400 via-gold-500 to-gold-700 p-[1.5px] shadow-[0_0_18px_-5px_rgba(197,160,89,.5)]">
+          <span className="w-full h-full rounded-[6px] bg-navy-950 flex items-center justify-center font-display font-bold text-[11px] text-gold-300 tracking-tight">BP</span>
+        </span>
+        <span className="min-w-0 text-left leading-none">
+          <span className="block truncate font-display text-[13px] font-semibold uppercase tracking-[0.16em] text-white">Blue Pair</span>
+          <span className="block truncate mt-0.5 text-[7px] font-semibold uppercase tracking-[0.22em] text-gold-400">Signature Hotels</span>
+        </span>
+      </Link>
+      <div className="flex items-center gap-1.5 shrink-0"><div className="[&_button]:text-white/80 [&_button:hover]:bg-white/10"><NotificationBell /></div><button onClick={() => setMenuOpen(v => !v)} aria-label="Open user menu" aria-expanded={menuOpen} className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-tr from-gold-600 to-gold-300 p-[1px]"><span className="w-full h-full rounded-full bg-navy-900 text-gold-200 text-[10px] font-bold flex items-center justify-center">{userName.split(' ').map(n => n[0]).join('')}</span></button></div>
       {menuOpen && <div className="absolute top-full right-3 pt-2 w-[calc(100vw-24px)] max-w-56 z-50"><div className="bg-white rounded-xl2 shadow-pop border border-black/5 p-2 text-navy-600"><button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 text-left"><LogOut size={14} /> Sign out</button></div></div>}
     </div>
     <aside className={'fixed lg:sticky top-0 h-screen w-72 bg-navy-950 text-white/70 flex flex-col z-50 transition-transform duration-200 ' + (open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')}>
