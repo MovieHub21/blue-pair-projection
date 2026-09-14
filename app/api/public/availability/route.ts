@@ -52,12 +52,18 @@ export async function GET(request: Request) {
 
     const result = (rooms ?? []).map(room => {
       const roomBookings = (bookings ?? []).filter(b => b.room_id === room.id)
+      const state = guestStatus(room, roomBookings, checkIn, checkOut)
       const ownReservation = currentCustomerId
         ? roomBookings.find(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out))
         : null
-      if (ownReservation) return { ...room, guest_status: 'reserved', available_from: null, reservation_id: ownReservation.id }
-      const state = guestStatus(room, roomBookings, checkIn, checkOut)
-      return { ...room, guest_status: state.status, available_from: state.availableFrom }
+      if (ownReservation) return {
+        ...room,
+        guest_status: 'reserved',
+        available_from: state.availableFrom,
+        reservation_id: ownReservation.id,
+        payment_ready: state.status === 'available',
+      }
+      return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false }
     })
 
     const byType: Record<string, { available: number; availableSoon: number; taken: number; reserved: number; earliestAvailable: string | null }> = {}
