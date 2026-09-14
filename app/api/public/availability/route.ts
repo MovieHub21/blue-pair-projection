@@ -40,9 +40,6 @@ export async function GET(request: Request) {
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
 
-    // Supabase's generated database types currently omit customer_id from the
-    // inferred booking row even though it is selected above. Keep the runtime
-    // shape intact without changing the database schema.
     const bookingRows = (bookings ?? []) as any[]
 
     let currentCustomerId: string | null = null
@@ -68,12 +65,17 @@ export async function GET(request: Request) {
       const roomBookings = bookingRows.filter(b => b.room_id === room.id)
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
-      if (ownReservation) return {
-        ...room,
-        guest_status: 'reserved',
-        available_from: state.availableFrom,
-        reservation_id: ownReservation.id,
-        payment_ready: readyIds.has(ownReservation.id),
+      if (ownReservation) {
+        // The database room status is authoritative. Once staff marks the room
+        // available, the guest's pending reservation becomes payable immediately.
+        const roomIsOpen = room.status === 'available' && state.status === 'available'
+        return {
+          ...room,
+          guest_status: roomIsOpen ? 'reserved' : 'reserved',
+          available_from: state.availableFrom,
+          reservation_id: ownReservation.id,
+          payment_ready: roomIsOpen || readyIds.has(ownReservation.id),
+        }
       }
       return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false }
     })
