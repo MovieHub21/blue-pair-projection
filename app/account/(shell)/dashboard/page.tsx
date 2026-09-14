@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, MapPin, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned } from 'lucide-react'
+import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, MapPin, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, FileText, Clock3 } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { naira, formatDate } from '../../../../lib/format'
 import StatusBadge from '../../../../components/ui/StatusBadge'
 import CancelBookingButton from '../CancelBookingButton'
-import LiveDateTime from '../../../../components/ui/LiveDateTime'
+import GuestDateWeather from '../../../../components/account/GuestDateWeather'
 import ReviewForm from '../ReviewForm'
 
 export default async function DashboardPage() {
@@ -26,24 +26,100 @@ export default async function DashboardPage() {
     { icon: MapPinned, title: 'Find us', text: 'Location, contact and directions.', href: '/contact' },
   ]
 
+  const heroImage = upcoming?.room?.images?.[0] || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85'
+  const roomName = upcoming?.room?.name || 'Your Blue Pair stay'
+
   return (
     <div>
-      <LiveDateTime />
+      <GuestDateWeather />
 
-      <section className="relative overflow-hidden rounded-[1.5rem] min-h-[360px] md:min-h-[470px] mb-7 text-white flex items-end shadow-pop">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85')" }} role="img" aria-label="A welcoming Blue Pair hotel room" />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/95 via-navy-950/65 to-navy-950/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-navy-950/10" />
-        <div className="relative z-10 w-full p-5 md:p-10 lg:p-12"><div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 text-[9px] md:text-[10px] tracking-[0.16em] uppercase font-semibold text-white/90 mb-3 md:mb-5">Welcome home</div>
-          <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-semibold leading-[1.02] tracking-[-0.03em]">Good to have you here, {firstName}.</h1>
-          <p className="text-sm md:text-lg text-white/85 leading-relaxed mt-3 md:mt-5 max-w-xl">Your Blue Pair space is ready. Settle in, keep an eye on your stay, request anything you need, or simply explore what is waiting for you.</p>
-          {upcoming ? <div className="mt-5 md:mt-7 inline-flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-5 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md px-3.5 py-3 md:px-5 md:py-3.5"><div className="flex items-center gap-2.5 text-sm"><CalendarDays size={17} className="text-gold-300" /><span>Next stay</span></div><div className="hidden sm:block h-5 w-px bg-white/20" /><div className="text-sm font-semibold">{upcoming.room?.name ?? 'Your room'}</div><div className="text-xs text-white/65">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</div></div> : <Link href="/rooms" className="inline-flex items-center gap-2 mt-5 md:mt-7 rounded-lg bg-gold-500 px-4 py-2.5 md:px-5 md:py-3 text-sm font-semibold text-navy-950 hover:bg-gold-400 transition-colors">Plan a stay <ArrowRight size={15} /></Link>}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 md:mt-6 text-[11px] md:text-xs text-white/60"><span className="flex items-center gap-1.5"><MapPin size={13} className="text-gold-300" /> Uromi, Edo State</span><span>Hospitality made personal</span></div>
-        </div></div>
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[430px] md:min-h-[500px] mb-5 md:mb-7 text-white shadow-pop">
+        <div className="absolute inset-0 bg-cover bg-center scale-[1.02]" style={{ backgroundImage: `url('${heroImage}')` }} role="img" aria-label={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-950/75 via-navy-950/20 to-navy-950/95" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/95 via-navy-950/25 to-transparent" />
+
+        <div className="relative z-10 flex min-h-[430px] md:min-h-[500px] flex-col justify-between p-5 md:p-10">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/75 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              Welcome Home
+            </span>
+            <span className="rounded-full border border-white/10 bg-navy-950/55 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-white/75 backdrop-blur-md">
+              {upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}
+            </span>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center justify-center text-center px-2 py-10">
+            <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-300/90">
+              {upcoming ? 'Your current reservation' : 'Your Blue Pair experience'}
+            </p>
+            <h1 className="font-display text-[2rem] sm:text-4xl md:text-5xl font-medium leading-[1.05] tracking-[-0.02em] text-white">
+              {upcoming ? roomName : 'A stay made personal.'}
+            </h1>
+            <p className="mt-3 max-w-sm text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/70">
+              {upcoming
+                ? `Good to have you here, ${firstName}. Your space is prepared for a comfortable Blue Pair stay.`
+                : `Good to have you here, ${firstName}. Explore Blue Pair, discover our rooms and make your next stay yours.`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-white/65">
+            <span className="flex items-center gap-1.5"><MapPin size={12} className="text-gold-300" /> Uromi, Edo State</span>
+            <span className="h-1 w-1 rounded-full bg-white/30" />
+            <span>Hospitality made personal</span>
+          </div>
+        </div>
       </section>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      {upcoming ? (
+        <section className="mb-7 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600">
+                <CalendarDays size={19} />
+              </div>
+              <div>
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span>
+                <h2 className="font-display text-lg font-semibold text-navy-950">{roomName}</h2>
+              </div>
+            </div>
+            <StatusBadge status={upcoming.status} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-3.5 text-xs">
+            <div className="rounded-xl bg-cream-100/70 p-3">
+              <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span>
+              <p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p>
+            </div>
+            <div className="rounded-xl bg-cream-100/70 p-3">
+              <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span>
+              <p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span className="text-[10px] text-navy-400">Ref: {upcoming.reference}</span>
+            <div className="flex gap-2">
+              <Link href="/account/bookings" className="btn-outline btn-sm flex-1 sm:flex-none">View reservation</Link>
+              {['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="mb-7 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span>
+              <h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2>
+            </div>
+            <Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link>
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p>
+        </section>
+      )}
+
+      <div className="grid grid-cols-3 gap-2.5 md:gap-3 mb-8">
         <Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><UtensilsCrossed size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Room service</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Order something in</span></Link>
         <Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><Sparkles size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Request help</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">We are here for you</span></Link>
         <Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link>
@@ -59,14 +135,10 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {upcoming && <div className="card p-6 flex flex-col md:flex-row gap-5 mb-8">{upcoming.room?.images?.[0] && <img src={upcoming.room.images[0]} alt={upcoming.room.name} className="w-full md:w-40 h-40 rounded-xl2 object-cover" />}<div className="flex-1"><span className="eyebrow">Upcoming stay</span><div className="flex justify-between items-start gap-3 mt-1"><h3 className="text-xl font-semibold">{upcoming.room?.name ?? 'Room'}</h3><StatusBadge status={upcoming.status} /></div><p className="text-sm text-navy-500 mt-1.5">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)} · {upcoming.adults} adults</p><p className="text-xs text-navy-400 mt-1">Ref: {upcoming.reference}</p><div className="flex gap-2 mt-4"><Link href="/account/bookings" className="btn-outline btn-sm">View details</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div></div>}
-
-      {bookings.length === 0 && <div className="card p-8 text-center mb-8"><p className="text-sm text-navy-500 mb-4">You don't have any bookings yet.</p><Link href="/rooms" className="btn-primary">Browse rooms</Link></div>}
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div><h4 className="font-semibold mb-3 text-sm">Booking history</h4><div className="card divide-y divide-black/5">{bookings.length === 0 && <div className="px-5 py-4 text-sm text-navy-400">No bookings yet.</div>}{bookings.map(b => <div key={b.id} className="px-5 py-4 flex justify-between items-center"><div><b className="text-sm block">{b.room?.name ?? 'Room'}</b><span className="text-xs text-navy-400">{formatDate(b.checkIn)}</span></div><StatusBadge status={b.status} /></div>)}</div></div>
+      {bookings.length > 0 && <section className="grid md:grid-cols-2 gap-6">
+        <div><h4 className="font-semibold mb-3 text-sm">Booking history</h4><div className="card divide-y divide-black/5">{bookings.map(b => <div key={b.id} className="px-5 py-4 flex justify-between items-center"><div><b className="text-sm block">{b.room?.name ?? 'Room'}</b><span className="text-xs text-navy-400">{formatDate(b.checkIn)}</span></div><StatusBadge status={b.status} /></div>)}</div></div>
         <div><h4 className="font-semibold mb-3 text-sm">Recent payments</h4><div className="card divide-y divide-black/5">{payments.length === 0 && <div className="px-5 py-4 text-sm text-navy-400">No payments yet.</div>}{payments.map(p => <div key={p.id} className="px-5 py-4 flex justify-between items-center"><div><b className="text-sm block">{p.reference}</b><span className="text-xs text-navy-400">{p.method}</span></div><div className="text-right"><b className="text-sm block">{naira(p.amount)}</b><StatusBadge status={p.status} /></div></div>)}</div></div>
-      </div>
+      </section>}
 
       {hasCheckedIn && <div className="mt-8"><ReviewForm /></div>}
     </div>
