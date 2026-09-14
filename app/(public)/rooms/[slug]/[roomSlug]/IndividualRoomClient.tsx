@@ -25,12 +25,12 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
   const sideImages = images.filter((_, index) => index !== selected)
 
   return (
-    <div className="relative">
-      <div className={`grid gap-2.5 md:gap-3 ${images.length > 1 ? 'md:grid-cols-[1.65fr_1fr]' : ''}`}>
+    <div className="relative min-w-0 max-w-full overflow-hidden">
+      <div className={`grid min-w-0 max-w-full gap-2.5 md:gap-3 ${images.length > 1 ? 'md:grid-cols-[1.65fr_1fr]' : ''}`}>
         <button
           type="button"
           onClick={() => setSelected(selected)}
-          className="group relative h-[240px] sm:h-[300px] md:h-[500px] overflow-hidden rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
+          className="group relative min-w-0 w-full h-[220px] sm:h-[300px] md:h-[500px] overflow-hidden rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
           aria-label={`View ${name}, photo ${selected + 1}`}
         >
           <Image src={mainImage} alt={`${name}, photo ${selected + 1}`} fill priority className="object-cover transition duration-700 group-hover:scale-[1.025]" sizes="(max-width: 768px) 100vw, 65vw" />
@@ -40,30 +40,51 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
           </div>
         </button>
 
+        {/* Desktop: the remaining photos stay as the two side panels. */}
         {sideImages.length > 0 && (
-          <div className="flex md:grid gap-2.5 md:gap-3 overflow-x-auto md:overflow-visible pb-0.5 md:pb-0 md:grid-rows-2">
-            {sideImages.map((image, sideIndex) => {
+          <div className="hidden md:grid min-w-0 gap-3 md:grid-rows-2 overflow-hidden">
+            {sideImages.map((image) => {
               const actualIndex = images.findIndex(value => value === image)
               return (
                 <button
                   key={`${image}-${actualIndex}`}
                   type="button"
                   onClick={() => setSelected(actualIndex)}
-                  className="group relative shrink-0 w-[92px] h-[68px] sm:w-[112px] sm:h-[78px] md:w-auto md:h-auto md:min-h-0 overflow-hidden rounded-xl md:rounded-[1.25rem] border border-black/10 bg-navy-950 text-left"
+                  className="group relative min-w-0 w-full min-h-0 overflow-hidden rounded-[1.25rem] border border-black/10 bg-navy-950 text-left"
                   aria-label={`View ${name}, photo ${actualIndex + 1}`}
                 >
-                  <Image src={image} alt={`${name}, photo ${actualIndex + 1}`} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 768px) 112px, 35vw" />
+                  <Image src={image} alt={`${name}, photo ${actualIndex + 1}`} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="35vw" />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-transparent" />
-                  <span className="absolute inset-x-1.5 bottom-1.5 md:right-3 md:inset-x-auto md:bottom-3 rounded-full bg-white/90 px-2 py-1 text-[9px] md:text-[10px] font-semibold text-navy-950 shadow-sm backdrop-blur-sm text-center">
+                  <span className="absolute right-3 bottom-3 rounded-full bg-white/90 px-2.5 py-1.5 text-[10px] font-semibold text-navy-950 shadow-sm backdrop-blur-sm">
                     View {actualIndex + 1}
                   </span>
                 </button>
               )
             })}
-            <span className="self-center shrink-0 text-[9px] font-medium uppercase tracking-[0.12em] text-navy-400 md:hidden">Tap a photo</span>
           </div>
         )}
       </div>
+
+      {/* Mobile: only the three compact previews are shown. Tap any one to make it the main image. */}
+      {images.length > 1 && (
+        <div className="flex md:hidden w-full min-w-0 gap-2 mt-2.5 overflow-hidden">
+          {images.map((image, index) => (
+            <button
+              key={`${image}-mobile-thumb-${index}`}
+              type="button"
+              onClick={() => setSelected(index)}
+              className={`relative min-w-0 flex-1 h-[64px] overflow-hidden rounded-xl border-2 transition ${selected === index ? 'border-gold-500 ring-2 ring-gold-500/15' : 'border-transparent opacity-70'}`}
+              aria-label={`Select photo ${index + 1}`}
+              aria-pressed={selected === index}
+            >
+              <Image src={image} alt={`${name}, photo ${index + 1}`} fill className="object-cover" sizes="33vw" />
+              <span className="absolute left-1.5 bottom-1.5 rounded-full bg-navy-950/75 px-1.5 py-0.5 text-[8px] font-semibold text-white backdrop-blur-sm">
+                {index + 1}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {images.length > 1 && (
         <div className="hidden md:flex items-center gap-2 mt-3 overflow-x-auto pb-1">
@@ -130,14 +151,14 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
     } catch (e:any) { setError(e?.message || 'Unable to reserve this room right now.') } finally { setReserving(false) }
   }
 
-  return <div className="container-w px-6 md:px-10 py-8">
+  return <div className="container-w min-w-0 max-w-full overflow-x-hidden px-4 sm:px-6 md:px-10 py-8">
     <Link href={`/rooms/${type.slug}?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} className="text-xs text-navy-400 hover:text-navy-700">← Back to {type.name}</Link>
-    <div className="grid lg:grid-cols-[1.4fr,.6fr] gap-10 mt-5"><div>
+    <div className="grid min-w-0 lg:grid-cols-[1.4fr,.6fr] gap-10 mt-5"><div className="min-w-0 max-w-full">
       <RoomGallery images={gallery} name={name} />
       <span className="eyebrow mt-8 inline-block">{type.category} · Room {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1><p className="text-xs text-navy-400 mt-2">Floor {unit.floor || '—'} · This page is for this specific physical room.</p><p className="text-navy-500 leading-relaxed mt-4">{type.description}</p>
       <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{type.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{type.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{type.sizeSqm} m²</b></div></div>
       <h2 className="text-xl font-semibold mt-8 mb-4">Amenities</h2><div className="grid sm:grid-cols-2 gap-3">{type.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div>
-    </div><aside className="card p-6 h-fit sticky top-24">
+    </div><aside className="card p-6 h-fit sticky top-24 min-w-0 max-w-full">
       <div className="text-xs text-navy-400 mb-2">Room rate</div><b className="font-display text-3xl">{naira(type.price)}</b><span className="text-xs text-navy-400"> / night</span><div className="h-px bg-black/10 my-5"/>
       <label className="field-label">Check-in</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/>
       <div className="flex justify-between text-sm"><span>{naira(type.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total + tax)}</b></div>
