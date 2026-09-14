@@ -30,10 +30,10 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
         <button
           type="button"
           onClick={() => setSelected(selected)}
-          className="group relative min-w-0 w-full h-[220px] sm:h-[300px] md:h-[500px] overflow-hidden rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
+          className="group relative min-w-0 w-full h-[360px] sm:h-[420px] md:h-[500px] overflow-hidden rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
           aria-label={`View ${name}, photo ${selected + 1}`}
         >
-          <Image src={mainImage} alt={`${name}, photo ${selected + 1}`} fill priority className="object-cover transition duration-700 group-hover:scale-[1.025]" sizes="(max-width: 768px) 100vw, 65vw" />
+          <Image src={mainImage} alt={`${name}, photo ${selected + 1}`} fill priority className="object-contain md:object-cover transition duration-700 group-hover:scale-[1.025]" sizes="(max-width: 768px) 100vw, 65vw" />
           <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-white/5 pointer-events-none" />
           <div className="absolute left-3 bottom-3 md:left-4 md:bottom-4 rounded-full border border-white/20 bg-navy-950/70 px-2.5 py-1.5 md:px-3 md:py-1.5 text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
             Photo {selected + 1} of {images.length}
@@ -138,7 +138,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
     const onFocus = () => void loadAvailability()
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onFocus)
-    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
+    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
   }, [checkIn, checkOut, type.id, unit.id])
 
   async function reserve() {
