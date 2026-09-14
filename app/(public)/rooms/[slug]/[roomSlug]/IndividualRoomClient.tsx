@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, CheckCircle2, Loader2, Users, BedDouble, Ruler, BellRing, Clock3 } from 'lucide-react'
 import ImageCarousel from '../../../../../components/ui/ImageCarousel'
 import { naira, todayISO, addDaysISO } from '../../../../../lib/format'
@@ -21,10 +20,25 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
 
   useEffect(() => {
     if (!checkIn || !checkOut || checkIn >= checkOut) return
-    setChecking(true); setPaymentReady(false)
-    fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(type.id)}`, { cache:'no-store' })
-      .then(r => r.ok ? r.json() : null).then(data => { const current = data?.rooms?.find((r:any) => r.id === unit.id); setStatus(current?.guest_status || null); setAvailableFrom(current?.available_from || null); setPaymentReady(Boolean(current?.payment_ready)); setReserved(current?.guest_status === 'reserved') })
-      .catch(() => { setStatus(null); setError('Unable to check this room right now.') }).finally(() => setChecking(false))
+    let cancelled = false
+    const loadAvailability = async () => {
+      if (!cancelled) setChecking(true)
+      try {
+        const response = await fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(type.id)}&_=${Date.now()}`, { cache:'no-store' })
+        const data = response.ok ? await response.json() : null
+        if (cancelled) return
+        const current = data?.rooms?.find((r:any) => r.id === unit.id)
+        setStatus(current?.guest_status || null); setAvailableFrom(current?.available_from || null); setPaymentReady(Boolean(current?.payment_ready)); setReserved(current?.guest_status === 'reserved')
+      } catch {
+        if (!cancelled) { setStatus(null); setError('Unable to check this room right now.') }
+      } finally { if (!cancelled) setChecking(false) }
+    }
+    void loadAvailability()
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void loadAvailability() }, 15000)
+    const onFocus = () => void loadAvailability()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
   }, [checkIn, checkOut, type.id, unit.id])
 
   async function reserve() {
