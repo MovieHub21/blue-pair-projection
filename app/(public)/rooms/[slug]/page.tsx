@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { buildMetadata } from '../../../../lib/buildMetadata'
@@ -21,5 +22,5 @@ export default async function RoomDetailsPage({params}:{params:{slug:string}}){
  const availability=Object.fromEntries(others.map(r=>[r.id,allRooms.filter((u:any)=>u.roomTypeId===r.id&&u.status==='available').length]))
  const breadcrumbs=[{name:'Home',path:'/'},{name:'Rooms & Suites',path:'/rooms'},{name:room.name,path:`/rooms/${room.slug}`}]
  const jsonld={'@context':'https://schema.org','@type':'HotelRoom',name:room.name,description:room.description,image:room.images,occupancy:{'@type':'QuantitativeValue',value:room.guests},offers:{'@type':'Offer',price:room.price,priceCurrency:'NGN',availability:units.some((u:any)=>u.status==='available')?'https://schema.org/InStock':'https://schema.org/SoldOut',url:`${SITE_URL}/rooms/${room.slug}`}}
- return <><JsonLd data={[breadcrumbJsonLd(breadcrumbs,SITE_URL),jsonld]}/><RoomDetailsClient room={room} units={units} others={others} availability={availability}/></>
+ return <><JsonLd data={[breadcrumbJsonLd(breadcrumbs,SITE_URL),jsonld]}/><Suspense><RoomDetailsClient room={room} units={units} others={others} availability={availability}/></Suspense></>
 }
