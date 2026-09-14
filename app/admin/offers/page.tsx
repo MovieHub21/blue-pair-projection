@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import Modal from '../../../components/ui/Modal'
+import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import { Plus } from 'lucide-react'
 import type { Offer } from '../../../data/mock'
 
@@ -11,6 +12,7 @@ export default function OffersManagement() {
   const { offers, toggleOfferActive, addOffer, updateOffer, deleteOffer } = useStore()
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Offer | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Offer | null>(null)
   const [draft, setDraft] = useState({ title: '', description: '', category: 'Room' as Offer['category'], discount: '' })
   const [editDraft, setEditDraft] = useState({ title: '', description: '', category: 'Room' as Offer['category'], discount: '' })
 
@@ -33,10 +35,6 @@ export default function OffersManagement() {
     setEditing(null)
   }
 
-  function remove(id: string) {
-    if (confirm('Delete this offer?')) deleteOffer(id)
-  }
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
@@ -54,7 +52,7 @@ export default function OffersManagement() {
             <p className="text-sm text-navy-500">{o.description}</p>
             <div className="flex justify-between items-center">
               <span className="pill-gold w-fit">{o.discount}</span>
-              <div className="flex gap-2"><button onClick={() => openEdit(o)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => remove(o.id)} className="text-xs font-semibold text-red-600">Delete</button></div>
+              <div className="flex gap-2"><button onClick={() => openEdit(o)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => setDeleteTarget(o)} className="text-xs font-semibold text-red-600">Delete</button></div>
             </div>
           </div>
         ))}
@@ -82,6 +80,7 @@ export default function OffersManagement() {
         </div>
         <button onClick={saveEdit} className="btn-primary w-full justify-center mt-6">Save changes</button>
       </Modal>
+      <DeleteConfirmDialog open={!!deleteTarget} itemName={deleteTarget?.title} description="This offer will be permanently removed from the offers list." onCancel={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) deleteOffer(deleteTarget.id) }} />
     </div>
   )
 }
