@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, CheckCircle2, Loader2, Users, BedDouble, Ruler, BellRing, Clock3 } from 'lucide-react'
 import ImageCarousel from '../../../../../components/ui/ImageCarousel'
 import { naira, todayISO, addDaysISO } from '../../../../../lib/format'
