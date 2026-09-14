@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 
-const UROMI_LAT = 6.7092
-const UROMI_LON = 6.3304
+// Keep weather tied to the same Blue Pair location used by the hotel's map,
+// rather than using a broad Uromi-area coordinate.
+const BLUE_PAIR_LAT = 6.704229
+const BLUE_PAIR_LON = 6.326721
 
 function weatherLabel(code: number) {
   if (code === 0) return 'Clear'
@@ -26,7 +28,7 @@ export default function GuestDateWeather() {
     updateDate()
     const timer = window.setInterval(updateDate, 60_000)
 
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${UROMI_LAT}&longitude=${UROMI_LON}&current=temperature_2m,weather_code&temperature_unit=celsius`)
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${BLUE_PAIR_LAT}&longitude=${BLUE_PAIR_LON}&current=temperature_2m,weather_code&temperature_unit=celsius`)
       .then(response => response.ok ? response.json() : null)
       .then(data => {
         if (data?.current) setWeather({ temperature: Math.round(data.current.temperature_2m), code: data.current.weather_code })
