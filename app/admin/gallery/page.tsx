@@ -5,7 +5,7 @@ import ImageUploader from '../../../components/admin/ImageUploader'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import { Trash2 } from 'lucide-react'
 
-aexport default function GalleryManagement() {
+export default function GalleryManagement() {
   const galleryImages = useStore(s => s.galleryImages)
   const addGalleryImage = useStore(s => s.addGalleryImage)
   const removeGalleryImage = useStore(s => s.removeGalleryImage)
