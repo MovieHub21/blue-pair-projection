@@ -29,8 +29,11 @@ export const metadata: Metadata = {
     locale: 'en_NG',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: SITE_NAME, description: 'Premium hotel accommodation, dining, leisure and events in Uromi, Edo State, Nigeria.' },
-  icons: { icon: '/favicon.ico' },
+  twitter: { card: 'summary_large_image', title: SITE_NAME, description: 'Premium hotel accommodation, dining, leisure, events and guest services in Uromi, Edo State, Nigeria.' },
+  icons: {
+    icon: [{ url: '/favicon.png', type: 'image/png' }],
+    apple: [{ url: '/apple-touch-icon.png', type: 'image/png' }],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
