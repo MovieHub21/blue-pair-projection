@@ -5,9 +5,9 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
-function guestStatus(room: any, bookings: any[], checkIn: string) {
+function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
-  const overlapping = paid.filter(b => overlaps(checkIn, '9999-12-31', b.check_in, b.check_out))
+  const overlapping = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (overlapping.length) {
     const latest = overlapping.reduce((a, b) => a.check_out > b.check_out ? a : b)
     return { status: 'taken', availableFrom: latest.check_out }
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
-      db.from('bookings').select('id,room_id,room_type_id,check_in,check_out,status,payment_status').in('status', ['pending', 'confirmed', 'checked_in']),
+      db.from('bookings').select('id,customer_id,room_id,room_type_id,check_in,check_out,status,payment_status').in('status', ['pending', 'confirmed', 'checked_in']),
     ])
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
         ? roomBookings.find(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out))
         : null
       if (ownReservation) return { ...room, guest_status: 'reserved', available_from: null, reservation_id: ownReservation.id }
-      const state = guestStatus(room, roomBookings, checkIn)
+      const state = guestStatus(room, roomBookings, checkIn, checkOut)
       return { ...room, guest_status: state.status, available_from: state.availableFrom }
     })
 
