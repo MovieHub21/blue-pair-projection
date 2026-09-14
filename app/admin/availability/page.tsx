@@ -11,10 +11,33 @@ const STATUS_OPTIONS: { key: RoomStatus; label: string }[] = [
 ]
 
 export default function RoomAvailability() {
-  const { rooms, roomTypes, setRoomStatus, pushToast } = useStore()
+  const { rooms, roomTypes, loadAll, pushToast } = useStore()
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const room = rooms.find(r => r.id === activeId)
   const rt = room ? roomTypes.find(t => t.id === room.roomTypeId) : null
+
+  async function updateStatus(status: RoomStatus) {
+    if (!room || busy) return
+    setBusy(true)
+    try {
+      const response = await fetch('/api/admin/room-lifecycle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status', roomId: room.id, status }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Could not update room status.')
+      await loadAll()
+      const extra = status === 'available' && data.reservationsReady ? ` ${data.reservationsReady} reservation${data.reservationsReady === 1 ? '' : 's'} can now pay.` : ''
+      pushToast(`Room ${room.roomNumber} set to ${STATUS_OPTIONS.find(s => s.key === status)?.label}.${extra}`, 'success')
+      setActiveId(null)
+    } catch (error: any) {
+      pushToast(error?.message || 'Could not update room status.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div>
@@ -24,15 +47,15 @@ export default function RoomAvailability() {
         <AvailabilityGrid onSelect={setActiveId} />
       </div>
 
-      <Modal open={!!activeId} onClose={() => setActiveId(null)} title={room ? `Room ${room.roomNumber}` : ''} subtitle={rt?.name}>
+      <Modal open={!!activeId} onClose={() => !busy && setActiveId(null)} title={room ? `Room ${room.roomNumber}` : ''} subtitle={rt?.name}>
         {room && (
           <div>
             <label className="field-label mb-2 block">Set status</label>
             <div className="grid grid-cols-2 gap-2.5">
               {STATUS_OPTIONS.map(s => (
-                <button key={s.key} onClick={() => { setRoomStatus(room.id, s.key); pushToast(`Room ${room.roomNumber} set to ${s.label}`, 'success'); setActiveId(null) }}
-                  className={'px-3.5 py-3 rounded-lg border text-xs font-semibold text-left ' + (room.status === s.key ? 'border-navy-950 bg-cream-100' : 'border-black/10')}>
-                  {s.label}
+                <button key={s.key} disabled={busy} onClick={() => void updateStatus(s.key)}
+                  className={'px-3.5 py-3 rounded-lg border text-xs font-semibold text-left disabled:opacity-50 ' + (room.status === s.key ? 'border-navy-950 bg-cream-100' : 'border-black/10')}>
+                  {busy ? 'Updating…' : s.label}
                 </button>
               ))}
             </div>
