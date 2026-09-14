@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 
-function validDate(value: string | null) {
-  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value)
-}
-
-function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) {
-  return start < bookingEnd && end > bookingStart
-}
+function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
+function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
@@ -17,13 +12,11 @@ function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: stri
     return { status: 'taken', availableFrom: latest.check_out }
   }
 
-  const current = paid
-    .filter(b => b.check_in <= new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }) && b.check_out > new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }))
-    .sort((a, b) => b.check_out.localeCompare(a.check_out))[0]
-
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+  const current = paid.filter(b => b.check_in <= today && b.check_out > today).sort((a, b) => b.check_out.localeCompare(a.check_out))[0]
   if (current) {
-    if (current.check_out <= checkIn) return { status: 'available', availableFrom: current.check_out }
-    return { status: 'taken', availableFrom: current.check_out }
+    if (current.check_out < checkIn) return { status: 'available', availableFrom: current.check_out }
+    return { status: 'availableSoon', availableFrom: current.check_out }
   }
 
   if (room.status === 'available') return { status: 'available', availableFrom: checkIn }
@@ -33,13 +26,8 @@ function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: stri
 export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams
-    const checkIn = params.get('checkin')
-    const checkOut = params.get('checkout')
-    const roomTypeId = params.get('roomTypeId')
-
-    if (!validDate(checkIn) || !validDate(checkOut) || !checkIn || !checkOut || checkIn >= checkOut) {
-      return NextResponse.json({ error: 'Valid check-in and check-out dates are required.' }, { status: 400 })
-    }
+    const checkIn = params.get('checkin'); const checkOut = params.get('checkout'); const roomTypeId = params.get('roomTypeId')
+    if (!validDate(checkIn) || !validDate(checkOut) || !checkIn || !checkOut || checkIn >= checkOut) return NextResponse.json({ error: 'Valid check-in and check-out dates are required.' }, { status: 400 })
 
     const db = createSupabaseAdminClient()
     let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,floor').order('room_number')
@@ -51,11 +39,7 @@ export async function GET(request: Request) {
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
 
-    const result = (rooms ?? []).map(room => {
-      const state = guestStatus(room, (bookings ?? []).filter(b => b.room_id === room.id), checkIn, checkOut)
-      return { ...room, guest_status: state.status, available_from: state.availableFrom }
-    })
-
+    const result = (rooms ?? []).map(room => ({ ...room, ...(() => { const state = guestStatus(room, (bookings ?? []).filter(b => b.room_id === room.id), checkIn, checkOut); return { guest_status: state.status, available_from: state.availableFrom } })() }))
     const byType: Record<string, { available: number; availableSoon: number; taken: number; earliestAvailable: string | null }> = {}
     for (const room of result) {
       const row = byType[room.room_type_id] ?? { available: 0, availableSoon: 0, taken: 0, earliestAvailable: null }
@@ -65,7 +49,6 @@ export async function GET(request: Request) {
       if (room.available_from && (!row.earliestAvailable || room.available_from < row.earliestAvailable)) row.earliestAvailable = room.available_from
       byType[room.room_type_id] = row
     }
-
     return NextResponse.json({ checkIn, checkOut, rooms: result, byType })
   } catch (error: any) {
     console.error('[public-availability]', error)
