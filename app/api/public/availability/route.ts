@@ -50,18 +50,25 @@ export async function GET(request: Request) {
       }
     } catch { /* Availability remains public when the visitor is signed out. */ }
 
+    const ownReservations = currentCustomerId
+      ? (bookings ?? []).filter(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out) && b.room_id)
+      : []
+    const readyIds = new Set<string>()
+    if (ownReservations.length) {
+      const { data: readyLogs } = await db.from('email_logs').select('booking_id').eq('event', 'reservation_ready').in('booking_id', ownReservations.map(b => b.id))
+      for (const log of readyLogs ?? []) if (log.booking_id) readyIds.add(log.booking_id)
+    }
+
     const result = (rooms ?? []).map(room => {
       const roomBookings = (bookings ?? []).filter(b => b.room_id === room.id)
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
-      const ownReservation = currentCustomerId
-        ? roomBookings.find(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out))
-        : null
+      const ownReservation = ownReservations.find(b => b.room_id === room.id)
       if (ownReservation) return {
         ...room,
         guest_status: 'reserved',
         available_from: state.availableFrom,
         reservation_id: ownReservation.id,
-        payment_ready: state.status === 'available',
+        payment_ready: readyIds.has(ownReservation.id),
       }
       return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false }
     })
