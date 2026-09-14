@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, MapPin, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3 } from 'lucide-react'
+import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3 } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { naira, formatDate } from '../../../../lib/format'
 import StatusBadge from '../../../../components/ui/StatusBadge'
@@ -27,9 +27,11 @@ export default async function DashboardPage() {
     { icon: MapPinned, title: 'Find us', text: 'Location, contact and directions.', href: '/contact' },
   ]
 
-  const heroImages = upcoming?.room?.images?.length
-    ? upcoming.room.images
-    : ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85']
+  const heroImages = upcoming?.roomImages?.length
+    ? upcoming.roomImages
+    : upcoming?.room?.images?.length
+      ? upcoming.room.images
+      : ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85']
   const roomName = upcoming?.roomNumber ? `Room ${upcoming.roomNumber}` : (upcoming?.room?.name || 'Your Blue Pair stay')
 
   return (
