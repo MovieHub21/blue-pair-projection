@@ -38,21 +38,24 @@ export default async function DashboardPage() {
 
       <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[430px] md:min-h-[500px] mb-5 md:mb-7 text-white shadow-pop">
         <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={5500} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy-950/80 via-navy-950/25 to-navy-950/95 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-navy-950 via-navy-950/75 to-transparent pointer-events-none" />
-        <div className="absolute inset-x-0 top-[24%] h-[52%] bg-[radial-gradient(ellipse_at_center,rgba(10,18,41,0.48),transparent_72%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/90 via-navy-950/45 to-navy-950/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-950/85 via-transparent to-navy-950/25 pointer-events-none" />
+        <div className="absolute inset-y-0 left-0 w-full md:w-[68%] bg-[radial-gradient(ellipse_at_20%_34%,rgba(8,18,41,0.55),transparent_68%)] pointer-events-none" />
 
         <div className="relative z-10 flex min-h-[430px] md:min-h-[500px] flex-col justify-between p-5 md:p-10 pointer-events-none">
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/75 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/70 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
             <span className="rounded-full border border-white/10 bg-navy-950/55 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-white/75 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.25)]">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center text-center px-2 py-10">
-            <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">{upcoming ? 'Your current reservation' : 'Your Blue Pair experience'}</p>
-            <h1 className="font-display text-[2rem] sm:text-4xl md:text-5xl font-medium leading-[1.05] tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">{upcoming ? roomName : 'A stay made personal.'}</h1>
-            <p className="mt-3 max-w-sm text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 drop-shadow-[0_2px_9px_rgba(0,0,0,0.95)]">{upcoming ? `Good to have you here, ${firstName}. Your space is prepared for a comfortable Blue Pair stay.` : `Good to have you here, ${firstName}. Explore Blue Pair, discover our rooms and make your next stay yours.`}</p>
+
+          <div className="flex flex-1 items-start justify-start pt-10 sm:pt-14 md:pt-16">
+            <div className="pointer-events-auto max-w-xl rounded-2xl border border-white/10 bg-navy-950/60 px-5 py-5 sm:px-7 sm:py-6 md:px-8 md:py-7 backdrop-blur-md shadow-[0_16px_50px_rgba(0,0,0,0.24)]">
+              <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-300 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">{upcoming ? 'Your current reservation' : 'Your Blue Pair experience'}</p>
+              <h1 className="font-display text-[2rem] sm:text-4xl md:text-5xl font-medium leading-[1.05] tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">{upcoming ? roomName : 'A stay made personal.'}</h1>
+              <p className="mt-3 max-w-lg text-[11px] sm:text-xs md:text-sm leading-relaxed text-white/85 drop-shadow-[0_2px_9px_rgba(0,0,0,0.95)]">{upcoming ? `Good to have you here, ${firstName}. Your space is prepared for a comfortable Blue Pair stay.` : `Good to have you here, ${firstName}. Explore Blue Pair, discover our rooms and make your next stay yours.`}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-white/80"><span className="flex items-center gap-1.5"><MapPin size={12} className="text-gold-300" /> Uromi, Edo State</span><span className="h-1 w-1 rounded-full bg-white/40" /><span>Hospitality made personal</span></div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-white/80 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"><span className="flex items-center gap-1.5"><MapPin size={12} className="text-gold-300" /> Uromi, Edo State</span><span className="h-1 w-1 rounded-full bg-white/40" /><span>Hospitality made personal</span></div>
         </div>
       </section>
 
