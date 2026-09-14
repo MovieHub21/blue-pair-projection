@@ -40,6 +40,11 @@ export async function GET(request: Request) {
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
 
+    // Supabase's generated database types currently omit customer_id from the
+    // inferred booking row even though it is selected above. Keep the runtime
+    // shape intact without changing the database schema.
+    const bookingRows = (bookings ?? []) as any[]
+
     let currentCustomerId: string | null = null
     try {
       const authDb = createSupabaseServerClient()
@@ -51,7 +56,7 @@ export async function GET(request: Request) {
     } catch { /* Availability remains public when the visitor is signed out. */ }
 
     const ownReservations = currentCustomerId
-      ? (bookings ?? []).filter(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out) && b.room_id)
+      ? bookingRows.filter(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out) && b.room_id)
       : []
     const readyIds = new Set<string>()
     if (ownReservations.length) {
@@ -60,7 +65,7 @@ export async function GET(request: Request) {
     }
 
     const result = (rooms ?? []).map(room => {
-      const roomBookings = (bookings ?? []).filter(b => b.room_id === room.id)
+      const roomBookings = bookingRows.filter(b => b.room_id === room.id)
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
       if (ownReservation) return {
