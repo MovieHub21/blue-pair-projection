@@ -1,10 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, CheckCircle2, Loader2, Users, BedDouble, Ruler, BellRing, Clock3 } from 'lucide-react'
-import ImageCarousel from '../../../../../components/ui/ImageCarousel'
 import { naira, todayISO, addDaysISO } from '../../../../../lib/format'
 import { useAuth } from '../../../../../lib/useAuth'
 import type { RoomType } from '../../../../../data/mock'
@@ -12,11 +12,88 @@ import type { RoomType } from '../../../../../data/mock'
 type Unit = { id:string; room_number:string; name?:string|null; slug:string; image_url?:string|null; images?:string[]|null; floor?:string; status:string }
 type GuestStatus = 'available'|'availableSoon'|'taken'|'reserved'
 
+function RoomGallery({ images, name }: { images:string[]; name:string }) {
+  const [selected, setSelected] = useState(0)
+
+  useEffect(() => {
+    setSelected(0)
+  }, [images.join('|')])
+
+  if (images.length === 0) return null
+
+  const mainImage = images[selected]
+  const sideImages = images.filter((_, index) => index !== selected)
+
+  return (
+    <div className="relative">
+      <div className={`grid gap-2.5 md:gap-3 ${images.length > 1 ? 'md:grid-cols-[1.65fr_1fr]' : ''}`}>
+        <button
+          type="button"
+          onClick={() => setSelected(selected)}
+          className="group relative min-h-[360px] md:min-h-[500px] overflow-hidden rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop text-left"
+          aria-label={`View ${name}, photo ${selected + 1}`}
+        >
+          <Image src={mainImage} alt={`${name}, photo ${selected + 1}`} fill priority className="object-cover transition duration-700 group-hover:scale-[1.025]" sizes="(max-width: 768px) 100vw, 65vw" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/40 via-transparent to-white/5 pointer-events-none" />
+          <div className="absolute left-4 bottom-4 rounded-full border border-white/20 bg-navy-950/70 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+            Photo {selected + 1} of {images.length}
+          </div>
+        </button>
+
+        {sideImages.length > 0 && (
+          <div className={`grid gap-2.5 md:gap-3 ${sideImages.length > 1 ? 'grid-rows-2' : ''}`}>
+            {sideImages.map((image, sideIndex) => {
+              const actualIndex = images.findIndex(value => value === image)
+              return (
+                <button
+                  key={`${image}-${actualIndex}`}
+                  type="button"
+                  onClick={() => setSelected(actualIndex)}
+                  className="group relative min-h-[170px] md:min-h-0 overflow-hidden rounded-[1.25rem] border border-black/10 bg-navy-950 text-left"
+                  aria-label={`View ${name}, photo ${actualIndex + 1}`}
+                >
+                  <Image src={image} alt={`${name}, photo ${actualIndex + 1}`} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 768px) 100vw, 35vw" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-950/35 via-transparent to-transparent" />
+                  <span className="absolute right-3 bottom-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-navy-950 shadow-sm backdrop-blur-sm">
+                    View {actualIndex + 1}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {images.length > 1 && (
+        <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1">
+          {images.map((image, index) => (
+            <button
+              key={`${image}-thumb-${index}`}
+              type="button"
+              onClick={() => setSelected(index)}
+              className={`relative shrink-0 w-16 h-12 sm:w-20 sm:h-14 overflow-hidden rounded-xl border-2 transition ${selected === index ? 'border-gold-500 ring-2 ring-gold-500/15' : 'border-transparent opacity-65 hover:opacity-100'}`}
+              aria-label={`Select photo ${index + 1}`}
+              aria-pressed={selected === index}
+            >
+              <Image src={image} alt="" fill className="object-cover" sizes="80px" />
+            </button>
+          ))}
+          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-navy-400 whitespace-nowrap ml-1">Tap any photo to view</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function IndividualRoomClient({ type, unit }: { type: RoomType; unit: Unit }) {
   const router = useRouter(); const params = useSearchParams(); const auth = useAuth()
   const [checkIn, setCheckIn] = useState(params.get('checkin') || todayISO()); const [checkOut, setCheckOut] = useState(params.get('checkout') || addDaysISO(2)); const [status, setStatus] = useState<GuestStatus | null>(null); const [availableFrom, setAvailableFrom] = useState<string|null>(null); const [paymentReady, setPaymentReady] = useState(false); const [checking, setChecking] = useState(true); const [reserving, setReserving] = useState(false); const [reserved, setReserved] = useState(false); const [error, setError] = useState<string|null>(null)
   const name = unit.name || `Room ${unit.room_number}`
-  const gallery = useMemo(() => Array.from(new Set([...(unit.images || []), unit.image_url, ...(type.images || [])].filter(Boolean) as string[])), [unit.images, unit.image_url, type.images])
+  const gallery = useMemo(() => {
+    const physical = Array.from(new Set([...(unit.images || []), unit.image_url].filter(Boolean) as string[])).slice(0, 3)
+    if (physical.length > 0) return physical
+    return Array.from(new Set((type.images || []).filter(Boolean))).slice(0, 3)
+  }, [unit.images, unit.image_url, type.images])
   const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)); const total = type.price * nights; const tax = Math.round(total * .075)
 
   useEffect(() => {
@@ -55,11 +132,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
   return <div className="container-w px-6 md:px-10 py-8">
     <Link href={`/rooms/${type.slug}?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} className="text-xs text-navy-400 hover:text-navy-700">← Back to {type.name}</Link>
     <div className="grid lg:grid-cols-[1.4fr,.6fr] gap-10 mt-5"><div>
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/15 bg-navy-950 shadow-pop">
-        <ImageCarousel images={gallery} alt={`${name}, ${type.name}, Blue Pair Hotel`} className="h-[500px] md:h-[560px]" imageClassName="scale-[1.02]" showArrows={gallery.length > 1} showDots={gallery.length > 1} showCounter={gallery.length > 1} autoPlay interval={6000} />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-950/35 via-transparent to-white/5" />
-        {gallery.length > 1 && <div className="absolute left-4 bottom-4 z-10 rounded-full border border-white/20 bg-navy-950/65 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">Room {unit.room_number} · {gallery.length} views</div>}
-      </div>
+      <RoomGallery images={gallery} name={name} />
       <span className="eyebrow mt-8 inline-block">{type.category} · Room {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1><p className="text-xs text-navy-400 mt-2">Floor {unit.floor || '—'} · This page is for this specific physical room.</p><p className="text-navy-500 leading-relaxed mt-4">{type.description}</p>
       <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{type.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{type.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{type.sizeSqm} m²</b></div></div>
       <h2 className="text-xl font-semibold mt-8 mb-4">Amenities</h2><div className="grid sm:grid-cols-2 gap-3">{type.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div>
