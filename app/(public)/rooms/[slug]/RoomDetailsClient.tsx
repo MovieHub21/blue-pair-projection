@@ -7,14 +7,13 @@ import { naira, todayISO, addDaysISO } from '../../../../lib/format'
 import RoomCard from '../../../../components/ui/RoomCard'
 import ImageCarousel from '../../../../components/ui/ImageCarousel'
 import type { RoomType } from '../../../../data/mock'
-import { useAuth, ensureCustomer } from '../../../../lib/useAuth'
-import { useStore } from '../../../../store/useStore'
+import { useAuth } from '../../../../lib/useAuth'
 
 type Unit={id:string;room_number:string;name:string;slug:string;image_url?:string|null;status:string;floor?:string}
 type AvailabilityUnit=Unit & {guest_status?:'available'|'availableSoon'|'taken';available_from?:string|null}
 
 export default function RoomDetailsClient({room,units,others,availability}:{room:RoomType;units:Unit[];others:RoomType[];availability:Record<string,number>}){
- const router=useRouter(); const params=useSearchParams(); const auth=useAuth(); const {createBooking}=useStore()
+ const router=useRouter(); const params=useSearchParams(); const auth=useAuth()
  const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [liveUnits,setLiveUnits]=useState<AvailabilityUnit[]>(units as AvailabilityUnit[]); const [checking,setChecking]=useState(false); const [reserving,setReserving]=useState(false); const [reserved,setReserved]=useState<string|null>(null); const [error,setError]=useState<string|null>(null)
  const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
 
@@ -33,9 +32,10 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
   if(!selected){setError('There is no room available for those dates yet.');return}
   setReserving(true)
   try{
-   const customerId=await ensureCustomer(auth.userId,auth.customer?.name||auth.profile?.name||'',auth.customer?.email||auth.profile?.email||auth.email||'',auth.customer?.phone||auth.profile?.phone||'')
-   const booking=createBooking({customerId,roomTypeId:room.id,roomId:selected.id,checkIn,checkOut,adults:2,children:0,amount:total+tax} as any)
-   setReserved(booking.reference)
+   const response=await fetch('/api/public/reservations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomTypeId:room.id,roomId:selected.id,checkIn,checkOut,adults:2,children:0,amount:total+tax})})
+   const data=await response.json().catch(()=>null)
+   if(!response.ok) throw new Error(data?.error||'Unable to reserve this room right now.')
+   setReserved(data?.booking?.reference||'Reservation received')
   }catch(e:any){setError(e?.message||'Unable to reserve this room right now.')}finally{setReserving(false)}
  }
 
@@ -52,11 +52,11 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
     <div className="space-y-2.5">{liveUnits.map(u=>{const state=u.guest_status||u.status; const ok=state==='available'; const soon=state==='availableSoon'; return <div key={u.id} className="card p-2.5 sm:p-4 flex items-center gap-2.5 sm:gap-4 min-h-0">
       <img src={u.image_url||room.images[0]} className="w-16 h-14 sm:w-24 sm:h-20 shrink-0 rounded-md sm:rounded-lg object-cover" alt={u.name||`Room ${u.room_number}`}/>
       <div className="min-w-0 flex-1"><b className="block text-xs sm:text-sm truncate">{u.name||`Room ${u.room_number}`}</b><span className="text-[10px] sm:text-xs text-navy-400 block truncate">Room {u.room_number} · Floor {u.floor||'—'}</span></div>
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0"><span className={(ok?'pill-green':soon?'rounded-full border border-gold-200 bg-gold-50 text-gold-700':'pill-red')+' !text-[9px] sm:!text-[11px] !px-2 sm:!px-3 !py-0.5 sm:!py-1'}>{ok?'Available':soon?'Available soon':'Taken'}</span>{ok&&<Link href={`/rooms/${room.slug}/${u.slug}?checkin=${checkIn}&checkout=${checkOut}`} className="btn-outline btn-sm !min-h-8 !px-2 sm:!px-3 !text-[10px] sm:!text-xs">View <ArrowRight size={11}/></Link>}</div>
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0"><span className={(ok?'pill-green':soon?'pill-gold':'pill-red')+' !text-[9px] sm:!text-[11px] !px-2 sm:!px-3 !py-0.5 sm:!py-1'}>{ok?'Available':soon?'Available soon':'Taken'}</span>{ok&&<Link href={`/rooms/${room.slug}/${u.slug}?checkin=${checkIn}&checkout=${checkOut}`} className="btn-outline btn-sm !min-h-8 !px-2 sm:!px-3 !text-[10px] sm:!text-xs">View <ArrowRight size={11}/></Link>}</div>
     </div>})}</div>
    </div>
    <aside className="card p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>
-    {reserved?<div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><b>Reservation received</b><p className="mt-1 text-xs leading-5">Reference {reserved}. No payment has been taken. We will notify you when the room is ready for payment.</p><Link href="/account/bookings" className="btn-outline btn-sm mt-3">View reservation</Link></div>:selected?<><button onClick={reserveRoom} disabled={reserving||checking} className="btn-gold w-full justify-center mt-5 disabled:opacity-60">{reserving?<><Loader2 size={15} className="animate-spin"/>Reserving…</>:<>Reserve without payment <BellRing size={15}/></>}</button><p className="text-[10px] text-navy-400 text-center mt-2">Reservation does not secure the room until payment is completed. First successful payment secures it.</p></>:<div className="mt-5 rounded-xl bg-gold-50 border border-gold-200 text-gold-800 text-sm p-4">{availableSoon.length?`This room type has ${availableSoon.length} room${availableSoon.length===1?'':'s'} becoming available soon.`:'No rooms of this type are available for these dates yet.'}</div>}
+    {reserved?<div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><b>Reservation received</b><p className="mt-1 text-xs leading-5">Reference {reserved}. No payment has been taken. We will notify you when the room is ready for payment.</p><Link href="/account/bookings" className="btn-outline btn-sm mt-3">View reservation</Link></div>:selected?<><button onClick={reserveRoom} disabled={reserving||checking||auth.loading} className="btn-gold w-full justify-center mt-5 disabled:opacity-60">{reserving?<><Loader2 size={15} className="animate-spin"/>Reserving…</>:<>Reserve without payment <BellRing size={15}/></>}</button><p className="text-[10px] text-navy-400 text-center mt-2">Reservation does not secure the room until payment is completed. First successful payment secures it.</p></>:<div className="mt-5 rounded-xl bg-gold-50 border border-gold-200 text-gold-800 text-sm p-4">{availableSoon.length?`This room type has ${availableSoon.length} room${availableSoon.length===1?'':'s'} becoming available soon.`:'No rooms of this type are available for these dates yet.'}</div>}
     {error&&<div className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-xs text-red-700">{error}</div>}
    </aside>
   </div>
