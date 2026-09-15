@@ -61,9 +61,6 @@ export async function GET(request: Request) {
     if (bookingLookupError) throw bookingLookupError
     if (!booking) return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
 
-    // If the webhook already completed the booking, this callback is simply a
-    // successful redirect. Never undo a confirmed payment because the lock was
-    // already cleared by the other Paystack delivery path.
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') {
       return NextResponse.redirect(`${guestUrl}?payment=success&reference=${encodeURIComponent(reference)}`)
     }
@@ -82,8 +79,6 @@ export async function GET(request: Request) {
       && room.status === 'available'
 
     if (!ownsActiveLock) {
-      // Give the webhook a chance to have completed the booking between our
-      // first booking read and this lock read.
       const { data: refreshedBooking } = await admin.from('bookings')
         .select('status,payment_status')
         .eq('id', booking.id)
@@ -107,7 +102,7 @@ export async function GET(request: Request) {
       .update({ payment_status: 'paid', status: 'confirmed', reservation_expires_at: null })
       .eq('id', booking.id)
       .in('status', ['pending', 'confirmed'])
-      .eq('payment_status', 'pending')
+      .neq('payment_status', 'paid')
     if (bookingUpdateError) throw bookingUpdateError
 
     const { error: lockClearError } = await admin.from('rooms')
