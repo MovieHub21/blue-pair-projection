@@ -3,9 +3,7 @@ import {useEffect,useState} from 'react'
 import {useSearchParams,usePathname} from 'next/navigation'
 import Link from 'next/link'
 import {Check,Calendar,Users,Wallet,Loader2,ArrowLeft,Shirt,UtensilsCrossed,Dumbbell,Gamepad2} from 'lucide-react'
-import {useStore} from '../../../store/useStore'
-import {useAuth,ensureCustomer} from '../../../lib/useAuth'
-import {supabase} from '../../../lib/supabase/client'
+import {useAuth} from '../../../lib/useAuth'
 import {naira,nightsBetween,formatDate,todayISO,addDaysISO} from '../../../lib/format'
 import type {RoomType,ExtraServiceSelection} from '../../../data/mock'
 const STEPS=['Room','Dates & Guests','Guest Info','Summary']
@@ -23,14 +21,35 @@ const EXTRA_META:Record<string,{icon:any;description:string}>={
  game:{icon:Gamepad2,description:'Game house access during your stay.'},
 }
 export default function BookingFlowPaystackClient({roomTypes}:{roomTypes:RoomType[]}){
- const params=useSearchParams(); const pathname=usePathname(); const auth=useAuth(); const {createBooking}=useStore(); const typeSlug=params.get('room')||''; const [step,setStep]=useState(0); const [typeId,setTypeId]=useState(roomTypes.find(r=>r.slug===typeSlug)?.id||roomTypes[0]?.id||''); const [unitId,setUnitId]=useState(params.get('unit')||''); const [units,setUnits]=useState<Unit[]>([]); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [adults,setAdults]=useState(2); const [children,setChildren]=useState(0); const [guest,setGuest]=useState({name:'',email:'',phone:'',requests:''}); const [extraIds,setExtraIds]=useState<string[]>([]); const [submitting,setSubmitting]=useState(false); const [submitError,setSubmitError]=useState<string|null>(null); const paymentResult=params.get('payment'); const paymentReference=params.get('reference')||''
+ const params=useSearchParams(); const pathname=usePathname(); const auth=useAuth(); const typeSlug=params.get('room')||''; const [step,setStep]=useState(0); const [typeId,setTypeId]=useState(roomTypes.find(r=>r.slug===typeSlug)?.id||roomTypes[0]?.id||''); const [unitId,setUnitId]=useState(params.get('unit')||''); const [units,setUnits]=useState<Unit[]>([]); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [adults,setAdults]=useState(2); const [children,setChildren]=useState(0); const [guest,setGuest]=useState({name:'',email:'',phone:'',requests:''}); const [extraIds,setExtraIds]=useState<string[]>([]); const [submitting,setSubmitting]=useState(false); const [submitError,setSubmitError]=useState<string|null>(null); const paymentResult=params.get('payment'); const paymentReference=params.get('reference')||''
  const room=roomTypes.find(r=>r.id===typeId); const nights=nightsBetween(checkIn,checkOut); const subtotal=(room?.price||0)*nights; const extraTotal=EXTRA_SERVICES.filter(x=>extraIds.includes(x.id)).reduce((sum,x)=>sum+x.price,0); const taxableSubtotal=subtotal+extraTotal; const tax=Math.round(taxableSubtotal*.075); const total=taxableSubtotal+tax; const selected=units.find(u=>u.id===unitId); const maxChildren=Math.max(0,(room?.guests||1)-adults)
  useEffect(()=>{if(!typeId)return; fetch(`/api/rooms?roomTypeId=${encodeURIComponent(typeId)}`).then(r=>r.ok?r.json():[]).then(data=>{setUnits(data); if(!unitId){const a=data.find((x:Unit)=>x.status==='available');if(a)setUnitId(a.id)}}).catch(()=>{})},[typeId])
  useEffect(()=>{if(room)setAdults(a=>Math.min(Math.max(1,a),room.guests))},[room?.id,room?.guests])
  useEffect(()=>{if(auth.customer||auth.profile)setGuest(g=>({...g,name:g.name||auth.customer?.name||auth.profile?.name||'',email:g.email||auth.customer?.email||auth.profile?.email||auth.email||'',phone:g.phone||auth.customer?.phone||auth.profile?.phone||''}))},[auth.customer,auth.profile,auth.email])
  useEffect(()=>{if(paymentResult==='success'&&paymentReference&&auth.userId)void fetch('/api/email/payment-confirmation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reference:paymentReference})})},[paymentResult,paymentReference,auth.userId])
  function toggleExtra(id:string){setExtraIds(ids=>ids.includes(id)?ids.filter(x=>x!==id):[...ids,id])}
- async function payWithPaystack(){if(!auth.userId||!room||!selected)return;if(adults+children>room.guests){setSubmitError(`This ${room.name} allows a maximum of ${room.guests} guest${room.guests===1?'':'s'}.`);return}setSubmitting(true);setSubmitError(null);try{const customerId=await ensureCustomer(auth.userId,guest.name,guest.email,guest.phone);const extras=EXTRA_SERVICES.filter(x=>extraIds.includes(x.id));const booking=createBooking({customerId,roomTypeId:room.id,roomId:selected.id,checkIn,checkOut,adults,children,amount:total,specialRequests:guest.requests.trim()||undefined,extraServices:extras} as any);const {error:extraError}=await supabase.from('bookings').update({extra_services:extras}).eq('id',booking.id);if(extraError)throw new Error(`Unable to save selected extra services: ${extraError.message}`);const response=await fetch('/api/paystack/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:booking.id})});const data=await response.json();if(!response.ok||!data.authorizationUrl)throw new Error(data.error||'Unable to open Paystack checkout.');window.location.assign(data.authorizationUrl)}catch(e:any){setSubmitError(e?.message||'Something went wrong starting payment.');setSubmitting(false)}}
+ async function payWithPaystack(){
+  if(!auth.userId||!room||!selected)return
+  if(adults+children>room.guests){setSubmitError(`This ${room.name} allows a maximum of ${room.guests} guest${room.guests===1?'':'s'}.`);return}
+  setSubmitting(true);setSubmitError(null)
+  try{
+   const reservationResponse=await fetch('/api/public/reservations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomTypeId:room.id,roomId:selected.id,checkIn,checkOut,adults,children,amount:total,specialRequests:guest.requests.trim()||undefined,extraServices:EXTRA_SERVICES.filter(x=>extraIds.includes(x.id))})})
+   const reservationData=await reservationResponse.json().catch(()=>({}))
+   if(!reservationResponse.ok||!reservationData.booking?.id){
+    if(reservationData.code==='PAYMENT_IN_PROGRESS') throw new Error('Another guest is currently paying for this room. Please try again in a few seconds. Your selected room has not been changed.')
+    if(reservationData.code==='ROOM_SOLD') throw new Error('This room has just been taken by another guest. Please try this same room again in a few seconds, or choose another room yourself.')
+    throw new Error(reservationData.error||'Unable to reserve this room right now.')
+   }
+   const response=await fetch('/api/paystack/initialize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:reservationData.booking.id})})
+   const data=await response.json().catch(()=>({}))
+   if(!response.ok||!data.authorizationUrl){
+    if(data.code==='PAYMENT_IN_PROGRESS') throw new Error('Another guest is currently completing payment for this room. Please try again in a few seconds. Your selected room has not been changed.')
+    if(data.code==='ROOM_SOLD') throw new Error('This room has just been taken by another guest. Please try this same room again in a few seconds, or choose another room yourself.')
+    throw new Error(data.error||'Unable to open Paystack checkout.')
+   }
+   window.location.assign(data.authorizationUrl)
+  }catch(e:any){setSubmitError(e?.message||'Something went wrong starting payment.');setSubmitting(false)}
+ }
  if(!room)return <div className="container-w px-6 py-16 text-center">No room type available.</div>
  if(paymentResult){const ok=paymentResult==='success';return <div className="container-w px-6 py-16 max-w-lg mx-auto text-center"><div className={'w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-5 '+(ok?'bg-emerald-100 text-emerald-600':'bg-red-100 text-red-600')}>{ok?<Check size={30}/>:<span className="text-2xl">!</span>}</div><h1 className="text-3xl font-semibold mb-3">{ok?'Booking confirmed':'Payment not completed'}</h1><p className="text-sm text-navy-500 leading-6 mb-6">{ok?'Your payment was verified and your selected room has been secured.': 'We could not confirm this payment.'}</p><Link href="/account/bookings" className="btn-primary">View my bookings</Link></div>}
  if(!auth.loading&&!auth.userId){const redirect=`${pathname}?${params.toString()}`;return <div className="container-w px-6 py-16 max-w-md mx-auto text-center"><h2 className="text-2xl font-semibold mb-3">Sign in to book</h2><p className="text-sm text-navy-500 mb-8">Sign in so your booking can be attached to your account.</p><Link href={`/account/login?redirect=${encodeURIComponent(redirect)}`} className="btn-primary">Sign in</Link></div>}
