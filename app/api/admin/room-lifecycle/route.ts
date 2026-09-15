@@ -5,56 +5,56 @@ import { sendResendEmail } from '../../../../lib/email/resend'
 import { reservationReadyEmail } from '../../../../lib/email/templates'
 
 export const dynamic = 'force-dynamic'
-
 type Action = 'status' | 'checkout' | 'maintenance_request'
-
-function escapeHtml(value: unknown) {
-  return String(value ?? '').replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#039;' })[char] || char)
-}
-
+function escapeHtml(value: unknown) { return String(value ?? '').replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#039;' })[char] || char) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
+const HOLD_MINUTES = 10
 
 async function requireStaff() {
-  const auth = createSupabaseServerClient()
-  const { data: { user } } = await auth.auth.getUser()
-  if (!user) return null
-  const admin = createSupabaseAdminClient()
-  const { data: roleRows } = await admin.from('user_roles').select('role').eq('user_id', user.id)
-  const roles = (roleRows ?? []).map((r: any) => String(r.role))
-  if (!roles.some(role => ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance'].includes(role))) return null
+  const auth = createSupabaseServerClient(); const { data: { user } } = await auth.auth.getUser(); if (!user) return null
+  const admin = createSupabaseAdminClient(); const { data: roleRows } = await admin.from('user_roles').select('role').eq('user_id', user.id)
+  const roles = (roleRows ?? []).map((r: any) => String(r.role)); if (!roles.some(role => ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance'].includes(role))) return null
   return user
 }
 
 async function sendToDepartment(department: 'housekeeping' | 'maintenance', subject: string, html: string, text: string) {
-  const admin = createSupabaseAdminClient()
-  const { data: staff } = await admin.from('staff').select('email,name,department,role').eq('status', 'active')
+  const admin = createSupabaseAdminClient(); const { data: staff } = await admin.from('staff').select('email,name,department,role').eq('status', 'active')
   const recipients = (staff ?? []).filter(s => `${s.department ?? ''} ${s.role ?? ''}`.toLowerCase().includes(department)).map(s => String(s.email || '').trim().toLowerCase()).filter(Boolean)
   await Promise.all(recipients.map(to => sendResendEmail({ to, subject, html, text }).catch(error => { console.error(`[room-lifecycle] ${department} notification failed`, error); return null })))
   return recipients.length
 }
 
 async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAdminClient>, roomId: string) {
-  const { data: pending, error } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,status,payment_status').eq('status', 'pending').eq('payment_status', 'pending').eq('room_id', roomId)
+  const { data: pending, error } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,status,payment_status,check_in,check_out').eq('status', 'pending').eq('payment_status', 'pending').eq('room_id', roomId)
   if (error) throw error
   const room = (await admin.from('rooms').select('room_number,status').eq('id', roomId).maybeSingle()).data
   if (!room || room.status !== 'available') return 0
   let sent = 0
+  const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000).toISOString()
   for (const booking of pending ?? []) {
     const { data: existing } = await admin.from('email_logs').select('id').eq('dedupe_key', `reservation_ready:${booking.id}`).maybeSingle()
     if (existing) continue
     const { data: blocking } = await admin.from('bookings').select('id,check_in,check_out').eq('room_id', roomId).in('status', ['confirmed', 'checked_in']).eq('payment_status', 'paid')
-    if ((blocking ?? []).some(b => overlaps((booking as any).check_in, (booking as any).check_out, b.check_in, b.check_out))) continue
+    if ((blocking ?? []).some(b => overlaps(booking.check_in, booking.check_out, b.check_in, b.check_out))) continue
+
+    await admin.from('bookings').update({ reservation_expires_at: expiresAt }).eq('id', booking.id).eq('status', 'pending').eq('payment_status', 'pending')
     const customer = (await admin.from('customers').select('name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
     const recipient = String(customer?.email || '').trim().toLowerCase()
     if (!recipient) continue
     const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bluepairhotel.com'
     const paymentUrl = `${site}/account/bookings`
-    const email = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, paymentUrl })
+    const baseEmail = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, paymentUrl })
+    const timerText = `You have ${HOLD_MINUTES} minutes from this email to complete payment. If payment is not completed within ${HOLD_MINUTES} minutes, this reservation hold will automatically expire so the room can be offered again.`
+    const email = {
+      subject: baseEmail.subject,
+      text: `${baseEmail.text}\n\n${timerText}`,
+      html: baseEmail.html.replace('</div></body></html>', `<p style="margin:20px 0;padding:14px;background:#fff8e8;border:1px solid #ecd9a7;border-radius:8px;color:#6b4f00"><strong>${HOLD_MINUTES}-minute payment hold:</strong> ${timerText}</p></div></body></html>`),
+    }
     const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
     const { error: logError } = await admin.from('email_logs').insert({ dedupe_key: `reservation_ready:${booking.id}`, event: 'reservation_ready', booking_id: booking.id, recipient, subject: email.subject, resend_id: result.id ?? null })
     if (logError) continue
     sent++
-    if (customer?.user_id) await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'reservation_ready', title: 'Your reserved room is available', body: `Room ${room.room_number} is now available. Choose your stay dates and pay to secure it.`, href: '/account/bookings', metadata: { booking_id: booking.id, booking_reference: booking.reference, automation: true } })
+    if (customer?.user_id) await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'reservation_ready', title: 'Your reserved room is available', body: `Room ${room.room_number} is now available. You have ${HOLD_MINUTES} minutes to complete payment and secure it.`, href: '/account/bookings', metadata: { booking_id: booking.id, booking_reference: booking.reference, reservation_expires_at: expiresAt, automation: true } })
   }
   return sent
 }
@@ -74,16 +74,14 @@ export async function POST(request: Request) {
       const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}. Booking: ${requestRow.booking_ref || '—'}.`)
       return NextResponse.json({ ok: true, notified: count })
     }
-    const user = await requireStaff()
-    if (!user) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
+    const user = await requireStaff(); if (!user) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
     if (action === 'status') {
       if (!body.roomId || !['available', 'occupied', 'cleaning', 'cleaning_required', 'maintenance'].includes(body.status || '')) return NextResponse.json({ error: 'Invalid room status update.' }, { status: 400 })
       const { data: room, error: roomError } = await admin.from('rooms').select('id,room_number,status,room_type_id').eq('id', body.roomId).maybeSingle()
       if (roomError) throw roomError
       if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
       const previousStatus = room.status
-      const { error: updateError } = await admin.from('rooms').update({ status: body.status }).eq('id', body.roomId)
-      if (updateError) throw updateError
+      const { error: updateError } = await admin.from('rooms').update({ status: body.status }).eq('id', body.roomId); if (updateError) throw updateError
       let notified = 0
       if (body.status === 'cleaning' || body.status === 'cleaning_required') {
         const { data: existing } = await admin.from('housekeeping_tasks').select('id').eq('room_id', room.id).neq('status', 'completed').maybeSingle()
@@ -101,8 +99,7 @@ export async function POST(request: Request) {
     const { data: booking, error: bookingError } = await admin.from('bookings').select('id,reference,room_id,customer_id,status').eq('id', body.bookingId).maybeSingle()
     if (bookingError) throw bookingError
     if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 })
-    const { error: checkoutError } = await admin.from('bookings').update({ status: 'checked_out', checked_out_at: new Date().toISOString() }).eq('id', booking.id)
-    if (checkoutError) throw checkoutError
+    const { error: checkoutError } = await admin.from('bookings').update({ status: 'checked_out', checked_out_at: new Date().toISOString() }).eq('id', booking.id); if (checkoutError) throw checkoutError
     if (!booking.room_id) return NextResponse.json({ ok: true, notified: 0 })
     await admin.from('rooms').update({ status: 'cleaning_required' }).eq('id', booking.room_id)
     const room = (await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data
