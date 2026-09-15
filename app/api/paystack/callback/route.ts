@@ -15,9 +15,7 @@ export async function GET(request: Request) {
     const secret = process.env.PAYSTACK_SECRET_KEY
     if (!secret) return NextResponse.redirect(`${guestUrl}?payment=not-configured`)
 
-    // The callback only verifies that Paystack reports success and sends the
-    // guest back to the site. It must NOT finalize the booking/payment here.
-    // The signed Paystack webhook is the authoritative payment confirmation.
+    
     const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: { Authorization: `Bearer ${secret}` },
       cache: 'no-store',
