@@ -28,14 +28,15 @@ export async function POST(request: Request) {
     const email = String(body.email ?? '').trim().toLowerCase()
     const phone = String(body.phone ?? '').trim()
     const roomTypeId = String(body.roomTypeId ?? '').trim()
+    const roomId = String(body.roomId ?? '').trim()
     const checkIn = String(body.checkIn ?? '').trim()
     const checkOut = String(body.checkOut ?? '').trim()
     const adults = Number(body.adults)
     const children = Number(body.children ?? 0)
     const specialRequests = String(body.specialRequests ?? '').trim()
 
-    if (!name || !email || !phone || !roomTypeId || !isValidDate(checkIn) || !isValidDate(checkOut)) {
-      return NextResponse.json({ error: 'Name, email, phone, room and valid dates are required.' }, { status: 400 })
+    if (!name || !email || !phone || !roomTypeId || !roomId || !isValidDate(checkIn) || !isValidDate(checkOut)) {
+      return NextResponse.json({ error: 'Name, email, phone, room, room type and valid dates are required.' }, { status: 400 })
     }
     if (new Date(checkOut) <= new Date(checkIn)) {
       return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
@@ -54,6 +55,32 @@ export async function POST(request: Request) {
     if (roomError) throw roomError
     if (!room || !room.active) return NextResponse.json({ error: 'That room type is unavailable.' }, { status: 400 })
     if (adults > Number(room.guests)) return NextResponse.json({ error: `This room allows up to ${room.guests} adults.` }, { status: 400 })
+
+    const { data: selectedRoom, error: selectedRoomError } = await admin
+      .from('rooms')
+      .select('id,room_number,room_type_id,status')
+      .eq('id', roomId)
+      .maybeSingle()
+
+    if (selectedRoomError) throw selectedRoomError
+    if (!selectedRoom) return NextResponse.json({ error: 'That room could not be found.' }, { status: 400 })
+    if (selectedRoom.room_type_id !== roomTypeId) return NextResponse.json({ error: 'The selected room does not belong to that room type.' }, { status: 400 })
+    if (selectedRoom.status !== 'available') return NextResponse.json({ error: `Room ${selectedRoom.room_number} is no longer available.` }, { status: 409 })
+
+    const { data: conflictingBookings, error: conflictError } = await admin
+      .from('bookings')
+      .select('id,check_in,check_out,status')
+      .eq('room_id', roomId)
+      .in('status', ['pending', 'confirmed', 'checked_in'])
+
+    if (conflictError) throw conflictError
+
+    const hasConflict = (conflictingBookings ?? []).some((booking: any) =>
+      checkIn < String(booking.check_out) && String(booking.check_in) < checkOut
+    )
+    if (hasConflict) {
+      return NextResponse.json({ error: `Room ${selectedRoom.room_number} is already reserved for some of those dates.` }, { status: 409 })
+    }
 
     const start = new Date(`${checkIn}T00:00:00Z`)
     const end = new Date(`${checkOut}T00:00:00Z`)
@@ -102,7 +129,7 @@ export async function POST(request: Request) {
         reference,
         customer_id: customerId,
         room_type_id: roomTypeId,
-        room_id: null,
+        room_id: roomId,
         check_in: checkIn,
         check_out: checkOut,
         adults,
@@ -122,6 +149,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       booking,
       customer: { id: customerId, name, email, phone },
+      room: { id: selectedRoom.id, roomNumber: selectedRoom.room_number },
       totals: { nights, subtotal, tax, amount },
     }, { status: 201 })
   } catch (error: any) {
