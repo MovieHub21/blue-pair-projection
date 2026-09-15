@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
 
 type EventName =
-  | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified'
+  | 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified'
   | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder'
   | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status'
   | 'support_acknowledged' | 'support_status'
