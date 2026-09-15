@@ -2,15 +2,16 @@
 import { useStore } from '../../store/useStore'
 import type { RoomStatus } from '../../data/mock'
 
-const COLORS: Record<RoomStatus, string> = {
+const COLORS: Record<string, string> = {
   available: 'bg-emerald-500',
+  pending: 'bg-amber-400 text-navy-950',
   occupied: 'bg-blue-600',
   cleaning: 'bg-amber-400 text-navy-950',
   cleaning_required: 'bg-orange-500',
   maintenance: 'bg-red-600',
 }
-const LABELS: Record<RoomStatus, string> = {
-  available: 'Available', occupied: 'Occupied', cleaning: 'Cleaning', cleaning_required: 'Cleaning Req.', maintenance: 'Maintenance',
+const LABELS: Record<string, string> = {
+  available: 'Available', pending: 'Pending', occupied: 'Occupied', cleaning: 'Cleaning', cleaning_required: 'Cleaning Req.', maintenance: 'Maintenance',
 }
 
 export default function AvailabilityGrid({ onSelect }: { onSelect?: (roomId: string) => void }) {
@@ -25,9 +26,9 @@ export default function AvailabilityGrid({ onSelect }: { onSelect?: (roomId: str
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
         {rooms.map(r => (
           <button key={r.id} onClick={() => onSelect?.(r.id)}
-            className={'aspect-square rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs gap-0.5 hover:brightness-110 transition ' + COLORS[r.status]}>
+            className={'aspect-square rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs gap-0.5 hover:brightness-110 transition ' + (COLORS[r.status] || COLORS.available)}>
             <span>{r.roomNumber}</span>
-            <span className="text-[8px] font-medium opacity-80">{LABELS[r.status]}</span>
+            <span className="text-[8px] font-medium opacity-80">{LABELS[r.status] || r.status}</span>
           </button>
         ))}
       </div>
