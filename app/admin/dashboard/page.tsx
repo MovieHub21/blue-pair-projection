@@ -25,15 +25,7 @@ function dateInRange(value: string | undefined, start: string, end: string) {
 function revenueSourceLabel(outlet: string | null | undefined) {
   const key = String(outlet || '').toLowerCase().trim()
   const labels: Record<string, string> = {
-    rooms: 'Bookings',
-    booking: 'Bookings',
-    annex: 'Annex',
-    restaurant: 'Restaurant',
-    bar: 'Bar',
-    events: 'Events',
-    billboard: 'Billboard',
-    ads: 'Billboard',
-    parking: 'Parking',
+    rooms: 'Bookings', booking: 'Bookings', annex: 'Annex', restaurant: 'Restaurant', bar: 'Bar', events: 'Events', billboard: 'Billboard', ads: 'Billboard', parking: 'Parking',
   }
   return labels[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : 'Other')
 }
@@ -49,14 +41,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true
     const loadRevenue = async () => {
-      const { data } = await supabase
-        .from('financial_transactions')
-        .select('amount,direction,status,outlet,occurred_at')
-        .eq('direction', 'credit')
-        .eq('status', 'posted')
-        .gte('occurred_at', `${rangeStart}T00:00:00`)
-        .lte('occurred_at', `${today}T23:59:59.999`)
-        .order('occurred_at', { ascending: true })
+      const { data } = await supabase.from('financial_transactions').select('amount,direction,status,outlet,occurred_at').eq('direction', 'credit').eq('status', 'posted').gte('occurred_at', `${rangeStart}T00:00:00`).lte('occurred_at', `${today}T23:59:59.999`).order('occurred_at', { ascending: true })
       if (active) setFinancialTransactions((data || []) as Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string }>)
     }
     loadRevenue()
@@ -65,12 +50,11 @@ export default function AdminDashboardPage() {
 
   const stats = useMemo(() => {
     const paid = payments.filter(p => p.status === 'success')
-    const revenue = financialTransactions.length
-      ? financialTransactions.reduce((sum, p) => sum + Number(p.amount || 0), 0)
-      : paid.filter(p => dateInRange(p.date, rangeStart, today)).reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    const revenue = financialTransactions.length ? financialTransactions.reduce((sum, p) => sum + Number(p.amount || 0), 0) : paid.filter(p => dateInRange(p.date, rangeStart, today)).reduce((sum, p) => sum + Number(p.amount || 0), 0)
     const periodBookings = bookings.filter(b => dateInRange(b.createdAt || b.checkIn, rangeStart, today) && b.status !== 'cancelled')
-    const checkIns = bookings.filter(b => dateInRange(b.checkIn, rangeStart, today)).length
-    const checkOuts = bookings.filter(b => dateInRange(b.checkOut, rangeStart, today)).length
+    const scheduledStatuses = new Set(['confirmed', 'checked_in', 'checked_out'])
+    const checkIns = bookings.filter(b => dateInRange(b.checkIn, rangeStart, today) && b.paymentStatus === 'paid' && scheduledStatuses.has(b.status)).length
+    const checkOuts = bookings.filter(b => dateInRange(b.checkOut, rangeStart, today) && b.paymentStatus === 'paid' && scheduledStatuses.has(b.status)).length
     const occupied = rooms.filter(r => r.status === 'occupied').length
     const available = rooms.filter(r => r.status === 'available').length
     const cleaning = rooms.filter(r => r.status === 'cleaning_required').length
@@ -79,20 +63,14 @@ export default function AdminDashboardPage() {
     const openMaintenance = maintenanceTickets.filter(t => !['resolved', 'closed', 'completed'].includes(String(t.status).toLowerCase())).length
     const openRequests = guestRequests.filter(r => !['resolved', 'completed', 'closed'].includes(String(r.status).toLowerCase())).length
     const sourceMap: Record<string, number> = {}
-    financialTransactions.forEach(t => {
-      const source = revenueSourceLabel(t.outlet)
-      sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0)
-    })
+    financialTransactions.forEach(t => { const source = revenueSourceLabel(t.outlet); sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0) })
     return { revenue, periodBookings, checkIns, checkOuts, occupied, available, cleaning, pending, activeGuests, openMaintenance, openRequests, sourceMap }
   }, [payments, bookings, rooms, maintenanceTickets, guestRequests, financialTransactions, rangeStart, today])
 
   const revenueByDay = useMemo(() => {
     if (financialTransactions.length) {
       const map: Record<string, number> = {}
-      financialTransactions.forEach(t => {
-        const date = t.occurred_at.slice(0, 10)
-        map[date] = (map[date] || 0) + Number(t.amount || 0)
-      })
+      financialTransactions.forEach(t => { const date = t.occurred_at.slice(0, 10); map[date] = (map[date] || 0) + Number(t.amount || 0) })
       return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).slice(-7).map(([date, value]) => ({ day: date.slice(5), value }))
     }
     const paid = payments.filter(p => p.status === 'success' && p.date >= rangeStart && p.date <= today)
