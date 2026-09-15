@@ -6,7 +6,7 @@ import { useStore } from '../../../store/useStore'
 import { naira, formatDate, nightsBetween, todayISO, addDaysISO } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Modal from '../../../components/ui/Modal'
-import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Plus, Check, X } from 'lucide-react'
+import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Plus, Check, X, ChevronDown } from 'lucide-react'
 import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatcher'
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
@@ -22,7 +22,7 @@ const EXTRA_SERVICES: ExtraService[] = [
 ]
 
 const emptyWalkIn = {
-  name: '', email: '', phone: '', roomTypeId: '', checkIn: todayISO(), checkOut: addDaysISO(1),
+  name: '', email: '', phone: '', roomTypeId: '', roomId: '', checkIn: todayISO(), checkOut: addDaysISO(1),
   adults: 1, children: 0, specialRequests: '',
 }
 
@@ -34,6 +34,7 @@ export default function BookingManagement() {
   const [q, setQ] = useState('')
   const [showWalkIn, setShowWalkIn] = useState(false)
   const [walkIn, setWalkIn] = useState({ ...emptyWalkIn, roomTypeId: roomTypes[0]?.id ?? '' })
+  const [expandedWalkInType, setExpandedWalkInType] = useState<string | null>(roomTypes[0]?.id ?? null)
   const [creating, setCreating] = useState(false)
   const [confirmingPayment, setConfirmingPayment] = useState<typeof bookings[0] | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
@@ -60,6 +61,7 @@ export default function BookingManagement() {
 
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
+  const physicalRoomOf = (id?: string) => id ? rooms.find(r => r.id === id) : undefined
   const filtered = bookings.filter(b => {
     const customer = custOf(b.customerId)
     const query = q.toLowerCase()
@@ -71,6 +73,38 @@ export default function BookingManagement() {
   const walkInSubtotal = (walkInRoom?.price ?? 0) * walkInNights
   const walkInTax = Math.round(walkInSubtotal * 0.075)
   const walkInTotal = walkInSubtotal + walkInTax
+
+  const walkInAvailableRooms = (roomTypeId: string) => rooms.filter(room => {
+    if (room.roomTypeId !== roomTypeId || room.status !== 'available') return false
+    return !bookings.some(booking => {
+      if (booking.roomId !== room.id || !['pending', 'confirmed', 'checked_in'].includes(booking.status)) return false
+      return walkIn.checkIn < booking.checkOut && booking.checkIn < walkIn.checkOut
+    })
+  })
+
+  function selectWalkInType(roomTypeId: string) {
+    setWalkIn(current => ({
+      ...current,
+      roomTypeId,
+      roomId: current.roomTypeId === roomTypeId ? current.roomId : '',
+    }))
+    setExpandedWalkInType(current => current === roomTypeId ? null : roomTypeId)
+    setError(null)
+  }
+
+  function selectWalkInRoom(roomTypeId: string, roomId: string) {
+    setWalkIn(current => ({ ...current, roomTypeId, roomId }))
+    setExpandedWalkInType(roomTypeId)
+    setError(null)
+  }
+
+  function openWalkIn() {
+    setError(null)
+    const firstType = roomTypes.find(r => r.active)?.id ?? ''
+    setWalkIn({ ...emptyWalkIn, roomTypeId: firstType, roomId: '' })
+    setExpandedWalkInType(firstType || null)
+    setShowWalkIn(true)
+  }
 
   function openBooking(booking: typeof bookings[0]) {
     setActive(booking)
@@ -107,8 +141,12 @@ export default function BookingManagement() {
 
   async function createWalkIn() {
     setError(null)
-    if (!walkIn.name || !walkIn.email || !walkIn.phone || !walkIn.roomTypeId) {
-      setError('Name, email, phone and room are required.')
+    if (!walkIn.name || !walkIn.email || !walkIn.phone || !walkIn.roomTypeId || !walkIn.roomId) {
+      setError('Name, email, phone and an available room are required.')
+      return
+    }
+    if (!walkInAvailableRooms(walkIn.roomTypeId).some(room => room.id === walkIn.roomId)) {
+      setError('That room is no longer available for the selected dates. Please choose another room.')
       return
     }
     setCreating(true)
@@ -122,6 +160,7 @@ export default function BookingManagement() {
       await loadAll()
       setShowWalkIn(false)
       setWalkIn({ ...emptyWalkIn, roomTypeId: roomTypes[0]?.id ?? '' })
+      setExpandedWalkInType(roomTypes[0]?.id ?? null)
       setError(null)
       window.setTimeout(() => {
         const created = useStore.getState().bookings.find(b => b.id === data.booking.id)
@@ -177,8 +216,8 @@ export default function BookingManagement() {
   async function checkIn(id: string) {
     const booking = bookings.find(b => b.id === id)
     if (!booking) return
-    const room = freeRoom(booking.roomTypeId)
-    if (!room) return
+    const room = booking.roomId ? rooms.find(r => r.id === booking.roomId) : freeRoom(booking.roomTypeId)
+    if (!room || room.status !== 'available') return
     checkInBooking(id, room.id)
     await supabase.from('bookings').update({ checked_in_at: new Date().toISOString() }).eq('id', id)
   }
@@ -200,7 +239,7 @@ export default function BookingManagement() {
             <Search size={14} className="text-navy-400" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search guest, email or booking…" className="text-sm outline-none flex-1" />
           </div>
-          <button onClick={() => { setError(null); setShowWalkIn(true) }} className="btn-gold flex items-center gap-2"><UserRoundPlus size={16} /> Walk-in booking</button>
+          <button onClick={openWalkIn} className="btn-gold flex items-center gap-2"><UserRoundPlus size={16} /> Walk-in booking</button>
         </div>
       </div>
 
@@ -214,7 +253,7 @@ export default function BookingManagement() {
             <tr key={b.id} className="border-b border-black/5 last:border-none">
               <td className="p-4 font-medium">{b.reference}</td><td className="p-4">{custOf(b.customerId)?.name}</td>
               <td className="p-4">{(b as any).source === 'walk_in' ? <span className="rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] font-semibold">Walk-in</span> : <span className="text-xs text-navy-400">Online</span>}</td>
-              <td className="p-4 text-navy-500">{roomOf(b.roomTypeId)?.name}</td><td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td><td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
+              <td className="p-4 text-navy-500">{physicalRoomOf(b.roomId)?.roomNumber ? `Room ${physicalRoomOf(b.roomId)?.roomNumber}` : roomOf(b.roomTypeId)?.name}</td><td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td><td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
               <td className="p-4 font-display">{naira(b.amount)}</td><td className="p-4"><StatusBadge status={b.paymentStatus} /></td><td className="p-4"><StatusBadge status={b.status} /></td>
               <td className="p-4"><div className="flex gap-2 flex-wrap">
                 <button onClick={() => openBooking(b)} className="text-xs font-semibold text-navy-900">View</button>
@@ -233,7 +272,7 @@ export default function BookingManagement() {
         {active && <div className="space-y-5">
           <div className="flex flex-col gap-0.5">{[
             ['Customer', custOf(active.customerId)?.name], ['Email', custOf(active.customerId)?.email], ['Phone', custOf(active.customerId)?.phone],
-            ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'], ['Room', roomOf(active.roomTypeId)?.name],
+            ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'], ['Room', physicalRoomOf(active.roomId)?.roomNumber ? `Room ${physicalRoomOf(active.roomId)?.roomNumber} · ${roomOf(active.roomTypeId)?.name}` : roomOf(active.roomTypeId)?.name],
             ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`], ['Guests', `${active.adults} adults, ${active.children} children`],
             ['Payment', active.paymentStatus], ['Special requests', active.specialRequests || 'None'],
             ['Checked in at', (active as any).checkedInAt ? new Date((active as any).checkedInAt).toLocaleString('en-NG') : 'Not checked in'],
@@ -260,20 +299,61 @@ export default function BookingManagement() {
             <div><label className="field-label">Guest full name</label><input value={walkIn.name} onChange={e => setWalkIn({ ...walkIn, name: e.target.value })} className="field-input" placeholder="Guest name" /></div>
             <div><label className="field-label">Email</label><input type="email" value={walkIn.email} onChange={e => setWalkIn({ ...walkIn, email: e.target.value })} className="field-input" placeholder="guest@email.com" /></div>
             <div><label className="field-label">Phone</label><input value={walkIn.phone} onChange={e => setWalkIn({ ...walkIn, phone: e.target.value })} className="field-input" placeholder="+234 800 000 0000" /></div>
-            <div><label className="field-label">Room type</label><select value={walkIn.roomTypeId} onChange={e => setWalkIn({ ...walkIn, roomTypeId: e.target.value })} className="field-input">{roomTypes.filter(r => r.active).map(r => <option key={r.id} value={r.id}>{r.name} — {naira(r.price)}/night</option>)}</select></div>
-            <div><label className="field-label">Check-in</label><input type="date" value={walkIn.checkIn} onChange={e => setWalkIn({ ...walkIn, checkIn: e.target.value })} className="field-input" /></div>
-            <div><label className="field-label">Check-out</label><input type="date" value={walkIn.checkOut} min={walkIn.checkIn} onChange={e => setWalkIn({ ...walkIn, checkOut: e.target.value })} className="field-input" /></div>
+            <div className="sm:col-span-2">
+              <label className="field-label">Room</label>
+              <div className="space-y-2">
+                {roomTypes.filter(r => r.active).map(type => {
+                  const availableRooms = walkInAvailableRooms(type.id)
+                  const expanded = expandedWalkInType === type.id
+                  const selected = walkIn.roomTypeId === type.id
+                  return (
+                    <div key={type.id} className={`rounded-2xl border overflow-hidden transition ${selected ? 'border-gold-500' : 'border-black/10'}`}>
+                      <button type="button" onClick={() => selectWalkInType(type.id)} className="w-full p-4 flex items-center gap-3 text-left bg-white hover:bg-navy-50/50">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-semibold text-sm">{type.name}</span>
+                            <span className="font-display font-semibold text-sm whitespace-nowrap">{naira(type.price)}/night</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-navy-400">
+                            <span>{availableRooms.length} available room{availableRooms.length === 1 ? '' : 's'}</span>
+                            {selected && walkIn.roomId && <span>· Room {rooms.find(r => r.id === walkIn.roomId)?.roomNumber}</span>}
+                          </div>
+                        </div>
+                        <ChevronDown size={17} className={`shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                      </button>
+                      {expanded && <div className="border-t border-black/5 bg-navy-50/40 p-3 space-y-2">
+                        {availableRooms.length === 0 ? (
+                          <div className="rounded-xl bg-white border border-black/5 p-4 text-center text-xs text-navy-400">No rooms available for these dates.</div>
+                        ) : availableRooms.map(room => {
+                          const roomSelected = walkIn.roomId === room.id
+                          return (
+                            <button key={room.id} type="button" onClick={() => selectWalkInRoom(type.id, room.id)} className={`w-full rounded-xl border p-3 flex items-center gap-3 text-left transition ${roomSelected ? 'border-navy-950 bg-navy-950 text-white' : 'border-black/10 bg-white hover:border-black/20'}`}>
+                              <span className="flex-1 min-w-0"><b className="block text-sm">Room {room.roomNumber}</b><span className={`text-[11px] ${roomSelected ? 'text-white/60' : 'text-navy-400'}`}>Floor {room.floor} · {naira(type.price)}/night</span></span>
+                              <span className={`h-5 w-5 rounded-full border flex items-center justify-center shrink-0 ${roomSelected ? 'border-white bg-white text-navy-950' : 'border-black/15'}`}>{roomSelected && <Check size={12}/>}</span>
+                            </button>
+                          )
+                        })}
+                      </div>}
+                    </div>
+                  )
+                })}
+              </div>
+              {!walkIn.roomId && <p className="text-[11px] text-navy-400 mt-2">Select a room type to see its available physical rooms, then choose the exact room for the guest.</p>}
+            </div>
+            <div><label className="field-label">Check-in</label><input type="date" value={walkIn.checkIn} onChange={e => setWalkIn({ ...walkIn, checkIn: e.target.value, roomId: '' })} className="field-input" /></div>
+            <div><label className="field-label">Check-out</label><input type="date" value={walkIn.checkOut} min={walkIn.checkIn} onChange={e => setWalkIn({ ...walkIn, checkOut: e.target.value, roomId: '' })} className="field-input" /></div>
             <div><label className="field-label">Adults</label><select value={walkIn.adults} onChange={e => setWalkIn({ ...walkIn, adults: Number(e.target.value) })} className="field-input">{Array.from({ length: walkInRoom?.guests ?? 1 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n}</option>)}</select></div>
             <div><label className="field-label">Children</label><select value={walkIn.children} onChange={e => setWalkIn({ ...walkIn, children: Number(e.target.value) })} className="field-input">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}</select></div>
           </div>
           <div><label className="field-label">Special requests</label><textarea value={walkIn.specialRequests} onChange={e => setWalkIn({ ...walkIn, specialRequests: e.target.value })} className="field-input min-h-24" placeholder="Late arrival, room preference, extra towels, etc." /></div>
           <div className="rounded-2xl border border-black/5 p-4 space-y-2">
-            <div className="flex justify-between text-sm"><span className="text-navy-500">{walkInNights} night{walkInNights === 1 ? '' : 's'} × room</span><span>{naira(walkInSubtotal)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-navy-500">{walkInNights} night{walkInNights === 1 ? '' : 's'} × {walkIn.roomId ? `Room ${rooms.find(r => r.id === walkIn.roomId)?.roomNumber}` : 'room'}</span><span>{naira(walkInSubtotal)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-navy-500">Room rate</span><span>{naira(walkInRoom?.price ?? 0)}/night</span></div>
             <div className="flex justify-between text-sm"><span className="text-navy-500">Taxes & VAT</span><span>{naira(walkInTax)}</span></div>
             <div className="flex justify-between font-semibold pt-2 border-t border-black/10"><span>Total</span><span>{naira(walkInTotal)}</span></div>
           </div>
           {error && <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3">{error}</div>}
-          <div className="flex justify-end gap-3"><button onClick={() => setShowWalkIn(false)} disabled={creating} className="btn-outline">Cancel</button><button onClick={() => void createWalkIn()} disabled={creating} className="btn-gold flex items-center gap-2">{creating && <Loader2 size={15} className="animate-spin" />} Create booking</button></div>
+          <div className="flex justify-end gap-3"><button onClick={() => setShowWalkIn(false)} disabled={creating} className="btn-outline">Cancel</button><button onClick={() => void createWalkIn()} disabled={creating || !walkIn.roomId} className="btn-gold flex items-center gap-2">{creating && <Loader2 size={15} className="animate-spin" />} Create booking</button></div>
         </div>
       </Modal>
 
