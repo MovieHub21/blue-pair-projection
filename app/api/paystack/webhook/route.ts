@@ -5,186 +5,25 @@ import { sendResendEmail } from '../../../../lib/email/resend'
 import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
 
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
-
-async function refundPaystackTransaction(secret: string, transactionId: unknown) {
-  if (!transactionId) return false
-  try {
-    const response = await fetch('https://api.paystack.co/refund', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transaction: transactionId }),
-      cache: 'no-store',
-    })
-    const result = await response.json().catch(() => null)
-    if (!response.ok || !result?.status) {
-      console.error('[paystack-webhook] refund failed', result?.message || response.status)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.error('[paystack-webhook] refund request failed', error)
-    return false
-  }
-}
+async function refundPaystackTransaction(secret: string, transactionId: unknown) { if (!transactionId) return false; try { const response = await fetch('https://api.paystack.co/refund',{method:'POST',headers:{Authorization:`Bearer ${secret}`,'Content-Type':'application/json'},body:JSON.stringify({transaction:transactionId}),cache:'no-store'}); const result=await response.json().catch(()=>null); if(!response.ok||!result?.status){console.error('[paystack-webhook] refund failed',result?.message||response.status);return false} return true } catch(error){console.error('[paystack-webhook] refund request failed',error);return false} }
 
 export async function POST(request: Request) {
-  const secret = process.env.PAYSTACK_SECRET_KEY
-  if (!secret) return NextResponse.json({ error: 'Paystack is not configured.' }, { status: 503 })
-  const rawBody = await request.text()
-  const signature = request.headers.get('x-paystack-signature') || ''
-  const expected = crypto.createHmac('sha512', secret).update(rawBody).digest('hex')
-  if (!signature || signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return NextResponse.json({ error: 'Invalid signature.' }, { status: 401 })
-
-  try {
-    const event = JSON.parse(rawBody)
-    if (event?.event !== 'charge.success' || event?.data?.status !== 'success') return NextResponse.json({ received: true })
-    const reference = String(event.data.reference || '').trim()
-    if (!reference) return NextResponse.json({ received: true })
-
-    const admin = createSupabaseAdminClient()
-    const { data: payment } = await admin
-      .from('payments')
-      .select('id,booking_ref,amount,status,customer_id')
-      .eq('reference', reference)
-      .maybeSingle()
-    if (!payment) return NextResponse.json({ received: true })
-
-    if (Number(event.data.amount) !== Math.round(Number(payment.amount) * 100)) {
-      console.error('[paystack-webhook] amount mismatch', reference)
-      return NextResponse.json({ received: true })
-    }
-
-    const { data: paidBooking } = await admin.from('bookings')
-      .select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status,reservation_expires_at')
-      .eq('reference', payment.booking_ref).maybeSingle()
-
-    if (!paidBooking) return NextResponse.json({ received: true })
-
-    // The payment lock is the final authority. A Paystack window that has
-    // expired or lost ownership must never be allowed to take the room.
-    if (!paidBooking.room_id) {
-      await refundPaystackTransaction(secret, event.data.id)
-      await admin.from('payments').update({ status: 'failed' }).eq('id', payment.id)
-      return NextResponse.json({ received: true })
-    }
-
-    const { data: room } = await admin.from('rooms')
-      .select('id,status,payment_lock_booking_id,payment_lock_expires_at')
-      .eq('id', paidBooking.room_id).maybeSingle()
-
-    const ownsActiveLock = room?.payment_lock_booking_id === paidBooking.id
-      && room?.payment_lock_expires_at
-      && new Date(room.payment_lock_expires_at).getTime() > Date.now()
-      && room.status === 'available'
-
-    // If this booking is already confirmed, this is a duplicate webhook.
-    // Do not refund it merely because the lock was already cleared.
-    if (paidBooking.payment_status === 'paid' && paidBooking.status === 'confirmed') {
-      return NextResponse.json({ received: true })
-    }
-
-    if (!ownsActiveLock) {
-      console.warn('[paystack-webhook] payment arrived without active room lock; refunding', {
-        reference,
-        bookingId: paidBooking.id,
-        roomId: paidBooking.room_id,
-      })
-      const refunded = await refundPaystackTransaction(secret, event.data.id)
-      await admin.from('payments').update({ status: refunded ? 'failed' : 'pending' }).eq('id', payment.id)
-      return NextResponse.json({ received: true })
-    }
-
-    const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
-    const { error: paymentError } = await admin.from('payments')
-      .update({ status: 'success', method: 'Paystack', date: paidOn })
-      .eq('id', payment.id)
-      .eq('status', 'pending')
-    if (paymentError) throw paymentError
-
-    const { error: bookingError } = await admin.from('bookings')
-      .update({ payment_status: 'paid', status: 'confirmed', reservation_expires_at: null })
-      .eq('reference', payment.booking_ref)
-      .eq('payment_status', 'pending')
-    if (bookingError) throw bookingError
-
-    await admin.from('rooms').update({ payment_lock_booking_id: null, payment_lock_expires_at: null })
-      .eq('id', paidBooking.room_id)
-      .eq('payment_lock_booking_id', paidBooking.id)
-
-    // The first successful payment wins. Any other pending holds for the same
-    // physical room and overlapping dates are cancelled immediately.
-    const { data: competitors } = await admin.from('bookings')
-      .select('id,check_in,check_out')
-      .eq('room_id', paidBooking.room_id)
-      .eq('status', 'pending')
-      .neq('payment_status', 'paid')
-    const losers = (competitors ?? [])
-      .filter(b => overlaps(paidBooking.check_in, paidBooking.check_out, b.check_in, b.check_out))
-      .map(b => b.id)
-    if (losers.length) {
-      await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).in('id', losers)
-    }
-
-    // Confirmation email and in-app notification are handled by the signed
-    // webhook so they do not depend on the guest remaining logged in after
-    // Paystack redirects back to the site.
-    const { data: customer } = await admin.from('customers')
-      .select('id,user_id,name,email')
-      .eq('id', payment.customer_id)
-      .maybeSingle()
-
-    if (customer?.user_id) {
-      const { data: existingNotification } = await admin.from('guest_notifications')
-        .select('id')
-        .eq('user_id', customer.user_id)
-        .eq('type', 'payment')
-        .contains('metadata', { payment_reference: reference })
-        .limit(1)
-        .maybeSingle()
-
-      if (!existingNotification) {
-        const { data: roomType } = await admin.from('room_types')
-          .select('name')
-          .eq('id', paidBooking.room_type_id)
-          .maybeSingle()
-
-        if (customer.email) {
-          try {
-            const email = paymentSuccessfulEmail({
-              guestName: customer.name || 'Guest',
-              reference: paidBooking.reference,
-              roomName: roomType?.name || 'Room',
-              checkIn: paidBooking.check_in,
-              checkOut: paidBooking.check_out,
-              total: Number(paidBooking.amount),
-              paymentReference: reference,
-            })
-            await sendResendEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text })
-          } catch (emailError) {
-            console.error('[paystack-webhook] confirmation email failed', emailError)
-          }
-        }
-
-        await admin.from('guest_notifications').insert({
-          id: `gn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          user_id: customer.user_id,
-          type: 'payment',
-          title: 'Booking confirmed',
-          body: `Payment for ${paidBooking.reference} was verified. Your reservation is now confirmed.`,
-          href: '/account/bookings',
-          metadata: {
-            booking_id: paidBooking.id,
-            reference: paidBooking.reference,
-            payment_reference: reference,
-            status: 'confirmed',
-          },
-        })
-      }
-    }
-
-    return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('[paystack-webhook]', error)
-    return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 })
-  }
+ const secret=process.env.PAYSTACK_SECRET_KEY; if(!secret)return NextResponse.json({error:'Paystack is not configured.'},{status:503})
+ const rawBody=await request.text(); const signature=request.headers.get('x-paystack-signature')||''; const expected=crypto.createHmac('sha512',secret).update(rawBody).digest('hex'); if(!signature||signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return NextResponse.json({error:'Invalid signature.'},{status:401})
+ try{
+  const event=JSON.parse(rawBody); if(event?.event!=='charge.success'||event?.data?.status!=='success')return NextResponse.json({received:true}); const reference=String(event.data.reference||'').trim(); if(!reference)return NextResponse.json({received:true})
+  const admin=createSupabaseAdminClient(); const {data:payment}=await admin.from('payments').select('id,booking_ref,amount,status,customer_id').eq('reference',reference).maybeSingle(); if(!payment)return NextResponse.json({received:true}); if(Number(event.data.amount)!==Math.round(Number(payment.amount)*100)){console.error('[paystack-webhook] amount mismatch',reference);return NextResponse.json({received:true})}
+  const {data:paidBooking}=await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status,reservation_expires_at').eq('reference',payment.booking_ref).maybeSingle(); if(!paidBooking)return NextResponse.json({received:true})
+  if(!paidBooking.room_id){await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:'failed'}).eq('id',payment.id);return NextResponse.json({received:true})}
+  const {data:room}=await admin.from('rooms').select('id,status,payment_lock_booking_id,payment_lock_expires_at').eq('id',paidBooking.room_id).maybeSingle(); const ownsActiveLock=room?.payment_lock_booking_id===paidBooking.id&&room?.payment_lock_expires_at&&new Date(room.payment_lock_expires_at).getTime()>Date.now()&&room.status==='available'
+  if(paidBooking.payment_status==='paid'&&paidBooking.status==='confirmed')return NextResponse.json({received:true})
+  if(!ownsActiveLock){console.warn('[paystack-webhook] payment arrived without active room lock; refunding',{reference,bookingId:paidBooking.id,roomId:paidBooking.room_id});const refunded=await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:refunded?'failed':'pending'}).eq('id',payment.id);return NextResponse.json({received:true})}
+  const paidOn=new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Lagos'}); const {error:paymentError}=await admin.from('payments').update({status:'success',method:'Paystack',date:paidOn}).eq('id',payment.id).eq('status','pending'); if(paymentError)throw paymentError
+  const {error:bookingError}=await admin.from('bookings').update({payment_status:'paid',status:'confirmed',reservation_expires_at:null}).eq('reference',payment.booking_ref).eq('payment_status','pending'); if(bookingError)throw bookingError
+  await admin.from('rooms').update({payment_lock_booking_id:null,payment_lock_expires_at:null}).eq('id',paidBooking.room_id).eq('payment_lock_booking_id',paidBooking.id)
+  const {data:competitors}=await admin.from('bookings').select('id,check_in,check_out').eq('room_id',paidBooking.room_id).eq('status','pending').neq('payment_status','paid'); const losers=(competitors??[]).filter(b=>overlaps(paidBooking.check_in,paidBooking.check_out,b.check_in,b.check_out)).map(b=>b.id); if(losers.length)await admin.from('bookings').update({status:'cancelled',reservation_expires_at:null}).in('id',losers)
+  const {data:customer}=await admin.from('customers').select('id,user_id,name,email').eq('id',payment.customer_id).maybeSingle()
+  if(customer?.user_id){const {data:existingNotification}=await admin.from('guest_notifications').select('id').eq('user_id',customer.user_id).eq('type','payment').contains('metadata',{payment_reference:reference}).limit(1).maybeSingle(); if(!existingNotification){const {data:roomType}=await admin.from('room_types').select('name').eq('id',paidBooking.room_type_id).maybeSingle(); if(customer.email){try{const email=paymentSuccessfulEmail({guestName:customer.name||'Guest',reference:paidBooking.reference,roomName:roomType?.name||'Room',checkIn:paidBooking.check_in,checkOut:paidBooking.check_out,total:Number(paidBooking.amount),paymentReference:reference});await sendResendEmail({to:customer.email,subject:email.subject,html:email.html,text:email.text,includeAccountCta:false})}catch(emailError){console.error('[paystack-webhook] confirmation email failed',emailError)}} await admin.from('guest_notifications').insert({id:`gn_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,user_id:customer.user_id,type:'payment',title:'Booking confirmed',body:`Payment for ${paidBooking.reference} was verified. Your reservation is now confirmed.`,href:'/account/bookings',metadata:{booking_id:paidBooking.id,reference:paidBooking.reference,payment_reference:reference,status:'confirmed'}})}}
+  return NextResponse.json({received:true})
+ }catch(error){console.error('[paystack-webhook]',error);return NextResponse.json({error:'Webhook processing failed.'},{status:500})}
 }
