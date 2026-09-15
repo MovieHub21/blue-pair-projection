@@ -11,7 +11,7 @@ export const mapMenuItem=(r:Row):MenuItem=>({id:r.id,outlet:r.outlet,category:r.
 export const mapDrink=(r:Row):Drink=>({id:r.id,bar:r.bar,category:r.category,name:r.name,price:Number(r.price),available:r.available})
 export const mapShortLet=(r:Row):ShortLet=>({id:r.id,name:r.name,type:r.type,price:Number(r.price),bedrooms:r.bedrooms,amenities:r.amenities??[],image:r.image,available:r.available,description:r.description})
 export const mapEvent=(r:Row):EventItem=>({id:r.id,title:r.title,date:r.date,price:Number(r.price),capacity:r.capacity,image:r.image,description:r.description,published:r.published})
-export const mapMaintenanceTicket=(r:Row):MaintenanceTicket=>({id:r.id,room:r.room,issue:r.issue,priority:r.priority,assignedTo:r.assignedTo,dateReported:r.date_reported,status:r.status,notes:r.notes??''})
+export const mapMaintenanceTicket=(r:Row):MaintenanceTicket=>({id:r.id,room:r.room,issue:r.issue,priority:r.priority,assignedTo:r.assigned_to,dateReported:r.date_reported,status:r.status,notes:r.notes??''})
 export const mapHousekeepingTask=(r:Row):HousekeepingTask=>({id:r.id,room:r.room,roomType:r.room_type,checkoutTime:r.checkout_time,priority:r.priority,assignedTo:r.assigned_to,status:r.status,notes:r.notes??'',completedAt:r.completed_at??undefined})
 export const mapBillboard=(r:Row):BillboardSpace=>({id:r.id,location:r.location,dimensions:r.dimensions,price:Number(r.price),image:r.image,available:r.available})
 export const mapParkingZone=(r:Row):ParkingZone=>({id:r.id,name:r.name,type:r.type,capacity:r.capacity,occupied:r.occupied})
