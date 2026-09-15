@@ -9,14 +9,12 @@ function activePending(b: any) { return b.status === 'pending' && b.payment_stat
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
   if (room.status === 'occupied') return { status: 'taken', availableFrom: null }
   if (room.status === 'cleaning' || room.status === 'cleaning_required' || room.status === 'maintenance') return { status: 'availableSoon', availableFrom: null }
-
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
   const overlapping = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (overlapping.length) {
     const latest = overlapping.reduce((a, b) => a.check_out > b.check_out ? a : b)
     return { status: 'taken', availableFrom: latest.check_out }
   }
-
   if (room.status === 'available') return { status: 'available', availableFrom: checkIn }
   return { status: 'taken', availableFrom: null }
 }
@@ -28,7 +26,7 @@ export async function GET(request: Request) {
     if (!validDate(checkIn) || !validDate(checkOut) || !checkIn || !checkOut || checkIn >= checkOut) return NextResponse.json({ error: 'Valid check-in and check-out dates are required.' }, { status: 400 })
 
     const db = createSupabaseAdminClient()
-    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,images,floor,payment_lock_expires_at').order('room_number')
+    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,images,floor,payment_lock_booking_id,payment_lock_expires_at').order('room_number')
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
@@ -63,29 +61,36 @@ export async function GET(request: Request) {
       const pendingHolds = roomBookings.filter(b => activePending(b) && overlaps(checkIn, checkOut, b.check_in, b.check_out))
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
       const paymentLockActive = Boolean(room.payment_lock_expires_at && new Date(room.payment_lock_expires_at).getTime() > Date.now())
+      const paymentLockedByMe = paymentLockActive && ownReservation?.id === room.payment_lock_booking_id
       const pending = pendingHolds.length > 0
+      const lockExpiresAt = paymentLockActive ? room.payment_lock_expires_at : null
+
       if (ownReservation) {
         const roomIsOpen = room.status === 'available' && state.status === 'available'
         return {
           ...room,
-          payment_lock_expires_at: paymentLockActive ? room.payment_lock_expires_at : null,
+          payment_lock_booking_id: undefined,
+          payment_lock_expires_at: lockExpiresAt,
           guest_status: 'reserved',
           available_from: state.availableFrom,
           reservation_id: ownReservation.id,
           reservation_expires_at: ownReservation.reservation_expires_at,
           payment_ready: roomIsOpen || readyIds.has(ownReservation.id),
           payment_locked: paymentLockActive,
+          payment_locked_by_me: paymentLockedByMe,
           pending,
           pending_count: pendingHolds.length,
         }
       }
       return {
         ...room,
-        payment_lock_expires_at: paymentLockActive ? room.payment_lock_expires_at : null,
+        payment_lock_booking_id: undefined,
+        payment_lock_expires_at: lockExpiresAt,
         guest_status: state.status,
         available_from: state.availableFrom,
         payment_ready: false,
         payment_locked: paymentLockActive,
+        payment_locked_by_me: false,
         pending,
         pending_count: pendingHolds.length,
       }
