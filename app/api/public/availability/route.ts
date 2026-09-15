@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     if (!validDate(checkIn) || !validDate(checkOut) || !checkIn || !checkOut || checkIn >= checkOut) return NextResponse.json({ error: 'Valid check-in and check-out dates are required.' }, { status: 400 })
 
     const db = createSupabaseAdminClient()
-    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,images,floor').order('room_number')
+    let roomsQuery = db.from('rooms').select('id,room_number,room_type_id,name,slug,status,image_url,images,floor,payment_lock_expires_at').order('room_number')
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
@@ -62,21 +62,33 @@ export async function GET(request: Request) {
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
       const pendingHolds = roomBookings.filter(b => activePending(b) && overlaps(checkIn, checkOut, b.check_in, b.check_out))
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
+      const paymentLockActive = Boolean(room.payment_lock_expires_at && new Date(room.payment_lock_expires_at).getTime() > Date.now())
       const pending = pendingHolds.length > 0
       if (ownReservation) {
         const roomIsOpen = room.status === 'available' && state.status === 'available'
         return {
           ...room,
+          payment_lock_expires_at: paymentLockActive ? room.payment_lock_expires_at : null,
           guest_status: 'reserved',
           available_from: state.availableFrom,
           reservation_id: ownReservation.id,
           reservation_expires_at: ownReservation.reservation_expires_at,
           payment_ready: roomIsOpen || readyIds.has(ownReservation.id),
+          payment_locked: paymentLockActive,
           pending,
           pending_count: pendingHolds.length,
         }
       }
-      return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false, pending, pending_count: pendingHolds.length }
+      return {
+        ...room,
+        payment_lock_expires_at: paymentLockActive ? room.payment_lock_expires_at : null,
+        guest_status: state.status,
+        available_from: state.availableFrom,
+        payment_ready: false,
+        payment_locked: paymentLockActive,
+        pending,
+        pending_count: pendingHolds.length,
+      }
     })
 
     const byType: Record<string, { available: number; availableSoon: number; taken: number; reserved: number; pending: number; earliestAvailable: string | null }> = {}
