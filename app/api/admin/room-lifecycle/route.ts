@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { sendResendEmail } from '../../../../lib/email/resend'
+import { reservationReadyEmail } from '../../../../lib/email/templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +19,6 @@ async function requireStaff() {
   const { data: { user } } = await auth.auth.getUser()
   if (!user) return null
   const admin = createSupabaseAdminClient()
-  // Blue Pair's authoritative staff access is user_roles, not the legacy staff table.
   const { data: roleRows } = await admin.from('user_roles').select('role').eq('user_id', user.id)
   const roles = (roleRows ?? []).map((r: any) => String(r.role))
   if (!roles.some(role => ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance'].includes(role))) return null
@@ -34,7 +34,7 @@ async function sendToDepartment(department: 'housekeeping' | 'maintenance', subj
 }
 
 async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAdminClient>, roomId: string) {
-  const { data: pending, error } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status').eq('status', 'pending').eq('payment_status', 'pending').eq('room_id', roomId)
+  const { data: pending, error } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,status,payment_status').eq('status', 'pending').eq('payment_status', 'pending').eq('room_id', roomId)
   if (error) throw error
   const room = (await admin.from('rooms').select('room_number,status').eq('id', roomId).maybeSingle()).data
   if (!room || room.status !== 'available') return 0
@@ -43,20 +43,18 @@ async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAd
     const { data: existing } = await admin.from('email_logs').select('id').eq('dedupe_key', `reservation_ready:${booking.id}`).maybeSingle()
     if (existing) continue
     const { data: blocking } = await admin.from('bookings').select('id,check_in,check_out').eq('room_id', roomId).in('status', ['confirmed', 'checked_in']).eq('payment_status', 'paid')
-    if ((blocking ?? []).some(b => overlaps(booking.check_in, booking.check_out, b.check_in, b.check_out))) continue
+    if ((blocking ?? []).some(b => overlaps((booking as any).check_in, (booking as any).check_out, b.check_in, b.check_out))) continue
     const customer = (await admin.from('customers').select('name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
     const recipient = String(customer?.email || '').trim().toLowerCase()
     if (!recipient) continue
     const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bluepairhotel.com'
     const paymentUrl = `${site}/account/bookings`
-    const subject = 'Your Blue Pair room is available — payment can now secure it'
-    const html = `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Your room is ready to secure</h2><p>Hello ${escapeHtml(customer?.name || 'Guest')},</p><p>Room ${escapeHtml(room.room_number)} is now available for your stay from <strong>${escapeHtml(booking.check_in)}</strong> to <strong>${escapeHtml(booking.check_out)}</strong>.</p><p>Your reservation is still unpaid. <strong>The first successful payment secures the room.</strong></p><p><a href="${paymentUrl}" style="display:inline-block;background:#c79a3e;color:#0a1229;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">Open my booking &amp; pay</a></p><p style="font-size:13px;color:#667085">Reservation reference: ${escapeHtml(booking.reference)} · Room ${escapeHtml(room.room_number)}</p></div>`
-    const text = `Hello ${customer?.name || 'Guest'}, room ${room.room_number} is now available. Your reservation is unpaid and the first successful payment secures it. Open ${paymentUrl} to pay. Reference: ${booking.reference}.`
-    const result = await sendResendEmail({ to: recipient, subject, html, text })
-    const { error: logError } = await admin.from('email_logs').insert({ dedupe_key: `reservation_ready:${booking.id}`, event: 'reservation_ready', booking_id: booking.id, recipient, subject, resend_id: result.id ?? null })
+    const email = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, paymentUrl })
+    const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
+    const { error: logError } = await admin.from('email_logs').insert({ dedupe_key: `reservation_ready:${booking.id}`, event: 'reservation_ready', booking_id: booking.id, recipient, subject: email.subject, resend_id: result.id ?? null })
     if (logError) continue
     sent++
-    if (customer?.user_id) await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'reservation_ready', title: 'Your reserved room is available', body: `Room ${room.room_number} is now available. Pay to secure your reservation.`, href: '/account/bookings', metadata: { booking_id: booking.id, booking_reference: booking.reference, automation: true } })
+    if (customer?.user_id) await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'reservation_ready', title: 'Your reserved room is available', body: `Room ${room.room_number} is now available. Choose your stay dates and pay to secure it.`, href: '/account/bookings', metadata: { booking_id: booking.id, booking_reference: booking.reference, automation: true } })
   }
   return sent
 }
@@ -83,6 +81,7 @@ export async function POST(request: Request) {
       const { data: room, error: roomError } = await admin.from('rooms').select('id,room_number,status,room_type_id').eq('id', body.roomId).maybeSingle()
       if (roomError) throw roomError
       if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
+      const previousStatus = room.status
       const { error: updateError } = await admin.from('rooms').update({ status: body.status }).eq('id', body.roomId)
       if (updateError) throw updateError
       let notified = 0
@@ -95,7 +94,7 @@ export async function POST(request: Request) {
         notified = await sendToDepartment('housekeeping', `Room ${room.room_number} requires housekeeping`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Housekeeping required</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>${escapeHtml(body.status)}</strong>.</p><p>Please attend to the room and mark the housekeeping task complete when ready.</p></div>`, `Room ${room.room_number} has been marked ${body.status}. Please attend to it and mark the housekeeping task complete when ready.`)
       }
       if (body.status === 'maintenance') notified = await sendToDepartment('maintenance', `Maintenance required — Room ${room.room_number}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Room sent to maintenance</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>maintenance</strong>.</p></div>`, `Room ${room.room_number} has been marked maintenance. Please inspect it.`)
-      if (body.status === 'available') return NextResponse.json({ ok: true, status: body.status, notified, reservationsReady: await notifyReadyReservations(admin, room.id) })
+      if (body.status === 'available') return NextResponse.json({ ok: true, status: body.status, notified, reservationsReady: previousStatus !== 'available' ? await notifyReadyReservations(admin, room.id) : 0 })
       return NextResponse.json({ ok: true, status: body.status, notified })
     }
     if (!body.bookingId) return NextResponse.json({ error: 'Booking ID is required.' }, { status: 400 })
