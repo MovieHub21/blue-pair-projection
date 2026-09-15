@@ -3,11 +3,10 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
-import { preArrivalEmail, checkInReminderEmail, checkoutReminderEmail, reviewRequestEmail, reservationReadyEmail } from '../../../../lib/email/templates'
+import { preArrivalEmail, checkInReminderEmail, checkoutReminderEmail, reviewRequestEmail } from '../../../../lib/email/templates'
 
 function dateOnly(value: string) { return new Date(`${value}T00:00:00Z`) }
 function diffDays(from: string, to: string) { return Math.round((dateOnly(to).getTime() - dateOnly(from).getTime()) / 86400000) }
-function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
 const automation = {
   pre_arrival: { title: 'Your Blue Pair stay is getting closer', body: 'Your stay is coming up. Review your booking, prepare any requests and get ready to arrive.', href: '/account/bookings' },
@@ -74,47 +73,6 @@ export async function GET(request: Request) {
         })
         if (notificationError) console.error('[guest-email-cron] notification failed', notificationError.message)
         else notifications++
-      }
-    }
-
-    // Unpaid reservations do not block other guests. Payment becomes available only
-    // after the specifically reserved physical room is actually free for those dates.
-    const { data: pendingReservations, error: pendingError } = await supabase
-      .from('bookings')
-      .select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status')
-      .eq('status','pending')
-      .eq('payment_status','pending')
-      .not('room_id','is',null)
-    if (pendingError) throw pendingError
-
-    for (const booking of pendingReservations ?? []) {
-      const dedupeKey = `reservation_ready:${booking.id}`
-      const { data: existing } = await supabase.from('email_logs').select('id').eq('dedupe_key',dedupeKey).maybeSingle()
-      if (existing) continue
-
-      const room = (await supabase.from('rooms').select('id,room_number,status').eq('id',booking.room_id).maybeSingle()).data
-      if (!room || room.status !== 'available') continue
-
-      const { data: blocking } = await supabase.from('bookings')
-        .select('id,check_in,check_out')
-        .eq('room_id', booking.room_id)
-        .in('status', ['confirmed','checked_in'])
-        .eq('payment_status','paid')
-      if ((blocking ?? []).some(b => overlaps(booking.check_in, booking.check_out, b.check_in, b.check_out))) continue
-
-      const customer = (await supabase.from('customers').select('name,email,user_id').eq('id',booking.customer_id).maybeSingle()).data
-      const recipient = String(customer?.email || '').trim().toLowerCase()
-      if (!recipient) continue
-      const site = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bluepairhotel.com'
-      const paymentUrl = `${site}/account/bookings`
-      const email = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, checkIn: booking.check_in, checkOut: booking.check_out, paymentUrl })
-      const result = await sendResendEmail({to:recipient,subject:email.subject,html:email.html,text:email.text})
-      const { error: logError } = await supabase.from('email_logs').insert({dedupe_key:dedupeKey,event:'reservation_ready',booking_id:booking.id,recipient,subject:email.subject,resend_id:result.id??null})
-      if (logError) { console.error('[guest-email-cron] reservation-ready log failed', logError.message); continue }
-      sent++
-      if (customer?.user_id) {
-        const { error: notificationError } = await supabase.from('guest_notifications').insert({user_id:customer.user_id,type:'reservation_ready',title:'Your reserved room is available',body:`Room ${room.room_number} is now available. Pay to secure your reservation before another guest does.`,href:'/account/bookings',metadata:{booking_id:booking.id,booking_reference:booking.reference,automation:true}})
-        if (!notificationError) notifications++
       }
     }
 
