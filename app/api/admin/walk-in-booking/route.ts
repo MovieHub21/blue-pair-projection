@@ -19,9 +19,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
 
     const { data: roleRows } = await server.from('user_roles').select('role').eq('user_id', user.id)
-    if (!(roleRows ?? []).some((row: any) => STAFF_ROLES.has(row.role))) {
-      return NextResponse.json({ error: 'Only reception, managers and super admins can create walk-in bookings.' }, { status: 403 })
-    }
+    if (!(roleRows ?? []).some((row: any) => STAFF_ROLES.has(row.role))) return NextResponse.json({ error: 'Only reception, managers and super admins can create walk-in bookings.' }, { status: 403 })
 
     const body = await request.json()
     const name = String(body.name ?? '').trim()
@@ -38,15 +36,9 @@ export async function POST(request: Request) {
       ? body.extraServices.map((service: any) => ({ id: String(service.id), name: String(service.name), price: Number(service.price) })).filter((service: any) => service.id && Number.isFinite(service.price))
       : []
 
-    if (!name || !email || !phone || !roomTypeId || !roomId || !isValidDate(checkIn) || !isValidDate(checkOut)) {
-      return NextResponse.json({ error: 'Name, email, phone, room, room type and valid dates are required.' }, { status: 400 })
-    }
-    if (new Date(checkOut) <= new Date(checkIn)) {
-      return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
-    }
-    if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0) {
-      return NextResponse.json({ error: 'Guest counts are invalid.' }, { status: 400 })
-    }
+    if (!name || !email || !phone || !roomTypeId || !roomId || !isValidDate(checkIn) || !isValidDate(checkOut)) return NextResponse.json({ error: 'Name, email, phone, room, room type and valid dates are required.' }, { status: 400 })
+    if (new Date(checkOut) <= new Date(checkIn)) return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
+    if (!Number.isInteger(adults) || adults < 1 || !Number.isInteger(children) || children < 0) return NextResponse.json({ error: 'Guest counts are invalid.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
     const { data: room, error: roomError } = await admin.from('room_types').select('id,name,price,guests,active').eq('id', roomTypeId).maybeSingle()
@@ -54,11 +46,14 @@ export async function POST(request: Request) {
     if (!room || !room.active) return NextResponse.json({ error: 'That room type is unavailable.' }, { status: 400 })
     if (adults > Number(room.guests)) return NextResponse.json({ error: `This room allows up to ${room.guests} adults.` }, { status: 400 })
 
-    const { data: selectedRoom, error: selectedRoomError } = await admin.from('rooms').select('id,room_number,room_type_id,status').eq('id', roomId).maybeSingle()
+    const { data: selectedRoom, error: selectedRoomError } = await admin.from('rooms').select('id,room_number,room_type_id,status,payment_lock_booking_id,payment_lock_expires_at').eq('id', roomId).maybeSingle()
     if (selectedRoomError) throw selectedRoomError
     if (!selectedRoom) return NextResponse.json({ error: 'That room could not be found.' }, { status: 400 })
     if (selectedRoom.room_type_id !== roomTypeId) return NextResponse.json({ error: 'The selected room does not belong to that room type.' }, { status: 400 })
     if (selectedRoom.status !== 'available') return NextResponse.json({ error: `Room ${selectedRoom.room_number} is no longer available.` }, { status: 409 })
+    if (selectedRoom.payment_lock_booking_id && selectedRoom.payment_lock_expires_at && new Date(selectedRoom.payment_lock_expires_at).getTime() > Date.now()) {
+      return NextResponse.json({ error: `Room ${selectedRoom.room_number} is currently being secured by an online guest. Please wait for the payment window to expire.` }, { status: 409 })
+    }
 
     const { data: conflictingBookings, error: conflictError } = await admin.from('bookings').select('id,check_in,check_out,status').eq('room_id', roomId).in('status', ['pending', 'confirmed', 'checked_in'])
     if (conflictError) throw conflictError
