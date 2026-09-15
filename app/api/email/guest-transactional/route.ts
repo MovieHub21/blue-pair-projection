@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     const bookingId = body.bookingId ? String(body.bookingId) : ''
     const requestId = body.requestId ? String(body.requestId) : ''
     const { data: staff } = await supabase.from('staff').select('role').eq('user_id', user.id).maybeSingle()
-    const isStaff = !!staff && staffRoles.has(String(staff.role).toLowerCase().replace(/\s+/g, '_'))
+    const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+    const isStaff = (!!staff && staffRoles.has(String(staff.role).toLowerCase().replace(/\s+/g, '_'))) || (roleRows ?? []).some((row: any) => staffRoles.has(String(row.role).toLowerCase().replace(/\s+/g, '_')))
     let booking: any = null
     if (bookingId) booking = (await supabase.from('bookings').select('*').eq('id', bookingId).maybeSingle()).data
     let requestRow: any = null
