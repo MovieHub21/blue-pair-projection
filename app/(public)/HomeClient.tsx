@@ -1,8 +1,9 @@
 'use client'
+
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Calendar, Users, ArrowRight, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, Coffee, Minus, Plus } from 'lucide-react'
+import { ArrowRight, Calendar, Coffee, Users, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, Minus, Plus } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
 import Hotel3DHero from '../../components/ui/Hotel3DHero'
@@ -11,6 +12,13 @@ import { type RoomType, type Room, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
 import { todayISO, addDaysISO } from '../../lib/format'
 
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1400&q=85',
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1400&q=85',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1400&q=85',
+  'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?auto=format&fit=crop&w=1400&q=85',
+]
+
 export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
   const router = useRouter()
   const [checkIn, setCheckIn] = useState(todayISO())
@@ -18,46 +26,127 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
   const [adults, setAdults] = useState(2)
   const [showOccupancy, setShowOccupancy] = useState(false)
   const [selectedRoomId, setSelectedRoomId] = useState(roomTypes[0]?.id || '')
-  const heroImage = gallery[0]?.url || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=2200&q=85'
-  const availableCount = (roomTypeId: string) => rooms.filter(x => x.roomTypeId === roomTypeId && x.status === 'available').length
+
+  const images = gallery.map(item => item.url).filter(Boolean)
+  const heroImage = images[0] || FALLBACK_IMAGES[0]
   const selectedRoom = roomTypes.find(room => room.id === selectedRoomId) || roomTypes[0]
+  const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
   const displayDate = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
   const displayWeekday = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-NG', { weekday: 'long' })
   const openAvailability = () => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}&guests=${adults}${selectedRoom ? `&room=${selectedRoom.slug}` : ''}`)
 
+  const experienceCards = [
+    { title: 'Rooms & Suites', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
+    { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
+    { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: images[3] || FALLBACK_IMAGES[3], description: 'Elegant spaces for celebrations, meetings and moments.' },
+  ]
+
   return (
-    <div>
-      <header className="relative min-h-[720px] h-[88vh] md:min-h-[720px] md:h-[88vh] max-h-[900px] text-white overflow-hidden bg-navy-950">
-        <div className="absolute inset-0 bg-hero opacity-35" style={{ backgroundImage: `url('${heroImage}')` }} role="img" aria-label="Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State" />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/90 to-navy-950/45" />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/15 to-navy-950/60" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_48%,rgba(199,154,62,.12),transparent_32%)]" />
-        <div className="absolute inset-0 z-[1] hidden md:block opacity-95"><Hotel3DHero /></div>
-        <div className="absolute inset-x-0 bottom-0 z-[1] h-[48%] md:hidden bg-[radial-gradient(ellipse_at_center,rgba(199,154,62,.08),transparent_58%)]"><Hotel3DHero /></div>
-        <div className="absolute inset-0 z-[2] bg-gradient-to-r from-navy-950 via-navy-950/80 to-transparent md:via-navy-950/65" />
-        <div className="absolute inset-0 z-[2] bg-gradient-to-t from-navy-950 via-transparent to-navy-950/55 pointer-events-none" />
-        <div className="relative z-10 container-w px-5 md:px-10 h-full flex items-start md:items-center pb-0 md:pb-0 pt-[7.25rem] md:pt-0 pointer-events-none"><div className="max-w-xl pointer-events-auto md:max-w-[43%]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-1.5 md:px-4 md:py-2 text-[9px] md:text-[11px] tracking-[0.18em] uppercase font-semibold text-white/90 mb-4 md:mb-6">A place to arrive, relax & feel at home</div>
-          <h1 className="text-[2.2rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold leading-[1.02] tracking-[-0.035em] max-w-2xl">{headline || <>Welcome to <em className="italic text-gold-300 font-medium">Blue Pair.</em></>}</h1>
-          <p className="mt-4 md:mt-6 max-w-xl text-sm md:text-lg text-white/80 leading-relaxed">{subtitle || 'Come in, settle down and let us take care of the rest. Thoughtful rooms, warm hospitality, good food and spaces made for memorable stays in Uromi.'}</p>
-          <div className="flex flex-wrap gap-2.5 md:gap-3 mt-6 md:mt-8"><Link href="/rooms" className="btn-gold px-5 py-3 md:px-6 md:py-3.5">Find your room</Link><Link href="/about" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/10 px-5 py-3 md:px-6 md:py-3.5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/15 transition-colors">Take a look around <ArrowRight size={15} /></Link></div>
-          <div className="mt-5 md:mt-8 flex flex-wrap items-center gap-x-5 md:gap-x-6 gap-y-2 text-[11px] md:text-xs text-white/60"><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Uromi, Edo State</span><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Rooms & suites</span><span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-gold-300" /> Dining, pool & more</span></div>
-        </div></div>
+    <div className="bg-cream-50 text-navy-950">
+      <header className="relative isolate min-h-[620px] overflow-hidden bg-navy-950 text-white md:min-h-[700px]">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroImage}')` }} role="img" aria-label="Blue Pair Hotel & Suites in Uromi, Edo State" />
+        <div className="absolute inset-0 bg-navy-950/45" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/85 via-navy-950/45 to-navy-950/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-navy-950/30" />
+        <div className="absolute inset-0 hidden opacity-25 md:block"><Hotel3DHero /></div>
+
+        <div className="relative z-10 container-w flex min-h-[620px] items-center px-5 pb-28 pt-28 md:min-h-[700px] md:px-10 md:pb-36">
+          <div className="max-w-2xl">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[.2em] text-white/85 backdrop-blur-md">Blue Pair · Uromi</span>
+            <h1 className="max-w-2xl font-display text-[2.7rem] font-medium leading-[1.02] tracking-[-.035em] sm:text-5xl md:text-6xl lg:text-[4.8rem]">
+              {headline || <>A refined stay, <em className="italic text-gold-300">thoughtfully made for you.</em></>}
+            </h1>
+            {subtitle && <p className="mt-5 max-w-lg text-sm leading-6 text-white/70 md:text-base">{subtitle}</p>}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/rooms" className="btn-gold px-5 py-3.5">Explore rooms <ArrowRight size={15} /></Link>
+              <Link href="/about" className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-5 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/15">Discover Blue Pair</Link>
+            </div>
+          </div>
+        </div>
+
+        <section className="absolute inset-x-0 bottom-0 z-20 px-3 sm:px-5 md:px-10" aria-labelledby="stay-planner-title">
+          <div className="container-w rounded-t-[1.5rem] border border-white/10 bg-navy-950/90 shadow-2xl backdrop-blur-xl">
+            <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end md:p-6">
+              <label className="relative min-w-0 cursor-pointer rounded-xl border border-white/10 bg-white/[.06] px-4 py-3 transition-colors hover:border-gold-300/50">
+                <span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[.14em] text-white/45"><Calendar size={14} className="text-gold-300" /> Check-in</span>
+                <strong className="mt-1.5 block truncate text-sm text-white">{displayDate(checkIn)}</strong>
+                <span className="mt-0.5 block truncate text-[10px] text-white/35">{displayWeekday(checkIn)} · 2:00 PM</span>
+                <input aria-label="Check-in date" type="date" min={todayISO()} value={checkIn} onChange={event => { setCheckIn(event.target.value); if (event.target.value >= checkOut) setCheckOut(addDaysISO(1, event.target.value)) }} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+              </label>
+              <label className="relative min-w-0 cursor-pointer rounded-xl border border-white/10 bg-white/[.06] px-4 py-3 transition-colors hover:border-gold-300/50">
+                <span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[.14em] text-white/45"><Calendar size={14} className="text-gold-300" /> Check-out</span>
+                <strong className="mt-1.5 block truncate text-sm text-white">{displayDate(checkOut)}</strong>
+                <span className="mt-0.5 block truncate text-[10px] text-white/35">{displayWeekday(checkOut)} · 11:00 AM</span>
+                <input aria-label="Check-out date" type="date" min={addDaysISO(1, checkIn)} value={checkOut} onChange={event => setCheckOut(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+              </label>
+              <div className="rounded-xl border border-white/10 bg-white/[.06] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Users size={15} className="text-gold-300" />
+                  <div className="min-w-0 flex-1"><span className="block text-[9px] font-semibold uppercase tracking-[.14em] text-white/45">Guests</span><strong className="mt-1 block truncate text-sm text-white">{adults} {adults === 1 ? 'Adult' : 'Adults'}</strong></div>
+                  <button type="button" onClick={() => setShowOccupancy(value => !value)} className="text-[10px] font-semibold text-gold-300">Change</button>
+                </div>
+                {showOccupancy && <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3"><span className="text-xs text-white/55">Adults</span><div className="flex items-center gap-2"><button type="button" onClick={() => setAdults(value => Math.max(1, value - 1))} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 text-white" aria-label="Remove one adult"><Minus size={12} /></button><strong className="w-5 text-center text-xs text-white">{adults}</strong><button type="button" onClick={() => setAdults(value => Math.min(selectedRoom?.guests || 8, value + 1))} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 text-white" aria-label="Add one adult"><Plus size={12} /></button></div></div>}
+              </div>
+              <button type="button" onClick={openAvailability} className="btn-gold min-h-[62px] justify-center rounded-xl px-6 text-xs uppercase tracking-[.08em] md:min-w-[170px]">Check availability <ArrowRight size={16} /></button>
+            </div>
+          </div>
+        </section>
       </header>
-      <section className="relative z-20 -mt-10 px-3 sm:px-5 md:-mt-12 md:px-10" aria-labelledby="stay-planner-title"><div className="container-w overflow-hidden rounded-[1.6rem] border border-black/[0.06] bg-cream-50 shadow-pop"><div className="p-5 sm:p-7 md:p-8 lg:p-9">
-        <div className="mb-6 md:mb-7"><span className="eyebrow">Plan your stay</span><h2 id="stay-planner-title" className="mt-2 text-[1.75rem] font-semibold leading-tight text-navy-950 sm:text-3xl md:text-4xl">When would you like to feel at home?</h2></div>
-        <div className="grid grid-cols-2 gap-2.5 md:gap-4"><label className="relative min-w-0 cursor-pointer rounded-xl border border-navy-900/10 bg-white px-3 py-3.5 transition-colors hover:border-gold-500 sm:px-5 sm:py-4"><span className="flex items-center gap-2 text-[10px] font-semibold uppercase text-navy-500 sm:text-xs"><Calendar size={16} className="shrink-0 text-gold-600" />Check-in</span><strong className="mt-2 block truncate text-sm font-semibold text-navy-950 sm:text-lg">{displayDate(checkIn)}</strong><span className="mt-0.5 block truncate text-[10px] text-navy-400 sm:text-xs">{displayWeekday(checkIn)} from 2:00 PM</span><input aria-label="Check-in date" type="date" min={todayISO()} value={checkIn} onChange={e => { setCheckIn(e.target.value); if (e.target.value >= checkOut) setCheckOut(addDaysISO(1, e.target.value)) }} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" /></label><label className="relative min-w-0 cursor-pointer rounded-xl border border-navy-900/10 bg-white px-3 py-3.5 transition-colors hover:border-gold-500 sm:px-5 sm:py-4"><span className="flex items-center gap-2 text-[10px] font-semibold uppercase text-navy-500 sm:text-xs"><Calendar size={16} className="shrink-0 text-gold-600" />Check-out</span><strong className="mt-2 block truncate text-sm font-semibold text-navy-950 sm:text-lg">{displayDate(checkOut)}</strong><span className="mt-0.5 block truncate text-[10px] text-navy-400 sm:text-xs">{displayWeekday(checkOut)} by 11:00 AM</span><input aria-label="Check-out date" type="date" min={addDaysISO(1, checkIn)} value={checkOut} onChange={e => setCheckOut(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" /></label></div>
-        <div className="mt-3 rounded-xl border border-navy-900/10 bg-white px-3 py-3 sm:px-5 sm:py-4"><div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold-50 text-gold-600"><Users size={18} /></span><div className="min-w-0"><span className="block text-[10px] font-semibold uppercase text-navy-400 sm:text-xs">Occupancy</span><strong className="mt-0.5 block truncate text-sm text-navy-950 sm:text-base">{adults} {adults === 1 ? 'Adult' : 'Adults'} · {selectedRoom?.name || 'Room'}</strong></div><button type="button" onClick={() => setShowOccupancy(value => !value)} className="shrink-0 text-xs font-semibold text-gold-600 sm:text-sm" aria-expanded={showOccupancy}>Change</button></div>{showOccupancy && <div className="mt-4 flex items-center justify-between border-t border-black/[0.06] pt-3"><span className="text-sm font-medium text-navy-700">Adults</span><div className="flex items-center gap-3"><button type="button" onClick={() => setAdults(value => Math.max(1, value - 1))} className="grid h-8 w-8 place-items-center rounded-full border border-navy-900/15 text-navy-800" aria-label="Remove one adult"><Minus size={14} /></button><strong className="w-5 text-center text-sm">{adults}</strong><button type="button" onClick={() => setAdults(value => Math.min(selectedRoom?.guests || 8, value + 1))} className="grid h-8 w-8 place-items-center rounded-full border border-navy-900/15 text-navy-800" aria-label="Add one adult"><Plus size={14} /></button></div></div>}</div>
-        {!!roomTypes.length && <div className="mt-6"><p className="mb-3 text-xs font-semibold uppercase text-navy-800 sm:text-sm">Select room / suite</p><div className="grid grid-cols-3 gap-2 md:flex md:flex-wrap">{roomTypes.slice(0, 5).map(room => <button type="button" key={room.id} onClick={() => { setSelectedRoomId(room.id); setAdults(value => Math.min(value, room.guests)) }} className={`min-w-0 rounded-lg border px-2 py-3 text-[11px] font-semibold transition-colors sm:text-sm md:min-w-36 md:px-5 ${selectedRoom?.id === room.id ? 'border-navy-950 bg-navy-950 text-white shadow-md' : 'border-navy-900/10 bg-white text-navy-700 hover:border-gold-500'}`}>{room.name}</button>)}</div></div>}
-        <div className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 px-1"><div className="min-w-0"><span className="block text-xs text-navy-500 sm:text-sm">Best Available Rate:</span><strong className="mt-1 block font-display text-xl font-semibold text-navy-950 sm:text-2xl">₦{Number(selectedRoom?.price || 0).toLocaleString()} <span className="font-body text-xs font-normal text-navy-400">/ night</span></strong></div><span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-2 text-[9px] font-semibold text-emerald-700 sm:px-3 sm:text-xs"><Coffee size={13} /> Breakfast included</span></div><button type="button" onClick={openAvailability} className="btn-gold mt-7 w-full justify-center rounded-xl py-4 text-xs uppercase sm:text-sm">Check availability &amp; reserve <ArrowRight size={17} /></button><p className="mt-3 text-center text-[10px] text-navy-400 sm:text-xs">Instant booking confirmation · No cancellation fee up to 48h prior</p>
-      </div></div></section>
-      <InteractiveHotelExperience gallery={gallery} />
-      <section className="section"><div className="container-w"><div className="flex justify-between items-end mb-10 flex-wrap gap-4"><SectionHeading eyebrow="Featured stays" title="Rooms guests choose most" /><Link href="/rooms" className="text-sm font-semibold flex items-center gap-1.5 text-navy-900">View all rooms →</Link></div><div className="grid md:grid-cols-3 gap-6">{roomTypes.slice(0, 3).map(r => <RoomCard key={r.id} room={r} availableCount={availableCount(r.id)} />)}</div></div></section>
-      <section className="section bg-navy-950 text-white"><div className="container-w"><SectionHeading eyebrow="On the property" title="Everything a Uromi stay needs" light center subtitle="From sunrise laps in the indoor pool to late dinners at the Blue Pair Restaurant." /><div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">{[{ icon: Waves, name: 'Indoor Pool', to: '/pool' },{ icon: Dumbbell, name: 'Fitness Gym', to: '/gym' },{ icon: UtensilsCrossed, name: 'Blue Pair Restaurant', to: '/dining' },{ icon: PartyPopper, name: 'The Club', to: '/club' },{ icon: Wifi, name: 'VIP Lounge', to: '/vip-lounge' },{ icon: Car, name: 'VIP Parking', to: '/parking' }].map(a => <Link href={a.to} key={a.name} className="bg-white/5 border border-white/10 rounded-xl2 p-6 hover:bg-white/10 transition-colors"><div className="w-11 h-11 rounded-full bg-gold-500/15 text-gold-300 flex items-center justify-center mb-4"><a.icon size={19} /></div><div className="font-semibold text-[15px]">{a.name}</div><div className="text-white/40 text-xs mt-1 flex items-center gap-1">Explore <ArrowRight size={12} /></div></Link>)}</div></div></section>
-      <section className="section"><div className="container-w grid lg:grid-cols-2 gap-16 items-center"><div className="relative h-[440px] rounded-xl2 overflow-hidden"><img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1000&q=80" alt="Blue Pair Hotel exterior, Uromi, Edo State" className="w-full h-full object-cover" /><div className="absolute bottom-5 left-5 bg-navy-950/90 backdrop-blur text-white rounded-xl2 px-6 py-5 flex gap-7"><div><b className="font-display text-2xl block">60</b><span className="text-[11px] text-white/60 uppercase">Rooms &amp; suites</span></div><div><b className="font-display text-2xl block">12</b><span className="text-[11px] text-white/60 uppercase">Years in Uromi</span></div><div><b className="font-display text-2xl block">4.8</b><span className="text-[11px] text-white/60 uppercase">Guest rating</span></div></div></div><div><span className="eyebrow">Blue Pair Signature</span><h2 className="text-3xl md:text-4xl font-semibold mt-3 mb-5">A homegrown luxury brand, built for Edo State</h2><p className="text-navy-500 text-[15px] leading-relaxed">Blue Pair Hotel opened its doors in Uromi with one goal — to bring genuinely world-class hospitality to Esan North-East. Every room, every plate at the restaurant, and every event on the Club terrace is built around that promise.</p><Link href="/about" className="btn-outline mt-7">Our story</Link></div></div></section>
-      <section className="section bg-cream-100"><div className="container-w"><SectionHeading eyebrow="Limited-time" title="Current offers" /><div className="grid md:grid-cols-3 gap-6">{offers.map(o => <div key={o.id} className="card p-6 flex flex-col gap-3"><span className="pill-gold w-fit">{o.discount}</span><h4 className="text-lg font-semibold">{o.title}</h4><p className="text-sm text-navy-500">{o.description}</p><Link href="/offers" className="text-sm font-semibold text-navy-900 mt-2 flex items-center gap-1">See details <ArrowRight size={13} /></Link></div>)}</div></div></section>
-      <section className="section"><div className="container-w"><div className="flex justify-between items-end mb-10 flex-wrap gap-4"><SectionHeading eyebrow="Gallery" title="A closer look" /><Link href="/gallery" className="text-sm font-semibold flex items-center gap-1.5 text-navy-900">Full gallery <ArrowRight size={14} /></Link></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{gallery.slice(0, 8).map((g, i) => <div key={g.id} className={'rounded-xl2 overflow-hidden ' + (i === 0 ? 'col-span-2 row-span-2 h-full' : 'h-40')}><img src={g.url} alt={g.caption || 'Blue Pair Hotel, Uromi, Edo State'} className="w-full h-full object-cover" /></div>)}</div></div></section>
-      <section className="section bg-cream-100"><div className="container-w grid lg:grid-cols-2 gap-14 items-center"><div><span className="eyebrow">Find us</span><h2 className="text-3xl font-semibold mt-3 mb-4">Auchi Road, Uromi, Edo State</h2><p className="text-navy-500 text-sm leading-relaxed max-w-md">Set in the heart of Uromi, a short drive from Ekpoma and Auchi, with VIP parking and airport pickup available from Benin Airport.</p><div className="flex gap-8 mt-6"><div><span className="eyebrow block mb-1">Phone</span><span className="text-sm font-semibold">+234 901 234 5678</span></div><div><span className="eyebrow block mb-1">Email</span><span className="text-sm font-semibold">reservations@bluepairhotel.com</span></div></div><Link href="/contact" className="btn-outline mt-7">Get directions</Link></div><div className="h-96 rounded-xl2 bg-navy-100 flex items-center justify-center relative overflow-hidden border border-black/5"><div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle at 30% 40%, #22346e33 0, transparent 40%), radial-gradient(circle at 70% 70%, #C79A3E33 0, transparent 40%)' }} /><div className="w-14 h-14 rounded-full bg-navy-900 flex items-center justify-center relative z-10 shadow-pop"><span className="w-3 h-3 bg-gold-400 rounded-full" /></div></div></div></section>
+
+      <main>
+        <section className="section pt-16 md:pt-20">
+          <div className="container-w">
+            <div className="mb-8 flex items-end justify-between gap-4">
+              <div><span className="eyebrow">Explore Blue Pair</span><h2 className="mt-2 font-display text-3xl font-medium md:text-4xl">Everything you came for.</h2></div>
+              <Link href="/about" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-800 sm:flex">View all <ArrowRight size={14} /></Link>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {experienceCards.map(card => <Link href={card.href} key={card.title} className="group relative min-h-[330px] overflow-hidden rounded-2xl border border-navy-900/10 bg-navy-950 text-white shadow-sm">
+                <img src={card.image} alt={card.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/35 to-transparent" />
+                <div className="absolute inset-x-5 bottom-5"><span className="text-[9px] font-semibold uppercase tracking-[.18em] text-gold-300">{card.eyebrow}</span><h3 className="mt-1 font-display text-2xl font-medium">{card.title}</h3><p className="mt-1 max-w-xs text-xs leading-5 text-white/60">{card.description}</p><span className="mt-4 inline-flex items-center gap-2 text-xs font-semibold">Explore <ArrowRight size={13} /></span></div>
+              </Link>)}
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-16 md:pb-20">
+          <div className="container-w">
+            <div className="relative overflow-hidden rounded-2xl bg-navy-950 text-white">
+              <img src={images[4] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1800&q=85'} alt="Blue Pair Hotel experience" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+              <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/65 to-transparent" />
+              <div className="relative min-h-[280px] px-6 py-10 md:min-h-[320px] md:px-12 md:py-14">
+                <div className="max-w-xl"><span className="eyebrow text-gold-300">Your stay, your way</span><h2 className="mt-3 max-w-lg font-display text-3xl font-medium leading-tight md:text-5xl">Make your time at Blue Pair feel effortless.</h2><p className="mt-4 max-w-md text-sm leading-6 text-white/60">Stay, dine, unwind, celebrate and explore — with everything you need in one place.</p><Link href="/rooms" className="btn-gold mt-6 px-5 py-3">Plan your stay <ArrowRight size={15} /></Link></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <InteractiveHotelExperience gallery={gallery} />
+
+        <section className="section">
+          <div className="container-w">
+            <div className="mb-10 flex items-end justify-between gap-4"><SectionHeading eyebrow="Featured stays" title="Rooms & suites" /><Link href="/rooms" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-900 sm:flex">View all rooms <ArrowRight size={14} /></Link></div>
+            <div className="grid gap-6 md:grid-cols-3">{roomTypes.slice(0, 3).map(room => <RoomCard key={room.id} room={room} availableCount={availableCount(room.id)} />)}</div>
+          </div>
+        </section>
+
+        <section className="section bg-navy-950 text-white">
+          <div className="container-w">
+            <SectionHeading eyebrow="On the property" title="More to enjoy at Blue Pair" light center subtitle="Thoughtful spaces, good food and experiences made for your stay." />
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {[{ icon: Waves, name: 'Indoor Pool', to: '/pool' }, { icon: Dumbbell, name: 'Fitness Gym', to: '/gym' }, { icon: UtensilsCrossed, name: 'Blue Pair Restaurant', to: '/dining' }, { icon: PartyPopper, name: 'The Club', to: '/club' }, { icon: Wifi, name: 'VIP Lounge', to: '/vip-lounge' }, { icon: Car, name: 'VIP Parking', to: '/parking' }].map(item => <Link href={item.to} key={item.name} className="group rounded-xl border border-white/10 bg-white/[.04] p-5 transition-colors hover:bg-white/[.08]"><div className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-gold-500/15 text-gold-300"><item.icon size={18} /></div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.name}</span><ArrowRight size={14} className="text-white/30 transition-transform group-hover:translate-x-1 group-hover:text-gold-300" /></div></Link>)}
+            </div>
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="container-w grid items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+            <div className="relative min-h-[380px] overflow-hidden rounded-2xl"><img src={FALLBACK_IMAGES[0]} alt="Blue Pair Hotel exterior" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-navy-950/80 p-5 text-white backdrop-blur-md"><div className="grid grid-cols-3 gap-4"><div><b className="font-display text-2xl">60</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Rooms & suites</span></div><div><b className="font-display text-2xl">12</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Years in Uromi</span></div><div><b className="font-display text-2xl">4.8</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Guest rating</span></div></div></div></div>
+            <div><span className="eyebrow">Blue Pair Signature</span><h2 className="mt-3 font-display text-3xl font-medium leading-tight md:text-5xl">A place to arrive, relax and feel at home.</h2><p className="mt-5 max-w-xl text-sm leading-7 text-navy-600 md:text-base">From your first welcome to your last morning, Blue Pair brings rooms, dining, leisure and events together in one considered hotel experience in Uromi.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/about" className="btn-dark px-5 py-3.5">About Blue Pair <ArrowRight size={15} /></Link><Link href="/contact" className="inline-flex items-center gap-2 rounded-lg border border-navy-900/15 px-5 py-3.5 text-sm font-semibold text-navy-900 transition-colors hover:border-gold-500">Contact us</Link></div></div>
+          </div>
+        </section>
+      </main>
     </div>
   )
 }
