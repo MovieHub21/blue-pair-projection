@@ -31,24 +31,17 @@ export async function POST(request: Request) {
 
     // This RPC locks the exact physical room atomically in PostgreSQL. Only one
     // booking can own the 10-minute payment window at a time.
-    const { data: lock, error: lockError } = await admin.rpc('acquire_payment_lock', {
-      p_booking_id: booking.id,
-      p_user_id: user.id,
-    })
+    const { data: lock, error: lockError } = await admin.rpc('acquire_payment_lock', { p_booking_id: booking.id, p_user_id: user.id })
     if (lockError) throw lockError
     const lockResult = Array.isArray(lock) ? lock[0] : lock
     if (!lockResult?.acquired) {
       if (lockResult?.reason === 'payment_in_progress') {
         const expiresAt = lockResult.expires_at ? new Date(lockResult.expires_at).toISOString() : null
-        return NextResponse.json({
-          error: 'This room is currently being secured by another guest. Please wait until their payment window ends and try again.',
-          code: 'PAYMENT_IN_PROGRESS',
-          expiresAt,
-        }, { status: 409 })
+        return NextResponse.json({ error: 'This room is currently being secured by another guest. Please wait until their payment window ends and try again.', code: 'PAYMENT_IN_PROGRESS', expiresAt }, { status: 409 })
       }
       if (lockResult?.reason === 'room_already_sold') return NextResponse.json({ error: 'This room has just been secured by another guest. Please choose another available room.', code: 'ROOM_SOLD' }, { status: 409 })
       if (lockResult?.reason === 'room_not_available') return NextResponse.json({ error: 'This room is no longer available for payment. Please refresh and choose another room.', code: 'ROOM_NOT_AVAILABLE' }, { status: 409 })
-      return NextResponse.json({ error: 'This booking is not currently eligible for payment.', status: 409 })
+      return NextResponse.json({ error: 'This booking is not currently eligible for payment.' }, { status: 409 })
     }
 
     const reference = `BPH-${booking.reference.replace(/^BPH-/,'')}-PS-${Date.now()}`
@@ -57,14 +50,7 @@ export async function POST(request: Request) {
       const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: customer.email,
-          amount: String(Math.round(Number(booking.amount) * 100)),
-          currency: 'NGN',
-          reference,
-          callback_url: callbackUrl,
-          metadata: { booking_id: booking.id, booking_reference: booking.reference, customer_id: customer.id, user_id: user.id, source: 'guest_booking' },
-        }),
+        body: JSON.stringify({ email: customer.email, amount: String(Math.round(Number(booking.amount) * 100)), currency: 'NGN', reference, callback_url: callbackUrl, metadata: { booking_id: booking.id, booking_reference: booking.reference, customer_id: customer.id, user_id: user.id, source: 'guest_booking' } }),
         cache: 'no-store',
       })
       const result = await paystackResponse.json()
