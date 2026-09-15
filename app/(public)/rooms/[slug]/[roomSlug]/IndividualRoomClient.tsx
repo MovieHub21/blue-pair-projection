@@ -53,10 +53,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
       finally { if (!cancelled) setChecking(false) }
     }
     void loadAvailability()
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void loadAvailability() }, 15000)
-    const onFocus = () => void loadAvailability()
-    window.addEventListener('focus', onFocus); document.addEventListener('visibilitychange', onFocus)
-    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
+    return () => { cancelled = true }
   }, [checkIn, checkOut, type.id, unit.id])
   async function reserve() {
     if (!auth.userId) { router.push(`/account/login?redirect=${encodeURIComponent(`/rooms/${type.slug}/${unit.slug}?checkin=${checkIn}&checkout=${checkOut}`)}`); return }
