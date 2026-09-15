@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { createSupabaseServerClient } from './supabase/server'
+import { createSupabaseAdminClient } from './supabase/admin'
 import { mapBooking, mapPayment, mapGuestRequest, mapRoomType } from './mappers'
 
 /**
@@ -16,7 +17,13 @@ export const getCurrentUser = cache(async () => {
   return { user, profile: profile ?? null }
 })
 
-/** The `customers` row linked to the signed-in user, creating one if it doesn't exist yet. Request-memoized. */
+/**
+ * The `customers` row linked to the signed-in user, creating one if it doesn't exist yet.
+ * Walk-in customers are initially created with user_id = null. When that guest later
+ * creates an account with the same email, claim that existing customer so all previous
+ * walk-in bookings/payments become part of the guest account instead of creating a new
+ * customer record with no booking history.
+ */
 export const getMyCustomer = cache(async () => {
   const { user, profile } = await getCurrentUser()
   if (!user) return null
@@ -24,10 +31,49 @@ export const getMyCustomer = cache(async () => {
   const { data: existing } = await db.from('customers').select('*').eq('user_id', user.id).maybeSingle()
   if (existing) return existing as any
 
+  const email = String(user.email ?? profile?.email ?? '').trim().toLowerCase()
+  if (email) {
+    const admin = createSupabaseAdminClient()
+    const { data: emailCustomer, error: emailLookupError } = await admin
+      .from('customers')
+      .select('*')
+      .ilike('email', email)
+      .maybeSingle()
+
+    if (emailLookupError) {
+      console.error('[account] customer email lookup failed', emailLookupError.message)
+    } else if (emailCustomer) {
+      // Only claim an unlinked customer. Never reassign a customer that already
+      // belongs to another authenticated user.
+      if (!emailCustomer.user_id) {
+        const { data: claimed, error: claimError } = await admin
+          .from('customers')
+          .update({
+            user_id: user.id,
+            name: profile?.name || emailCustomer.name || user.email || 'Guest',
+            email,
+            phone: profile?.phone || emailCustomer.phone || '',
+          })
+          .eq('id', emailCustomer.id)
+          .is('user_id', null)
+          .select('*')
+          .maybeSingle()
+
+        if (claimError) {
+          console.error('[account] walk-in customer claim failed', claimError.message)
+        } else if (claimed) {
+          return claimed as any
+        }
+      } else if (emailCustomer.user_id === user.id) {
+        return emailCustomer as any
+      }
+    }
+  }
+
   const id = `c_${Date.now()}`
   const { data: created } = await db.from('customers').insert({
     id, user_id: user.id, name: profile?.name || user.email || 'Guest',
-    email: profile?.email || user.email || '', phone: profile?.phone || '',
+    email: email || user.email || '', phone: profile?.phone || '',
   }).select('*').maybeSingle()
   return created as any
 })
