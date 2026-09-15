@@ -4,16 +4,11 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 
 function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
+function activePending(b: any) { return b.status === 'pending' && b.payment_status !== 'paid' && (!b.reservation_expires_at || new Date(b.reservation_expires_at).getTime() > Date.now()) }
 
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
-  // Physical room lifecycle is authoritative for what guests can do.
-  // Occupied rooms are taken — never offer a reservation for them.
   if (room.status === 'occupied') return { status: 'taken', availableFrom: null }
-
-  // Cleaning/maintenance rooms can be reserved, but cannot be booked/paid for yet.
-  if (room.status === 'cleaning' || room.status === 'cleaning_required' || room.status === 'maintenance') {
-    return { status: 'availableSoon', availableFrom: null }
-  }
+  if (room.status === 'cleaning' || room.status === 'cleaning_required' || room.status === 'maintenance') return { status: 'availableSoon', availableFrom: null }
 
   const paid = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status) && b.payment_status === 'paid')
   const overlapping = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
@@ -37,13 +32,12 @@ export async function GET(request: Request) {
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
-      db.from('bookings').select('id,customer_id,room_id,room_type_id,check_in,check_out,status,payment_status').in('status', ['pending', 'confirmed', 'checked_in']),
+      db.from('bookings').select('id,customer_id,room_id,room_type_id,check_in,check_out,status,payment_status,reservation_expires_at').in('status', ['pending', 'confirmed', 'checked_in']),
     ])
     if (roomsError) throw roomsError
     if (bookingsError) throw bookingsError
 
     const bookingRows = (bookings ?? []) as any[]
-
     let currentCustomerId: string | null = null
     try {
       const authDb = createSupabaseServerClient()
@@ -52,10 +46,10 @@ export async function GET(request: Request) {
         const { data: customer } = await db.from('customers').select('id').eq('user_id', user.id).maybeSingle()
         currentCustomerId = customer?.id ?? null
       }
-    } catch { /* Availability remains public when the visitor is signed out. */ }
+    } catch { /* Public availability remains available when signed out. */ }
 
     const ownReservations = currentCustomerId
-      ? bookingRows.filter(b => b.customer_id === currentCustomerId && b.status === 'pending' && b.payment_status !== 'paid' && overlaps(checkIn, checkOut, b.check_in, b.check_out) && b.room_id)
+      ? bookingRows.filter(b => b.customer_id === currentCustomerId && activePending(b) && overlaps(checkIn, checkOut, b.check_in, b.check_out) && b.room_id)
       : []
     const readyIds = new Set<string>()
     if (ownReservations.length) {
@@ -66,7 +60,9 @@ export async function GET(request: Request) {
     const result = (rooms ?? []).map(room => {
       const roomBookings = bookingRows.filter(b => b.room_id === room.id)
       const state = guestStatus(room, roomBookings, checkIn, checkOut)
+      const pendingHolds = roomBookings.filter(b => activePending(b) && overlaps(checkIn, checkOut, b.check_in, b.check_out))
       const ownReservation = ownReservations.find(b => b.room_id === room.id)
+      const pending = pendingHolds.length > 0
       if (ownReservation) {
         const roomIsOpen = room.status === 'available' && state.status === 'available'
         return {
@@ -74,19 +70,23 @@ export async function GET(request: Request) {
           guest_status: 'reserved',
           available_from: state.availableFrom,
           reservation_id: ownReservation.id,
+          reservation_expires_at: ownReservation.reservation_expires_at,
           payment_ready: roomIsOpen || readyIds.has(ownReservation.id),
+          pending,
+          pending_count: pendingHolds.length,
         }
       }
-      return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false }
+      return { ...room, guest_status: state.status, available_from: state.availableFrom, payment_ready: false, pending, pending_count: pendingHolds.length }
     })
 
-    const byType: Record<string, { available: number; availableSoon: number; taken: number; reserved: number; earliestAvailable: string | null }> = {}
+    const byType: Record<string, { available: number; availableSoon: number; taken: number; reserved: number; pending: number; earliestAvailable: string | null }> = {}
     for (const room of result) {
-      const row = byType[room.room_type_id] ?? { available: 0, availableSoon: 0, taken: 0, reserved: 0, earliestAvailable: null }
+      const row = byType[room.room_type_id] ?? { available: 0, availableSoon: 0, taken: 0, reserved: 0, pending: 0, earliestAvailable: null }
       if (room.guest_status === 'available') row.available++
       else if (room.guest_status === 'availableSoon') row.availableSoon++
       else if (room.guest_status === 'reserved') row.reserved++
       else row.taken++
+      if (room.pending) row.pending++
       if (room.available_from && (!row.earliestAvailable || room.available_from < row.earliestAvailable)) row.earliestAvailable = room.available_from
       byType[room.room_type_id] = row
     }
