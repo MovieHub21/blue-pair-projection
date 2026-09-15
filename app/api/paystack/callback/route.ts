@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     if (!booking) return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
 
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') {
-      return NextResponse.redirect(`${guestUrl}?payment=success&reference=${encodeURIComponent(reference)}`)
+      return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
     }
 
     if (!booking.room_id) return NextResponse.redirect(`${guestUrl}?payment=room-missing`)
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
         .eq('id', booking.id)
         .maybeSingle()
       if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') {
-        return NextResponse.redirect(`${guestUrl}?payment=success&reference=${encodeURIComponent(reference)}`)
+        return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
       }
       return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
     }
@@ -178,7 +178,7 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.redirect(`${guestUrl}?payment=success&reference=${encodeURIComponent(reference)}`)
+    return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
   } catch (error) {
     console.error('[paystack-callback]', error)
     return NextResponse.redirect(`${guestUrl}?payment=error`)
