@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sendResendEmail } from '../../../lib/email/resend'
 import { SITE_EMAIL } from '../../../lib/siteConfig'
 import { createSupabasePublicClient } from '../../../lib/supabase/server'
+import { readSanitizedJson } from '../../../lib/security/input'
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char] as string))
@@ -9,11 +10,11 @@ function escapeHtml(value: string) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const name = String(body.name ?? '').trim()
-    const email = String(body.email ?? '').trim()
-    const subject = String(body.subject ?? '').trim()
-    const message = String(body.message ?? '').trim()
+    const body = await readSanitizedJson<{ name?: unknown; email?: unknown; subject?: unknown; message?: unknown }>(request)
+    const name = String(body.name ?? '')
+    const email = String(body.email ?? '')
+    const subject = String(body.subject ?? '')
+    const message = String(body.message ?? '')
     if (!name || !email || !subject || !message) return NextResponse.json({ error: 'Please complete all fields.' }, { status: 400 })
     if (!/^\S+@\S+\.\S+$/.test(email)) return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
     if (message.length > 5000) return NextResponse.json({ error: 'Message is too long.' }, { status: 400 })
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('[contact]', error)
-    return NextResponse.json({ error: error?.message || 'Unable to send your message right now.' }, { status: 500 })
+    if (error?.message === 'REQUEST_BODY_TOO_LARGE') return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
+    return NextResponse.json({ error: 'Unable to send your message right now.' }, { status: 500 })
   }
 }
