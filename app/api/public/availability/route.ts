@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 function activePending(b: any) { return b.status === 'pending' && b.payment_status !== 'paid' && (!b.reservation_expires_at || new Date(b.reservation_expires_at).getTime() > Date.now()) }
