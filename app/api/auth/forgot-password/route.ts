@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { SITE_URL } from '../../../../lib/siteConfig'
+import { readSanitizedJson } from '../../../../lib/security/input'
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char] as string))
@@ -9,7 +10,7 @@ function escapeHtml(value: string) {
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json()
+    const { email } = await readSanitizedJson<{ email?: unknown }>(request)
     const normalizedEmail = String(email || '').trim().toLowerCase()
     if (!normalizedEmail) return NextResponse.json({ error: 'Enter your email address.' }, { status: 400 })
 
@@ -20,7 +21,6 @@ export async function POST(request: Request) {
       options: { redirectTo: `${SITE_URL}/auth/callback?next=/account/reset-password` },
     })
 
-    // Do not reveal whether an email is registered.
     if (error) console.warn('[forgot-password] generateLink', error.message)
     if (data?.properties?.action_link) {
       const actionLink = data.properties.action_link
@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('[forgot-password] failed', error)
-    // Keep the response generic so the endpoint cannot be used to enumerate accounts.
     return NextResponse.json({ ok: true })
   }
 }

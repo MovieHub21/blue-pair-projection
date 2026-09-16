@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+import { readSanitizedJson } from '../../../../lib/security/input'
 
 function validDate(value: unknown): value is string { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await authDb.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Please sign in before reserving a room.' }, { status: 401 })
 
-    const body = await request.json()
+    const body = await readSanitizedJson<{ roomTypeId?: unknown; roomId?: unknown; checkIn?: unknown; checkOut?: unknown; adults?: unknown; children?: unknown; amount?: unknown; specialRequests?: unknown; extraServices?: unknown }>(request)
     const { roomTypeId, roomId, checkIn, checkOut, adults = 2, children = 0, amount, specialRequests, extraServices } = body ?? {}
     if (!roomTypeId || !validDate(checkIn) || !validDate(checkOut) || checkIn >= checkOut) return NextResponse.json({ error: 'Valid room and stay dates are required.' }, { status: 400 })
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
       if (current) return NextResponse.json({ booking: current, alreadyReserved: true, error: 'You already have a pending room reservation. Complete it or wait for its hold to expire before reserving another room.' }, { status: 409 })
     }
 
-    let selectedRoomId: string | null = roomId || null
+    let selectedRoomId: string | null = roomId ? String(roomId) : null
     const { data: rooms } = await db.from('rooms').select('id,status,room_type_id,payment_lock_booking_id,payment_lock_expires_at').eq('room_type_id', roomTypeId).order('room_number')
     let selectedRoom = selectedRoomId ? (rooms ?? []).find(r => r.id === selectedRoomId) : null
     if (selectedRoomId && !selectedRoom) return NextResponse.json({ error: 'That room could not be found.' }, { status: 404 })
@@ -82,13 +83,14 @@ export async function POST(request: Request) {
       payment_status: 'pending',
       status: 'pending',
       reservation_expires_at: reservationExpiresAt,
-      special_requests: typeof specialRequests === 'string' ? specialRequests.trim() || null : null,
+      special_requests: typeof specialRequests === 'string' ? specialRequests || null : null,
       extra_services: Array.isArray(extraServices) ? extraServices : [],
     }).select('id,reference,room_id,reservation_expires_at,status').single()
     if (bookingError) throw bookingError
     return NextResponse.json({ booking, holdMinutes: HOLD_MINUTES, holdStarted: Boolean(reservationExpiresAt) }, { status: 201 })
   } catch (error: any) {
     console.error('[public-reservation]', error)
-    return NextResponse.json({ error: error?.message || 'Unable to reserve this room right now.' }, { status: 500 })
+    if (error?.message === 'REQUEST_BODY_TOO_LARGE') return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
+    return NextResponse.json({ error: 'Unable to reserve this room right now.' }, { status: 500 })
   }
 }
