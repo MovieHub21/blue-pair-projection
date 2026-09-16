@@ -8,6 +8,40 @@ const GUEST_PREFIXES = ['/account']
 const PUBLIC_PATHS = ['/account/login', '/account/register', '/account/forgot-password', '/account/reset-password', '/staff/login']
 const MAINTENANCE_PATH = '/site-maintenance'
 
+type RateLimitEntry = { count: number; resetAt: number }
+const rateLimitStore = new Map<string, RateLimitEntry>()
+const RATE_WINDOW_MS = 60_000
+
+function rateLimit(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown'
+  const method = request.method.toUpperCase()
+
+  let limit = 120
+  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname)) limit = 15
+  else if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) limit = 40
+
+  const bucket = pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : 'api'
+  const key = `${ip}:${bucket}`
+  const now = Date.now()
+  const current = rateLimitStore.get(key)
+  const entry = !current || current.resetAt <= now ? { count: 1, resetAt: now + RATE_WINDOW_MS } : { count: current.count + 1, resetAt: current.resetAt }
+  rateLimitStore.set(key, entry)
+
+  if (rateLimitStore.size > 5000) {
+    for (const [storedKey, storedEntry] of rateLimitStore) if (storedEntry.resetAt <= now) rateLimitStore.delete(storedKey)
+  }
+
+  if (entry.count > limit) {
+    const retryAfter = Math.max(1, Math.ceil((entry.resetAt - now) / 1000))
+    return NextResponse.json({ error: 'Too many requests. Please try again shortly.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(retryAfter), 'X-RateLimit-Limit': String(limit), 'X-RateLimit-Remaining': '0' },
+    })
+  }
+  return null
+}
+
 function getEnvironment() {
   if (process.env.VERCEL_ENV === 'preview') return 'preview'
   if (process.env.VERCEL_ENV === 'production') return 'production'
@@ -16,6 +50,13 @@ function getEnvironment() {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/api/')) {
+    const limited = rateLimit(request)
+    if (limited) return limited
+    return NextResponse.next({ request })
+  }
+
   const response = NextResponse.next({ request })
   if (pathname === MAINTENANCE_PATH) return response
 
@@ -82,4 +123,4 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|api/).*)'] }
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js).*)'] }
