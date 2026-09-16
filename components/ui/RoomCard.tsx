@@ -9,32 +9,37 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
   const available = hasLiveCount ? count > 0 : true
 
   return (
-    <div className="card overflow-hidden flex flex-col group">
-      <div className="relative h-56 overflow-hidden">
-        <img src={room.images[0]} alt={room.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        <span className={'absolute top-3.5 left-3.5 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>
+    <div className="card group flex min-h-[620px] flex-col overflow-hidden rounded-[10px] border border-navy-900/10 bg-white shadow-sm">
+      <div className="relative h-64 shrink-0 overflow-hidden sm:h-72">
+        <img src={room.images[0]} alt={room.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <span className={'absolute left-4 top-4 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95 shadow-sm'}>
           {available ? `${count} available` : 'Fully booked'}
         </span>
       </div>
-      <div className="p-5 flex flex-col gap-3 flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-semibold text-navy-950">{room.name}</h3>
-          <div className="text-right shrink-0">
-            <div className="font-display text-lg text-navy-950">{naira(room.price)}</div>
-            <div className="text-[11px] text-navy-400">per night</div>
+
+      <div className="flex flex-1 flex-col p-6 sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="min-w-0 font-display text-xl font-semibold leading-tight text-navy-950 sm:text-2xl">{room.name}</h3>
+          <div className="shrink-0 text-right leading-none">
+            <div className="font-display text-xl font-semibold text-gold-600 sm:text-2xl">{naira(room.price)}<span className="ml-1 font-body text-xs font-normal text-navy-400">/ night</span></div>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-xs text-navy-500 flex-wrap">
-          <span className="flex items-center gap-1"><Users size={13} /> {room.guests} guests</span>
-          <span className="flex items-center gap-1"><BedDouble size={13} /> {room.bedType}</span>
-          <span className="flex items-center gap-1"><Ruler size={13} /> {room.sizeSqm} m²</span>
+
+        <div className="my-5 h-px bg-navy-900/10" />
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-navy-500 sm:text-sm">
+          <span className="flex items-center gap-1.5"><Ruler size={14} className="text-navy-400" /> {room.sizeSqm} m²</span>
+          <span className="flex items-center gap-1.5"><Users size={14} className="text-navy-400" /> {room.guests} guests</span>
+          <span className="flex items-center gap-1.5"><BedDouble size={14} className="text-navy-400" /> {room.bedType}</span>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {room.amenities.slice(0, 3).map(a => <span key={a} className="tag">{a}</span>)}
+
+        <div className="mt-4 text-xs leading-5 text-navy-400 sm:text-sm">
+          {room.description}
         </div>
-        <div className="flex gap-2 mt-auto pt-2">
-          <Link href={`/rooms/${room.slug}`} className="btn-outline btn-sm flex-1 justify-center">View room</Link>
-          <Link href={`/booking?room=${room.slug}`} aria-disabled={!available} className={'btn-primary btn-sm flex-1 justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>{available ? 'Book now' : 'Fully booked'}</Link>
+
+        <div className="mt-auto flex items-center gap-3 border-t border-navy-900/10 pt-6">
+          <Link href={`/rooms/${room.slug}`} className="text-sm font-semibold text-navy-900 underline underline-offset-4 transition-colors hover:text-gold-600">View room details</Link>
+          <Link href={`/booking?room=${room.slug}`} aria-disabled={!available} className={'btn-primary btn-sm ml-auto min-w-[118px] justify-center ' + (!available ? 'pointer-events-none opacity-50' : '')}>{available ? 'Book now' : 'Fully booked'}</Link>
         </div>
       </div>
     </div>
