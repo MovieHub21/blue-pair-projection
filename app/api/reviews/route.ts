@@ -73,7 +73,7 @@ export async function PUT(request: Request) {
   try {
     const user = await getUser()
     if (!user) return NextResponse.json({ error: 'Please sign in to edit your review.' }, { status: 401 })
-    const body = await readSanitizedJson(request)
+    const body = await readSanitizedJson<{ id?: string }>(request)
     const reviewId = String(body.id || '')
     if (!reviewId) return NextResponse.json({ error: 'Review ID is required.' }, { status: 400 })
     const input = await validateReviewInput(body)
@@ -102,7 +102,7 @@ export async function DELETE(request: Request) {
   try {
     const user = await getUser()
     if (!user) return NextResponse.json({ error: 'Please sign in to delete your review.' }, { status: 401 })
-    const body = await readSanitizedJson(request).catch(() => ({}))
+    const body = await readSanitizedJson<{ id?: string }>(request).catch(() => ({}))
     const reviewId = String(body.id || '')
     if (!reviewId) return NextResponse.json({ error: 'Review ID is required.' }, { status: 400 })
     const admin = createSupabaseAdminClient()
