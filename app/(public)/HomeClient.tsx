@@ -6,7 +6,6 @@ import { useState } from 'react'
 import { ArrowRight, Calendar, Coffee, Users, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, Minus, Plus } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
-import Hotel3DHero from '../../components/ui/Hotel3DHero'
 import InteractiveHotelExperience from '../../components/ui/InteractiveHotelExperience'
 import { type RoomType, type Room, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
@@ -48,7 +47,6 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         <div className="absolute inset-0 bg-navy-950/45" />
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/85 via-navy-950/45 to-navy-950/15" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-navy-950/30" />
-        <div className="absolute inset-0 hidden opacity-25 md:block"><Hotel3DHero /></div>
 
         <div className="relative z-10 container-w flex min-h-[620px] items-center px-5 pb-28 pt-28 md:min-h-[700px] md:px-10 md:pb-36">
           <div className="max-w-2xl">
@@ -142,8 +140,8 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
         <section className="section">
           <div className="container-w grid items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
-            <div className="relative min-h-[380px] overflow-hidden rounded-2xl"><img src={FALLBACK_IMAGES[0]} alt="Blue Pair Hotel exterior" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-navy-950/80 p-5 text-white backdrop-blur-md"><div className="grid grid-cols-3 gap-4"><div><b className="font-display text-2xl">60</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Rooms & suites</span></div><div><b className="font-display text-2xl">12</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Years in Uromi</span></div><div><b className="font-display text-2xl">4.8</b><span className="mt-1 block text-[9px] uppercase tracking-[.12em] text-white/45">Guest rating</span></div></div></div></div>
-            <div><span className="eyebrow">Blue Pair Signature</span><h2 className="mt-3 font-display text-3xl font-medium leading-tight md:text-5xl">A place to arrive, relax and feel at home.</h2><p className="mt-5 max-w-xl text-sm leading-7 text-navy-600 md:text-base">From your first welcome to your last morning, Blue Pair brings rooms, dining, leisure and events together in one considered hotel experience in Uromi.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/about" className="btn-dark px-5 py-3.5">About Blue Pair <ArrowRight size={15} /></Link><Link href="/contact" className="inline-flex items-center gap-2 rounded-lg border border-navy-900/15 px-5 py-3.5 text-sm font-semibold text-navy-900 transition-colors hover:border-gold-500">Contact us</Link></div></div>
+            <div className="relative min-h-[380px] overflow-hidden rounded-2xl"><img src={FALLBACK_IMAGES[0]} alt="Blue Pair Hotel exterior" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-navy-950/80 p-5 text-white backdrop-blur-md"><span className="eyebrow text-gold-300">The Blue Pair signature</span><h2 className="mt-2 font-display text-3xl font-medium">A stay that feels considered.</h2></div></div>
+            <div><span className="eyebrow">Made for your stay</span><h2 className="mt-3 font-display text-3xl font-medium md:text-5xl">Comfort, character and thoughtful hospitality.</h2><p className="mt-5 max-w-xl text-sm leading-7 text-navy-600 md:text-base">From restful rooms to memorable evenings, Blue Pair brings the essentials of a refined hotel experience together under one roof.</p><Link href="/about" className="btn-outline mt-7 px-5 py-3">Discover our story <ArrowRight size={15} /></Link></div>
           </div>
         </section>
       </main>
