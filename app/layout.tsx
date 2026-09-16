@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import './globals.css'
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
 import ToastHost from '../components/ui/Toast'
+import ApiRateLimitNotifier from '../components/ui/ApiRateLimitNotifier'
 import RouteProgress from '../components/RouteProgress'
 import GuestEmailWatcher from '../components/GuestEmailWatcher'
 
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Suspense fallback={null}><RouteProgress /></Suspense>
         <GuestEmailWatcher />
+        <ApiRateLimitNotifier />
         {children}
         <ToastHost />
       </body>
