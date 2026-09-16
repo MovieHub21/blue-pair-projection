@@ -18,7 +18,7 @@ function rateLimit(request: NextRequest) {
   const method = request.method.toUpperCase()
 
   let limit = 120
-  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname)) limit = 15
+  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname)) limit = 5
   else if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) limit = 40
 
   const bucket = pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : 'api'
