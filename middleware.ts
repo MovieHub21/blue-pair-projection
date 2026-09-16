@@ -18,10 +18,10 @@ function rateLimit(request: NextRequest) {
   const method = request.method.toUpperCase()
 
   let limit = 120
-  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname)) limit = 5
+  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname) || pathname === '/api/rate-limit-test') limit = 5
   else if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) limit = 40
 
-  const bucket = pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : 'api'
+  const bucket = pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : pathname === '/api/rate-limit-test' ? 'rate-limit-test' : 'api'
   const key = `${ip}:${bucket}`
   const now = Date.now()
   const current = rateLimitStore.get(key)
