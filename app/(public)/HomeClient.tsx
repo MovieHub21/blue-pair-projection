@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+
 import { ArrowRight, Coffee, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, MapPin, Users, LogIn, LogOut } from 'lucide-react'
+
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
 import InteractiveHotelExperience from '../../components/ui/InteractiveHotelExperience'
@@ -17,6 +19,7 @@ const FALLBACK_IMAGES = [
 
 export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
   const images = gallery.map(item => item.url).filter(Boolean)
+
   const heroImage = images[0] || FALLBACK_IMAGES[0] // swap this one image to update the hero everywhere it's used
   const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
 
@@ -27,6 +30,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
     { icon: LogOut, label: 'Check Out', value: '12pm' },
   ]
 
+
   const experienceCards = [
     { title: 'Rooms & Suites', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
     { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
@@ -35,6 +39,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
   return (
     <div className="bg-cream-50 text-navy-950">
+
       <header className="relative bg-cream-50 pb-14 pt-6 md:pb-20 md:pt-10">
         <div className="container-w px-5 md:px-10">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
@@ -48,6 +53,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
                 
                 <Link href="/about" className="btn-outline px-5 py-3.5">Discover Blue Pair</Link>
               </div>
+
             </div>
 
             <div className="motion-fade-up relative aspect-[4/3.5] overflow-hidden rounded-xl bg-navy-950 shadow-pop" style={{ animationDelay: '480ms', animationDuration: '550ms' }}>
@@ -70,7 +76,9 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
             <Link href="/rooms" className="motion-fade-up btn-gold ml-auto shrink-0" style={{ animationDelay: '980ms', animationDuration: '550ms' }}>Book Now</Link>
           </div>
         </div>
+
         </div>
+
       </header>
 
       <main>
