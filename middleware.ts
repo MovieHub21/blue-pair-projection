@@ -7,6 +7,8 @@ const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
 const PUBLIC_PATHS = ['/account/login', '/account/register', '/account/forgot-password', '/account/reset-password', '/staff/login']
 const MAINTENANCE_PATH = '/site-maintenance'
+const ADMIN_HOST = 'admin.bluepairsignature.com'
+const MAIN_HOSTS = new Set(['bluepairsignature.com', 'www.bluepairsignature.com'])
 
 type RateLimitEntry = { count: number; resetAt: number }
 const rateLimitStore = new Map<string, RateLimitEntry>()
@@ -49,12 +51,46 @@ function getEnvironment() {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const originalPathname = request.nextUrl.pathname
+  const hostname = request.headers.get('host')?.split(':')[0]?.toLowerCase() || ''
+  const isAdminSubdomain = hostname === ADMIN_HOST
+  const isMainProductionHost = MAIN_HOSTS.has(hostname)
 
-  if (pathname.startsWith('/api/')) {
+  // API routes are shared by the public site and admin subdomain.
+  if (originalPathname.startsWith('/api/')) {
     const limited = rateLimit(request)
     if (limited) return limited
     return NextResponse.next({ request })
+  }
+
+  // Keep local development unchanged: localhost:3000/admin still works.
+  // In production, /admin on the main domain is redirected to the admin subdomain.
+  if (isMainProductionHost && originalPathname.startsWith('/admin')) {
+    const url = request.nextUrl.clone()
+    const adminPath = originalPathname === '/admin' ? '/' : originalPathname.slice('/admin'.length)
+    url.hostname = ADMIN_HOST
+    url.pathname = adminPath || '/'
+    return NextResponse.redirect(url)
+  }
+
+  // The admin subdomain is a clean front door to the existing /admin route tree.
+  // Examples:
+  //   admin.bluepairsignature.com/            -> /admin/dashboard
+  //   admin.bluepairsignature.com/bookings    -> /admin/bookings
+  //   admin.bluepairsignature.com/rooms       -> /admin/rooms
+  // The real pathname is rewritten internally, so no second Vercel project is needed.
+  let pathname = originalPathname
+  let shouldRewriteToAdmin = false
+
+  if (isAdminSubdomain) {
+    const isStaffLogin = pathname === '/staff/login' || pathname.startsWith('/staff/login/')
+    const isAccountPath = pathname === '/account' || pathname.startsWith('/account/')
+    const isMaintenancePath = pathname === MAINTENANCE_PATH
+
+    if (!isStaffLogin && !isAccountPath && !isMaintenancePath && pathname !== '/admin' && !pathname.startsWith('/admin/')) {
+      pathname = pathname === '/' ? '/admin/dashboard' : `/admin${pathname}`
+      shouldRewriteToAdmin = true
+    }
   }
 
   const response = NextResponse.next({ request })
@@ -63,7 +99,14 @@ export async function middleware(request: NextRequest) {
   const needsStaff = STAFF_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const needsGuest = GUEST_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthPath = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
-  if (isAuthPath) return response
+  if (isAuthPath) {
+    if (shouldRewriteToAdmin) {
+      const url = request.nextUrl.clone()
+      url.pathname = pathname
+      return NextResponse.rewrite(url)
+    }
+    return response
+  }
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
@@ -86,13 +129,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url)
   }
 
-  if (!needsStaff && !needsGuest) return response
+  if (!needsStaff && !needsGuest) {
+    if (shouldRewriteToAdmin) {
+      const url = request.nextUrl.clone()
+      url.pathname = pathname
+      return NextResponse.rewrite(url)
+    }
+    return response
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = needsStaff ? '/staff/login' : '/account/login'
-    url.searchParams.set('redirect', pathname)
+    url.searchParams.set('redirect', originalPathname)
     return NextResponse.redirect(url)
   }
 
@@ -120,6 +171,13 @@ export async function middleware(request: NextRequest) {
       }
     }
   }
+
+  if (shouldRewriteToAdmin) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname
+    return NextResponse.rewrite(url)
+  }
+
   return response
 }
 
