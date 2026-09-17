@@ -1,5 +1,6 @@
 const MAP: Record<string, { label: string; cls: string }> = {
   available: { label: 'Available', cls: 'pill-green' },
+  available_soon: { label: 'Available Soon', cls: 'pill-gold' },
   cleaning_required: { label: 'Cleaning Required', cls: 'pill-amber' },
   cleaning: { label: 'Cleaning', cls: 'pill-amber' },
   maintenance: { label: 'Maintenance', cls: 'pill-red' },
