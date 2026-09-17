@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       log('CUSTOMER_CREATED', { customerId })
     } else log('CUSTOMER_OK', { customerId })
 
-    const { error: expiredError } = await db.from('bookings').update({ status: 'cancelled' }).eq('customer_id', customerId).eq('status', 'pending').neq('payment_status', 'paid').not('reservation_expires_at', 'is', null).lte('reservation_expires_at', new Date().toISOString())
+    const { error: expiredError } = await db.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).eq('customer_id', customerId).eq('status', 'pending').neq('payment_status', 'paid').not('reservation_expires_at', 'is', null).lte('reservation_expires_at', new Date().toISOString())
     if (expiredError) log('EXPIRED_BOOKING_CLEANUP_FAILED', { message: expiredError.message, code: expiredError.code })
 
     const { data: existingReservations, error: existingError } = await db.from('bookings').select('id,reference,room_id,room_type_id,check_in,check_out,amount,reservation_expires_at,payment_status,status').eq('customer_id', customerId).eq('status', 'pending').neq('payment_status', 'paid')
@@ -64,13 +64,14 @@ export async function POST(request: Request) {
     const current = (existingReservations ?? []).find(b => b.reservation_expires_at && new Date(b.reservation_expires_at).getTime() > Date.now())
     log('EXISTING_HOLD_CHECK', { count: existingReservations?.length || 0, activeBookingId: current?.id || null, activeRoomId: current?.room_id || null, activeExpiresAt: current?.reservation_expires_at || null })
 
-    if (current && String(current.room_type_id) === String(roomTypeId) && String(current.room_id || '') === String(roomId || '') && current.check_in === checkIn && current.check_out === checkOut) {
-      log('REUSING_EXISTING_HOLD', { bookingId: current.id, roomId: current.room_id, expiresAt: current.reservation_expires_at })
-      return NextResponse.json({ booking: current, alreadyHeldForPayment: true, holdMinutes: HOLD_MINUTES, holdStarted: true }, { status: 200 })
-    }
     if (current) {
-      log('ACTIVE_HOLD_FOR_OTHER_BOOKING', { bookingId: current.id, roomId: current.room_id, checkIn: current.check_in, checkOut: current.check_out, expiresAt: current.reservation_expires_at })
-      return NextResponse.json({ booking: current, alreadyReserved: true, error: 'You already have an active payment hold for another room. Complete that payment or wait for its hold to expire before starting another payment.' }, { status: 409 })
+      log('ACTIVE_HOLD_EXISTS', { bookingId: current.id, roomId: current.room_id, checkIn: current.check_in, checkOut: current.check_out, expiresAt: current.reservation_expires_at })
+      return NextResponse.json({
+        code: 'EXISTING_PAYMENT_HOLD',
+        booking: current,
+        expiresAt: current.reservation_expires_at,
+        error: 'You already have a payment window for a reservation. Please go to your dashboard to complete that payment before starting another booking.'
+      }, { status: 409 })
     }
 
     const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
@@ -85,8 +86,8 @@ export async function POST(request: Request) {
     if (claimError) {
       log('CLAIM_ROOM_RESERVATION_FAILED', { message: claimError.message, code: claimError.code, details: claimError.details, hint: claimError.hint })
       const message = String(claimError.message || '')
-      if (message.includes('PAYMENT_IN_PROGRESS')) return NextResponse.json({ code: 'PAYMENT_IN_PROGRESS', error: 'Another guest is currently paying for this room. Please try again in a few seconds.' }, { status: 409 })
-      if (message.includes('ROOM_SOLD') || message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_NOT_AVAILABLE', error: 'This room is no longer available for those dates. Please choose another room or change your dates.' }, { status: 409 })
+      if (message.includes('PAYMENT_IN_PROGRESS')) return NextResponse.json({ code: 'PAYMENT_IN_PROGRESS', error: 'Another guest is currently paying for this room. Please try again in a few minutes.' }, { status: 409 })
+      if (message.includes('ROOM_SOLD') || message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_NOT_AVAILABLE', error: 'This room is no longer available for those dates because another guest has successfully paid. Please choose another room or change your dates.' }, { status: 409 })
       if (message.includes('ROOM_NOT_FOUND')) return NextResponse.json({ error: 'That room could not be found.' }, { status: 404 })
       if (message.includes('CHECKOUT_MUST_BE_AFTER_CHECKIN')) return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
       throw claimError
