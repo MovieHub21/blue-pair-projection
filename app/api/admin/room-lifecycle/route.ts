@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     }
     const user = await requireStaff(); if (!user) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
     if (action === 'status') {
-      if (!body.roomId || !['available', 'cleaning', 'maintenance'].includes(body.status || '')) return NextResponse.json({ error: 'Invalid room status update.' }, { status: 400 })
+      if (!body.roomId || !['available', 'cleaning', 'maintenance', 'available_soon'].includes(body.status || '')) return NextResponse.json({ error: 'Invalid room status update.' }, { status: 400 })
       const { data: room, error: roomError } = await admin.from('rooms').select('id,room_number,status,room_type_id').eq('id', body.roomId).maybeSingle()
       if (roomError) throw roomError
       if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
