@@ -79,17 +79,65 @@ export const getMyCustomer = cache(async () => {
 })
 
 export async function getMyBookings() {
-  const { user } = await getCurrentUser()
+  const { user, profile } = await getCurrentUser()
   if (!user) return []
 
-  // Resolve the customer with the verified server-side auth user, then use the
-  // admin client for the joined booking read. This keeps the account page from
-  // depending on the bookings RLS subquery being able to resolve the customer
-  // relationship while still scoping the query to the authenticated user's customer.
-  const customer = await getMyCustomer()
-  if (!customer) return []
-
+  // Use the verified auth user id directly with the service-role client for this
+  // server-side account read. This avoids depending on the client-side RLS session
+  // being propagated through a nested relationship query during a Server Component
+  // render. The customer id is resolved from the authenticated user, then every
+  // booking query is explicitly scoped to that customer.
   const admin = createSupabaseAdminClient()
+  let { data: customer, error: customerError } = await admin
+    .from('customers')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (customerError) {
+    console.error('[account] getMyBookings customer lookup failed', customerError.message)
+    return []
+  }
+
+  // Fallback for an account whose customer row has not yet been linked by user_id.
+  if (!customer) {
+    const email = String(user.email ?? profile?.email ?? '').trim().toLowerCase()
+    if (email) {
+      const { data: emailCustomer, error: emailError } = await admin
+        .from('customers')
+        .select('*')
+        .ilike('email', email)
+        .maybeSingle()
+      if (emailError) {
+        console.error('[account] getMyBookings email customer lookup failed', emailError.message)
+        return []
+      }
+      if (emailCustomer) {
+        if (!emailCustomer.user_id) {
+          const { data: claimed, error: claimError } = await admin
+            .from('customers')
+            .update({ user_id: user.id })
+            .eq('id', emailCustomer.id)
+            .is('user_id', null)
+            .select('*')
+            .maybeSingle()
+          if (claimError) {
+            console.error('[account] getMyBookings customer claim failed', claimError.message)
+            return []
+          }
+          customer = claimed
+        } else if (emailCustomer.user_id === user.id) {
+          customer = emailCustomer
+        }
+      }
+    }
+  }
+
+  if (!customer) {
+    console.error('[account] getMyBookings: no customer found for authenticated user', user.id)
+    return []
+  }
+
   const { data, error } = await admin
     .from('bookings')
     .select('*, room_types(*), rooms(room_number,images,image_url)')
@@ -100,6 +148,8 @@ export async function getMyBookings() {
     console.error('[account] getMyBookings failed', error.message)
     return []
   }
+
+  console.log('[account] getMyBookings result', { userId: user.id, customerId: customer.id, count: data?.length ?? 0 })
 
   return (data ?? []).map((r: any) => ({
     ...mapBooking(r),
