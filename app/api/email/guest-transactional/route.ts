@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
+import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { bookingConfirmationEmail, paymentSuccessfulEmail, paymentFailedEmail, bookingCancelledEmail, bookingModifiedEmail, preArrivalEmail, checkInReminderEmail, checkInWelcomeEmail, checkoutReminderEmail, checkoutThankYouEmail, reviewRequestEmail, serviceRequestReceivedEmail, serviceRequestStatusEmail, supportTicketEmail } from '../../../../lib/email/templates'
 
@@ -7,38 +8,64 @@ type EventName = 'booking_confirmation' | 'payment_successful' | 'payment_failed
 const staffRoles = new Set(['admin', 'manager', 'reception', 'front_desk', 'super_admin'])
 
 export async function POST(request: Request) {
+  const requestId = `guest-email-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   try {
     const supabase = createSupabaseServerClient()
+    const admin = createSupabaseAdminClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    console.log('[guest-transactional-email]', requestId, 'request received', { userId: user?.id ?? null })
+    if (!user) {
+      console.error('[guest-transactional-email]', requestId, 'unauthorized')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const event = String(body.event || '') as EventName
     const bookingId = body.bookingId ? String(body.bookingId) : ''
-    const requestId = body.requestId ? String(body.requestId) : ''
-    const { data: staff } = await supabase.from('staff').select('role').eq('user_id', user.id).maybeSingle()
-    const { data: roleRows } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+    const requestIdFromBody = body.requestId ? String(body.requestId) : ''
+    console.log('[guest-transactional-email]', requestId, 'event', { event, bookingId, requestId: requestIdFromBody })
+
+    const { data: staff } = await admin.from('staff').select('role').eq('user_id', user.id).maybeSingle()
+    const { data: roleRows } = await admin.from('user_roles').select('role').eq('user_id', user.id)
     const isStaff = (!!staff && staffRoles.has(String(staff.role).toLowerCase().replace(/\s+/g, '_'))) || (roleRows ?? []).some((row: any) => staffRoles.has(String(row.role).toLowerCase().replace(/\s+/g, '_')))
+    console.log('[guest-transactional-email]', requestId, 'authorization', { staffRole: staff?.role ?? null, roles: roleRows?.map((row: any) => row.role) ?? [], isStaff })
+
     let booking: any = null
-    if (bookingId) booking = (await supabase.from('bookings').select('*').eq('id', bookingId).maybeSingle()).data
-    let requestRow: any = null
-    if (requestId) {
-      requestRow = (await supabase.from('guest_requests').select('*').eq('id', requestId).maybeSingle()).data
-      if (!booking && requestRow?.booking_ref) booking = (await supabase.from('bookings').select('*').eq('reference', requestRow.booking_ref).maybeSingle()).data
+    if (bookingId) {
+      const result = await admin.from('bookings').select('*').eq('id', bookingId).maybeSingle()
+      booking = result.data
+      if (result.error) console.error('[guest-transactional-email]', requestId, 'booking lookup failed', { error: result.error.message, code: result.error.code })
     }
-    if (!booking && !requestRow) return NextResponse.json({ error: 'Booking or request not found' }, { status: 404 })
+
+    let requestRow: any = null
+    if (requestIdFromBody) {
+      requestRow = (await admin.from('guest_requests').select('*').eq('id', requestIdFromBody).maybeSingle()).data
+      if (!booking && requestRow?.booking_ref) booking = (await admin.from('bookings').select('*').eq('reference', requestRow.booking_ref).maybeSingle()).data
+    }
+    if (!booking && !requestRow) {
+      console.error('[guest-transactional-email]', requestId, 'booking/request not found')
+      return NextResponse.json({ error: 'Booking or request not found' }, { status: 404 })
+    }
+
     let customer: any = null
-    if (booking?.customer_id) customer = (await supabase.from('customers').select('id,name,email').eq('id', booking.customer_id).maybeSingle()).data
-    else if (requestRow?.customer_id) customer = (await supabase.from('customers').select('id,name,email').eq('id', requestRow.customer_id).maybeSingle()).data
+    if (booking?.customer_id) customer = (await admin.from('customers').select('id,name,email').eq('id', booking.customer_id).maybeSingle()).data
+    else if (requestRow?.customer_id) customer = (await admin.from('customers').select('id,name,email').eq('id', requestRow.customer_id).maybeSingle()).data
     const recipient = String(customer?.email || '').trim().toLowerCase()
+    console.log('[guest-transactional-email]', requestId, 'recipient resolved', { bookingReference: booking?.reference ?? null, customerId: customer?.id ?? null, recipient: recipient || null })
     if (!recipient) return NextResponse.json({ error: 'Guest email not found' }, { status: 404 })
-    if (!isStaff && recipient !== String(user.email || '').trim().toLowerCase()) return NextResponse.json({ error: 'You cannot send an email for this guest' }, { status: 403 })
-    const roomType = booking?.room_type_id ? (await supabase.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle()).data : null
-    const physicalRoom = booking?.room_id ? (await supabase.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data : null
+    if (!isStaff && recipient !== String(user.email || '').trim().toLowerCase()) {
+      console.error('[guest-transactional-email]', requestId, 'forbidden recipient access', { userEmail: user.email, recipient })
+      return NextResponse.json({ error: 'You cannot send an email for this guest' }, { status: 403 })
+    }
+
+    const roomType = booking?.room_type_id ? (await admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle()).data : null
+    const physicalRoom = booking?.room_id ? (await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data : null
     const roomName = physicalRoom?.room_number ? `Room ${physicalRoom.room_number} · ${roomType?.name || 'Blue Pair room'}` : (roomType?.name || 'Your reserved room')
     const guestName = customer?.name || requestRow?.guest_name || 'Guest'
     const reference = booking?.reference || requestRow?.booking_ref || 'BPH'
     const base = { guestName, reference, roomName, checkIn: booking?.check_in || '', checkOut: booking?.check_out || '', total: Number(booking?.amount || 0) }
     let email: { subject: string; html: string; text?: string }
+
     switch (event) {
       case 'booking_confirmation': email = bookingConfirmationEmail({ guestName, email: recipient, reference, roomName, checkIn: base.checkIn, checkOut: base.checkOut, adults: Number(booking?.adults || 0), children: Number(booking?.children || 0), total: base.total, paymentStatus: String(booking?.payment_status || 'pending') }); break
       case 'payment_successful': email = paymentSuccessfulEmail({ ...base, paymentReference: body.paymentReference ? String(body.paymentReference) : undefined }); break
@@ -57,10 +84,13 @@ export async function POST(request: Request) {
       case 'support_status': if (!requestRow) return NextResponse.json({ error: 'Request not found' }, { status: 404 }); email = supportTicketEmail({ guestName, reference: requestRow.id, subject: requestRow.type, message: requestRow.message, status: requestRow.status }); break
       default: return NextResponse.json({ error: 'Unsupported email event' }, { status: 400 })
     }
+
+    console.log('[guest-transactional-email]', requestId, 'sending', { event, recipient, reference, roomName })
     const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
+    console.log('[guest-transactional-email]', requestId, 'sent', { event, recipient, providerId: result.id ?? null })
     return NextResponse.json({ ok: true, id: result.id ?? null, event, recipient })
-  } catch (error) {
-    console.error('[guest-transactional-email] failed', error)
+  } catch (error: any) {
+    console.error('[guest-transactional-email]', requestId, 'failed', { message: error?.message, stack: error?.stack })
     return NextResponse.json({ error: 'Unable to send guest email' }, { status: 500 })
   }
 }
