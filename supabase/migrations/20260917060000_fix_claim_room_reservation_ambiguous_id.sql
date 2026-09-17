@@ -1,0 +1,128 @@
+-- Fix PostgreSQL 42702 caused by the RETURNS TABLE(id ...) output
+-- variable colliding with rooms.id inside claim_room_reservation.
+
+create or replace function public.claim_room_reservation(
+  p_customer_id text,
+  p_room_type_id text,
+  p_room_id text,
+  p_check_in date,
+  p_check_out date,
+  p_adults integer,
+  p_children integer,
+  p_amount numeric,
+  p_special_requests text default null,
+  p_extra_services jsonb default '[]'::jsonb,
+  p_source text default 'online',
+  p_created_by uuid default null
+)
+returns table(id text, reference text, room_id text, reservation_expires_at timestamptz, status text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r public.rooms%rowtype;
+  b public.bookings%rowtype;
+  v_id text;
+  v_reference text;
+  v_expires timestamptz := now() + interval '10 minutes';
+begin
+  if p_check_in >= p_check_out then
+    raise exception 'CHECKOUT_MUST_BE_AFTER_CHECKIN';
+  end if;
+
+  if p_source not in ('online','walk_in') then
+    raise exception 'INVALID_BOOKING_SOURCE';
+  end if;
+
+  if p_room_id is not null then
+    select * into r
+    from public.rooms
+    where public.rooms.id = p_room_id
+      and public.rooms.room_type_id = p_room_type_id
+    for update;
+
+    if not found then
+      raise exception 'ROOM_NOT_FOUND';
+    end if;
+
+    if r.status <> 'available' then
+      raise exception 'ROOM_NOT_AVAILABLE';
+    end if;
+
+    if r.payment_lock_expires_at is not null and r.payment_lock_expires_at > now() then
+      raise exception 'PAYMENT_IN_PROGRESS';
+    end if;
+  else
+    select * into r
+    from public.rooms x
+    where x.room_type_id = p_room_type_id
+      and x.status = 'available'
+      and (x.payment_lock_expires_at is null or x.payment_lock_expires_at <= now())
+      and not exists (
+        select 1
+        from public.bookings bx
+        where bx.room_id = x.id
+          and (
+            (bx.status in ('confirmed','checked_in') and bx.payment_status = 'paid')
+            or
+            (bx.status = 'pending' and bx.payment_status <> 'paid'
+              and bx.reservation_expires_at is not null
+              and bx.reservation_expires_at > now())
+          )
+          and p_check_in < bx.check_out
+          and p_check_out > bx.check_in
+      )
+    order by x.room_number
+    for update skip locked
+    limit 1;
+
+    if not found then
+      raise exception 'ROOM_NOT_AVAILABLE';
+    end if;
+  end if;
+
+  if exists (
+    select 1
+    from public.bookings bx
+    where bx.room_id = r.id
+      and (
+        (bx.status in ('confirmed','checked_in') and bx.payment_status = 'paid')
+        or
+        (bx.status = 'pending' and bx.payment_status <> 'paid'
+          and bx.reservation_expires_at is not null
+          and bx.reservation_expires_at > now())
+      )
+      and p_check_in < bx.check_out
+      and p_check_out > bx.check_in
+  ) then
+    raise exception 'ROOM_SOLD';
+  end if;
+
+  v_id := 'b_' || floor(extract(epoch from clock_timestamp()) * 1000)::bigint::text || '_' || substr(md5(random()::text),1,8);
+  v_reference := 'BPH-' || upper(substr(md5(v_id || random()::text),1,7));
+
+  insert into public.bookings(
+    id, reference, customer_id, room_type_id, room_id, check_in, check_out,
+    adults, children, amount, payment_status, status, reservation_expires_at,
+    special_requests, extra_services, source, created_by
+  )
+  values(
+    v_id, v_reference, p_customer_id, p_room_type_id, r.id, p_check_in, p_check_out,
+    greatest(1, coalesce(p_adults,2)), greatest(0, coalesce(p_children,0)), p_amount,
+    'pending', 'pending', v_expires, nullif(p_special_requests,''),
+    coalesce(p_extra_services,'[]'::jsonb), p_source, p_created_by
+  )
+  returning * into b;
+
+  return query
+    select b.id, b.reference, b.room_id, b.reservation_expires_at, b.status;
+
+exception
+  when exclusion_violation then
+    raise exception 'ROOM_SOLD';
+end;
+$$;
+
+revoke execute on function public.claim_room_reservation(text,text,text,date,date,integer,integer,numeric,text,jsonb,text,uuid) from public, anon, authenticated;
+grant execute on function public.claim_room_reservation(text,text,text,date,date,integer,integer,numeric,text,jsonb,text,uuid) to service_role;
