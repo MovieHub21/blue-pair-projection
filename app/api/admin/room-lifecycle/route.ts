@@ -96,10 +96,10 @@ export async function POST(request: Request) {
     if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 })
     const { error: checkoutError } = await admin.from('bookings').update({ status: 'checked_out', checked_out_at: new Date().toISOString() }).eq('id', booking.id); if (checkoutError) throw checkoutError
     if (!booking.room_id) return NextResponse.json({ ok: true, notified: 0 })
-    await admin.from('rooms').update({ status: 'cleaning' }).eq('id', booking.room_id)
+    await admin.from('rooms').update({ status: 'cleaning_required' }).eq('id', booking.room_id)
     const room = (await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data
     const customer = (await admin.from('customers').select('name').eq('id', booking.customer_id).maybeSingle()).data
-    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now marked <strong>Cleaning</strong>.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`)
+    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now marked <strong>Cleaning Required</strong>.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`)
     return NextResponse.json({ ok: true, notified })
   } catch (error: any) {
     console.error('[room-lifecycle]', error)
