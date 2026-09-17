@@ -84,7 +84,6 @@ begin
     select 1
     from public.bookings bx
     where bx.room_id = r.id
-      and bx.id <> coalesce(p_room_id, '')
       and bx.payment_status = 'paid'
       and bx.status in ('confirmed','checked_in')
       and p_check_in < bx.check_out
