@@ -24,7 +24,7 @@ h1, h2, h3, h4 { @apply font-display; }
   .btn-outline { @apply btn border border-navy-900/20 text-navy-900 px-6 py-3 hover:border-gold-500 hover:text-navy-950 hover:bg-gold-50/50; }
   .btn-ghost-light { @apply btn bg-white/10 border border-white/30 text-white px-6 py-3 backdrop-blur-xl hover:bg-white/20 hover:border-white/50; }
   .btn-sm { @apply px-4 py-2 text-xs; }
-  .card { @apply bg-white border border-black/5 rounded-xl shadow-card; transition: transform 300ms cubic-bezier(.22,1,.36,1), box-shadow 300ms ease, border-color 300ms ease; transform: translateZ(0); }
+  .card { @apply bg-white border border-black/5 shadow-card; border-radius: 0.375rem; transition: transform 300ms cubic-bezier(.22,1,.36,1), box-shadow 300ms ease, border-color 300ms ease; transform: translateZ(0); }
   .card:hover { @apply shadow-pop; transform: translateY(-3px); }
   .card:active { transform: translateY(-1px) scale(.997); }
   .glass-card { @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg; }
@@ -78,7 +78,7 @@ h1, h2, h3, h4 { @apply font-display; }
 
 /* Refined card corners: reduce oversized 2xl/3xl rounding while preserving true pills. */
 [class~="rounded-3xl"]:not([class*="rounded-full"]),
-[class~="rounded-2xl"]:not([class*="rounded-full"]) { border-radius: 0.75rem !important; }
+[class~="rounded-2xl"]:not([class*="rounded-full"]) { border-radius: 0.375rem !important; }
 
 @keyframes bp-fade-up { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 @keyframes bp-pop { 0% { opacity: 0; transform: scale(.94); } 70% { opacity: 1; transform: scale(1.025); } 100% { opacity: 1; transform: scale(1); } }
@@ -103,7 +103,7 @@ h1, h2, h3, h4 { @apply font-display; }
   .public-site .section h3 { font-size: 1.05rem; line-height: 1.18; }
   .public-site .section p { font-size: 0.82rem; line-height: 1.45; }
   .public-site .section > .container-w { max-width: 100%; }
-  .public-site .card { border-radius: 0.75rem; }
+  .public-site .card { border-radius: 0.375rem; }
   .public-site .card > .p-8 { padding: 0.85rem; }
   .public-site .card > .p-7 { padding: 0.8rem; }
   .public-site .card > .p-6 { padding: 0.75rem; }
@@ -130,7 +130,7 @@ h1, h2, h3, h4 { @apply font-display; }
   .public-site .eyebrow { font-size: 9px; }
 
   .portal-shell main { padding-left: 0.6rem; padding-right: 0.6rem; }
-  .portal-shell .card { border-radius: 0.75rem; }
+  .portal-shell .card { border-radius: 0.375rem; }
   .portal-shell .card > .p-8,
   .portal-shell .card > .p-7,
   .portal-shell .card > .p-6 { padding: 0.8rem; }
