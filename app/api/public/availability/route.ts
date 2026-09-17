@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic'
 function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 function activePending(b: any) { return b.status === 'pending' && b.payment_status !== 'paid' && !!b.reservation_expires_at && new Date(b.reservation_expires_at).getTime() > Date.now() }
+function paidReservation(b: any) { return b.payment_status === 'paid' && !['cancelled','refunded'].includes(String(b.status)) }
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
-  const paid = bookings.filter(b => ['confirmed','checked_in'].includes(b.status) && b.payment_status === 'paid')
+  const paid = bookings.filter(paidReservation)
   const overlappingPaid = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (overlappingPaid.length) {
     const latest = overlappingPaid.reduce((a,b) => a.check_out > b.check_out ? a : b)
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
     if (roomTypeId) roomsQuery = roomsQuery.eq('room_type_id', roomTypeId)
     const [{ data: rooms, error: roomsError }, { data: bookings, error: bookingsError }] = await Promise.all([
       roomsQuery,
-      db.from('bookings').select('id,customer_id,room_id,room_type_id,check_in,check_out,status,payment_status,reservation_expires_at').in('status',['pending','confirmed','checked_in']),
+      db.from('bookings').select('id,customer_id,room_id,room_type_id,check_in,check_out,status,payment_status,reservation_expires_at').in('status',['pending','confirmed','checked_in','checked_out']),
     ])
     if (roomsError) throw roomsError; if (bookingsError) throw bookingsError
     const bookingRows = (bookings ?? []) as any[]
@@ -38,8 +39,6 @@ export async function GET(request: Request) {
       if (user) { const { data: customer } = await db.from('customers').select('id').eq('user_id',user.id).maybeSingle(); currentCustomerId = customer?.id ?? null }
     } catch {}
     const ownReservations = currentCustomerId ? bookingRows.filter(b => b.customer_id === currentCustomerId && activePending(b) && overlaps(checkIn,checkOut,b.check_in,b.check_out) && b.room_id) : []
-    const readyIds = new Set<string>()
-    if (ownReservations.length) { const { data: readyLogs } = await db.from('email_logs').select('booking_id').eq('event','reservation_ready').in('booking_id',ownReservations.map(b=>b.id)); for (const log of readyLogs ?? []) if (log.booking_id) readyIds.add(log.booking_id) }
     const result = (rooms ?? []).map(room => {
       const roomBookings = bookingRows.filter(b => b.room_id === room.id); const state = guestStatus(room,roomBookings,checkIn,checkOut)
       const pendingHolds = roomBookings.filter(b => activePending(b) && overlaps(checkIn,checkOut,b.check_in,b.check_out)); const ownReservation = ownReservations.find(b=>b.room_id===room.id)
