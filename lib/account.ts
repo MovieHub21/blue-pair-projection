@@ -79,10 +79,28 @@ export const getMyCustomer = cache(async () => {
 })
 
 export async function getMyBookings() {
+  const { user } = await getCurrentUser()
+  if (!user) return []
+
+  // Resolve the customer with the verified server-side auth user, then use the
+  // admin client for the joined booking read. This keeps the account page from
+  // depending on the bookings RLS subquery being able to resolve the customer
+  // relationship while still scoping the query to the authenticated user's customer.
   const customer = await getMyCustomer()
   if (!customer) return []
-  const db = createSupabaseServerClient()
-  const { data } = await db.from('bookings').select('*, room_types(*), rooms(room_number,images,image_url)').eq('customer_id', customer.id).order('created_at', { ascending: false })
+
+  const admin = createSupabaseAdminClient()
+  const { data, error } = await admin
+    .from('bookings')
+    .select('*, room_types(*), rooms(room_number,images,image_url)')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('[account] getMyBookings failed', error.message)
+    return []
+  }
+
   return (data ?? []).map((r: any) => ({
     ...mapBooking(r),
     room: r.room_types ? mapRoomType(r.room_types) : null,
