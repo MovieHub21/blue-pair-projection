@@ -2,66 +2,8 @@
 import { useState } from 'react'
 import { useStore } from '../../../store/useStore'
 import AvailabilityGrid from '../../../components/admin/AvailabilityGrid'
+import AvailabilityCalendar from '../../../components/booking/AvailabilityCalendar'
 import Modal from '../../../components/ui/Modal'
 import type { RoomStatus } from '../../../data/mock'
-
-const STATUS_OPTIONS: { key: RoomStatus; label: string }[] = [
-  { key: 'available', label: 'Available' }, { key: 'occupied', label: 'Occupied' },
-  { key: 'cleaning', label: 'Cleaning' }, { key: 'cleaning_required', label: 'Cleaning Required' }, { key: 'maintenance', label: 'Maintenance' },
-]
-
-export default function RoomAvailability() {
-  const { rooms, roomTypes, loadAll, pushToast } = useStore()
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const room = rooms.find(r => r.id === activeId)
-  const rt = room ? roomTypes.find(t => t.id === room.roomTypeId) : null
-
-  async function updateStatus(status: RoomStatus) {
-    if (!room || busy) return
-    setBusy(true)
-    try {
-      const response = await fetch('/api/admin/room-lifecycle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'status', roomId: room.id, status }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error || 'Could not update room status.')
-      await loadAll()
-      const extra = status === 'available' && data.reservationsReady ? ` ${data.reservationsReady} reservation${data.reservationsReady === 1 ? '' : 's'} can now pay.` : ''
-      pushToast(`Room ${room.roomNumber} set to ${STATUS_OPTIONS.find(s => s.key === status)?.label}.${extra}`, 'success')
-      setActiveId(null)
-    } catch (error: any) {
-      pushToast(error?.message || 'Could not update room status.', 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-1">Room Availability</h1>
-      <p className="text-navy-400 text-sm mb-6">Click any room to update its status.</p>
-      <div className="card p-6">
-        <AvailabilityGrid onSelect={setActiveId} />
-      </div>
-
-      <Modal open={!!activeId} onClose={() => !busy && setActiveId(null)} title={room ? `Room ${room.roomNumber}` : ''} subtitle={rt?.name}>
-        {room && (
-          <div>
-            <label className="field-label mb-2 block">Set status</label>
-            <div className="grid grid-cols-2 gap-2.5">
-              {STATUS_OPTIONS.map(s => (
-                <button key={s.key} disabled={busy} onClick={() => void updateStatus(s.key)}
-                  className={'px-3.5 py-3 rounded-lg border text-xs font-semibold text-left disabled:opacity-50 ' + (room.status === s.key ? 'border-navy-950 bg-cream-100' : 'border-black/10')}>
-                  {busy ? 'Updating…' : s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
-  )
-}
+const STATUS_OPTIONS:{key:RoomStatus;label:string}[]=[{key:'available',label:'Available'},{key:'occupied',label:'Occupied'},{key:'cleaning',label:'Cleaning'},{key:'cleaning_required',label:'Cleaning Required'},{key:'maintenance',label:'Maintenance'}]
+export default function RoomAvailability(){const{rooms,roomTypes,loadAll,pushToast}=useStore();const[activeId,setActiveId]=useState<string|null>(null);const[busy,setBusy]=useState(false);const room=rooms.find(r=>r.id===activeId);const rt=room?roomTypes.find(t=>t.id===room.roomTypeId):null;async function updateStatus(status:RoomStatus){if(!room||busy)return;setBusy(true);try{const response=await fetch('/api/admin/room-lifecycle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'status',roomId:room.id,status})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Could not update room status.');await loadAll();const extra=status==='available'&&data.reservationsReady?` ${data.reservationsReady} reservation${data.reservationsReady===1?'':'s'} can now pay.`:'';pushToast(`Room ${room.roomNumber} set to ${STATUS_OPTIONS.find(s=>s.key===status)?.label}.${extra}`,'success');setActiveId(null)}catch(error:any){pushToast(error?.message||'Could not update room status.','error')}finally{setBusy(false)}}return <div><h1 className="text-2xl font-semibold mb-1">Room Availability</h1><p className="text-navy-400 text-sm mb-6">Select dates to see which rooms are free for that stay. Click a room for its calendar and operational controls.</p><div className="card p-6"><AvailabilityGrid onSelect={setActiveId}/></div><Modal open={!!activeId} onClose={()=>!busy&&setActiveId(null)} title={room?`Room ${room.roomNumber}`:''} subtitle={rt?.name}>{room&&<div><AvailabilityCalendar roomId={room.id}/><div className="mt-5"><label className="field-label mb-2 block">Set physical room status</label><div className="grid grid-cols-2 gap-2.5">{STATUS_OPTIONS.map(s=><button key={s.key} disabled={busy} onClick={()=>void updateStatus(s.key)} className={'px-3.5 py-3 rounded-lg border text-xs font-semibold text-left disabled:opacity-50 '+(room.status===s.key?'border-navy-950 bg-cream-100':'border-black/10')}>{busy?'Updating…':s.label}</button>)}</div></div></div>}</Modal></div>}
