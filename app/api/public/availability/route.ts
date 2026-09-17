@@ -6,7 +6,6 @@ function validDate(value: string | null) { return !!value && /^\d{4}-\d{2}-\d{2}
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 function activePending(b: any) { return b.status === 'pending' && b.payment_status !== 'paid' && !!b.reservation_expires_at && new Date(b.reservation_expires_at).getTime() > Date.now() }
 function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: string) {
-  if (room.status === 'maintenance' || room.status === 'cleaning' || room.status === 'cleaning_required') return { status: 'availableSoon', availableFrom: null }
   const paid = bookings.filter(b => ['confirmed','checked_in'].includes(b.status) && b.payment_status === 'paid')
   const overlappingPaid = paid.filter(b => overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (overlappingPaid.length) {
@@ -15,9 +14,9 @@ function guestStatus(room: any, bookings: any[], checkIn: string, checkOut: stri
   }
   const pending = bookings.filter(b => activePending(b) && overlaps(checkIn, checkOut, b.check_in, b.check_out))
   if (pending.length) return { status: 'taken', availableFrom: null }
-  if (room.status === 'occupied') return { status: 'taken', availableFrom: null }
+  if (room.status === 'maintenance' || room.status === 'cleaning' || room.status === 'cleaning_required') return { status: 'availableSoon', availableFrom: null }
   if (room.status === 'available') return { status: 'available', availableFrom: checkIn }
-  return { status: 'taken', availableFrom: null }
+  return { status: 'availableSoon', availableFrom: null }
 }
 export async function GET(request: Request) {
   try {
