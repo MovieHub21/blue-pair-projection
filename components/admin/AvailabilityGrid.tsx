@@ -1,37 +1,9 @@
 'use client'
+import { useEffect, useState } from 'react'
+import { CalendarDays, Loader2 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import type { RoomStatus } from '../../data/mock'
-
-const COLORS: Record<string, string> = {
-  available: 'bg-emerald-500',
-  pending: 'bg-amber-400 text-navy-950',
-  occupied: 'bg-blue-600',
-  cleaning: 'bg-amber-400 text-navy-950',
-  cleaning_required: 'bg-orange-500',
-  maintenance: 'bg-red-600',
-}
-const LABELS: Record<string, string> = {
-  available: 'Available', pending: 'Pending', occupied: 'Occupied', cleaning: 'Cleaning', cleaning_required: 'Cleaning Req.', maintenance: 'Maintenance',
-}
-
-export default function AvailabilityGrid({ onSelect }: { onSelect?: (roomId: string) => void }) {
-  const { rooms } = useStore()
-  return (
-    <div>
-      <div className="flex flex-wrap gap-4 mb-5 text-xs text-navy-500">
-        {(Object.keys(COLORS) as RoomStatus[]).map(k => (
-          <span key={k} className="flex items-center gap-1.5"><i className={'w-2.5 h-2.5 rounded-sm inline-block ' + COLORS[k]} />{LABELS[k]}</span>
-        ))}
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
-        {rooms.map(r => (
-          <button key={r.id} onClick={() => onSelect?.(r.id)}
-            className={'aspect-square rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs gap-0.5 hover:brightness-110 transition ' + (COLORS[r.status] || COLORS.available)}>
-            <span>{r.roomNumber}</span>
-            <span className="text-[8px] font-medium opacity-80">{LABELS[r.status] || r.status}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
+import { addDaysISO, todayISO } from '../../lib/format'
+const COLORS: Record<string,string>={available:'bg-emerald-500',pending:'bg-amber-400 text-navy-950',occupied:'bg-blue-600',cleaning:'bg-amber-400 text-navy-950',cleaning_required:'bg-orange-500',maintenance:'bg-red-600',taken:'bg-red-600',held:'bg-amber-400 text-navy-950'}
+const LABELS: Record<string,string>={available:'Available',pending:'Pending',occupied:'Occupied',cleaning:'Cleaning',cleaning_required:'Cleaning Req.',maintenance:'Maintenance',taken:'Taken',held:'Held'}
+export default function AvailabilityGrid({onSelect}:{onSelect?:(roomId:string)=>void}){const{rooms}=useStore();const[checkIn,setCheckIn]=useState(todayISO());const[checkOut,setCheckOut]=useState(addDaysISO(1));const[live,setLive]=useState<Record<string,string>>({});const[loading,setLoading]=useState(false);useEffect(()=>{if(!checkIn||!checkOut||checkIn>=checkOut){setLive({});return}let cancelled=false;setLoading(true);fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(cancelled)return;const next:Record<string,string>={};for(const r of data?.rooms||[])next[r.id]=r.guest_status;setLive(next)}).catch(()=>{if(!cancelled)setLive({})}).finally(()=>{if(!cancelled)setLoading(false)});return()=>{cancelled=true}},[checkIn,checkOut]);return <div><div className="rounded-xl bg-cream-100 border border-black/[.06] p-4 mb-5"><div className="flex items-center gap-2 mb-3"><CalendarDays size={15} className="text-gold-600"/><div><p className="text-xs font-semibold">View availability for dates</p><p className="text-[10px] text-navy-400">Online bookings and walk-ins use the same date-range inventory.</p></div>{loading&&<Loader2 size={13} className="ml-auto animate-spin text-navy-400"/>}</div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label className="field-label">Check-in · 3:00 PM</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input"/></div><div><label className="field-label">Check-out · 12:00 PM</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input"/></div></div></div><div className="flex flex-wrap gap-4 mb-5 text-xs text-navy-500">{['available','taken','held','occupied','cleaning','maintenance'].map(k=><span key={k} className="flex items-center gap-1.5"><i className={'w-2.5 h-2.5 rounded-sm inline-block '+COLORS[k]} />{k==='taken'?'Booked for selected dates':LABELS[k]}</span>)}</div><div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">{rooms.map(r=>{const state=live[r.id]||r.status;return <button key={r.id} onClick={()=>onSelect?.(r.id)} title={`Room ${r.roomNumber} · ${LABELS[state]||state}`} className={'aspect-square rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs gap-0.5 hover:brightness-110 transition '+(COLORS[state]||COLORS.available)}><span>{r.roomNumber}</span><span className="text-[8px] font-medium opacity-80">{LABELS[state]||state}</span></button>})}</div><p className="text-[10px] text-navy-400 mt-4">Selected dates: <b>{checkIn}</b> → <b>{checkOut}</b>. Click a room for operational controls.</p></div>}
