@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { readSanitizedJson } from '../../../../lib/security/input'
 
 function validDate(value: unknown): value is string { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) }
+function todayLagosISO(): string { return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }) }
 const HOLD_MINUTES = 10
 
 export async function POST(request: Request) {
@@ -13,7 +14,8 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Please sign in before reserving a room.' }, { status: 401 })
     const body = await readSanitizedJson<{ roomTypeId?: unknown; roomId?: unknown; checkIn?: unknown; checkOut?: unknown; adults?: unknown; children?: unknown; amount?: unknown; specialRequests?: unknown; extraServices?: unknown }>(request)
     const { roomTypeId, roomId, checkIn, checkOut, adults = 2, children = 0, amount, specialRequests, extraServices } = body ?? {}
-    if (!roomTypeId || !validDate(checkIn) || !validDate(checkOut) || checkIn >= checkOut) return NextResponse.json({ error: 'Valid room and stay dates are required.' }, { status: 400 })
+    const today = todayLagosISO()
+    if (!roomTypeId || !validDate(checkIn) || !validDate(checkOut) || checkIn < today || checkIn >= checkOut || checkOut <= today) return NextResponse.json({ error: 'Please choose valid future check-in and check-out dates.' }, { status: 400 })
 
     const db = createSupabaseAdminClient()
     const { data: roomType, error: roomTypeError } = await db.from('room_types').select('id,price').eq('id', roomTypeId).maybeSingle()
@@ -52,17 +54,17 @@ export async function POST(request: Request) {
     if (claimError) {
       const message = String(claimError.message || '')
       if (message.includes('PAYMENT_IN_PROGRESS')) return NextResponse.json({ code: 'PAYMENT_IN_PROGRESS', error: 'Another guest is currently paying for this room. Please try again in a few seconds.' }, { status: 409 })
-      if (message.includes('ROOM_SOLD')) return NextResponse.json({ code: 'ROOM_SOLD', error: 'This room has just been taken by another guest. Please choose another room or try again.' }, { status: 409 })
-      if (message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_SOLD', error: 'No room is available for these dates. Please choose another room or change your dates.' }, { status: 409 })
+      if (message.includes('ROOM_SOLD') || message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_NOT_AVAILABLE', error: 'This room is no longer available for those dates. Please choose another room or change your dates.' }, { status: 409 })
       if (message.includes('ROOM_NOT_FOUND')) return NextResponse.json({ error: 'That room could not be found.' }, { status: 404 })
+      if (message.includes('CHECKOUT_MUST_BE_AFTER_CHECKIN')) return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
       throw claimError
     }
     const created = Array.isArray(booking) ? booking[0] : booking
-    if (!created?.id) return NextResponse.json({ error: 'Unable to reserve this room right now.' }, { status: 500 })
+    if (!created?.id) return NextResponse.json({ error: 'The reservation could not be created. Please try again.' }, { status: 500 })
     return NextResponse.json({ booking: created, holdMinutes: HOLD_MINUTES, holdStarted: true }, { status: 201 })
   } catch (error: any) {
     console.error('[public-reservation]', error)
     if (error?.message === 'REQUEST_BODY_TOO_LARGE') return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })
-    return NextResponse.json({ error: 'Unable to reserve this room right now.' }, { status: 500 })
+    return NextResponse.json({ error: 'We could not complete the reservation right now. Please try again.' }, { status: 500 })
   }
 }
