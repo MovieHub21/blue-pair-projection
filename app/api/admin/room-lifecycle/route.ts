@@ -36,7 +36,6 @@ async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAd
     if (existing) continue
     const { data: blocking } = await admin.from('bookings').select('id,check_in,check_out').eq('room_id', roomId).in('status', ['confirmed', 'checked_in']).eq('payment_status', 'paid')
     if ((blocking ?? []).some(b => overlaps(booking.check_in, booking.check_out, b.check_in, b.check_out))) continue
-
     await admin.from('bookings').update({ reservation_expires_at: expiresAt }).eq('id', booking.id).eq('status', 'pending').eq('payment_status', 'pending')
     const customer = (await admin.from('customers').select('name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
     const recipient = String(customer?.email || '').trim().toLowerCase()
@@ -45,11 +44,7 @@ async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAd
     const paymentUrl = `${site}/account/bookings`
     const baseEmail = reservationReadyEmail({ guestName: customer?.name || 'Guest', reference: booking.reference, roomNumber: room.room_number, paymentUrl })
     const timerText = `You have ${HOLD_MINUTES} minutes from this email to complete payment. If payment is not completed within ${HOLD_MINUTES} minutes, this reservation hold will automatically expire so the room can be offered again.`
-    const email = {
-      subject: baseEmail.subject,
-      text: `${baseEmail.text}\n\n${timerText}`,
-      html: baseEmail.html.replace('</div></body></html>', `<p style="margin:20px 0;padding:14px;background:#fff8e8;border:1px solid #ecd9a7;border-radius:8px;color:#6b4f00"><strong>${HOLD_MINUTES}-minute payment hold:</strong> ${timerText}</p></div></body></html>`),
-    }
+    const email = { subject: baseEmail.subject, text: `${baseEmail.text}\n\n${timerText}`, html: baseEmail.html.replace('</div></body></html>', `<p style="margin:20px 0;padding:14px;background:#fff8e8;border:1px solid #ecd9a7;border-radius:8px;color:#6b4f00"><strong>${HOLD_MINUTES}-minute payment hold:</strong> ${timerText}</p></div></body></html>`) }
     const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
     const { error: logError } = await admin.from('email_logs').insert({ dedupe_key: `reservation_ready:${booking.id}`, event: 'reservation_ready', booking_id: booking.id, recipient, subject: email.subject, resend_id: result.id ?? null })
     if (logError) continue
@@ -76,20 +71,20 @@ export async function POST(request: Request) {
     }
     const user = await requireStaff(); if (!user) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
     if (action === 'status') {
-      if (!body.roomId || !['available', 'occupied', 'cleaning', 'cleaning_required', 'maintenance'].includes(body.status || '')) return NextResponse.json({ error: 'Invalid room status update.' }, { status: 400 })
+      if (!body.roomId || !['available', 'cleaning', 'maintenance'].includes(body.status || '')) return NextResponse.json({ error: 'Invalid room status update.' }, { status: 400 })
       const { data: room, error: roomError } = await admin.from('rooms').select('id,room_number,status,room_type_id').eq('id', body.roomId).maybeSingle()
       if (roomError) throw roomError
       if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
       const previousStatus = room.status
       const { error: updateError } = await admin.from('rooms').update({ status: body.status }).eq('id', body.roomId); if (updateError) throw updateError
       let notified = 0
-      if (body.status === 'cleaning' || body.status === 'cleaning_required') {
+      if (body.status === 'cleaning') {
         const { data: existing } = await admin.from('housekeeping_tasks').select('id').eq('room_id', room.id).neq('status', 'completed').maybeSingle()
         if (!existing) {
           const roomType = (await admin.from('room_types').select('name').eq('id', room.room_type_id).maybeSingle()).data
-          await admin.from('housekeeping_tasks').insert({ id: `hk_${Date.now()}`, room: room.room_number, room_type: roomType?.name || '', checkout_time: new Date().toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }), priority: body.status === 'cleaning_required' ? 'High' : 'Normal', assigned_to: 'Unassigned', status: body.status === 'cleaning' ? 'in_progress' : 'pending', notes: body.status === 'cleaning_required' ? 'Room requires cleaning after status change.' : 'Room manually marked for cleaning.', room_id: room.id })
+          await admin.from('housekeeping_tasks').insert({ id: `hk_${Date.now()}`, room: room.room_number, room_type: roomType?.name || '', checkout_time: new Date().toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }), priority: 'High', assigned_to: 'Unassigned', status: 'pending', notes: 'Room manually marked for cleaning.', room_id: room.id })
         }
-        notified = await sendToDepartment('housekeeping', `Room ${room.room_number} requires housekeeping`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Housekeeping required</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>${escapeHtml(body.status)}</strong>.</p><p>Please attend to the room and mark the housekeeping task complete when ready.</p></div>`, `Room ${room.room_number} has been marked ${body.status}. Please attend to it and mark the housekeeping task complete when ready.`)
+        notified = await sendToDepartment('housekeeping', `Room ${room.room_number} requires housekeeping`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Housekeeping required</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>cleaning</strong>.</p><p>Please attend to the room and mark the housekeeping task complete when ready.</p></div>`, `Room ${room.room_number} has been marked cleaning. Please attend to it and mark the housekeeping task complete when ready.`)
       }
       if (body.status === 'maintenance') notified = await sendToDepartment('maintenance', `Maintenance required — Room ${room.room_number}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Room sent to maintenance</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>maintenance</strong>.</p></div>`, `Room ${room.room_number} has been marked maintenance. Please inspect it.`)
       if (body.status === 'available') return NextResponse.json({ ok: true, status: body.status, notified, reservationsReady: previousStatus !== 'available' ? await notifyReadyReservations(admin, room.id) : 0 })
@@ -101,10 +96,10 @@ export async function POST(request: Request) {
     if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 })
     const { error: checkoutError } = await admin.from('bookings').update({ status: 'checked_out', checked_out_at: new Date().toISOString() }).eq('id', booking.id); if (checkoutError) throw checkoutError
     if (!booking.room_id) return NextResponse.json({ ok: true, notified: 0 })
-    await admin.from('rooms').update({ status: 'cleaning_required' }).eq('id', booking.room_id)
+    await admin.from('rooms').update({ status: 'cleaning' }).eq('id', booking.room_id)
     const room = (await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data
     const customer = (await admin.from('customers').select('name').eq('id', booking.customer_id).maybeSingle()).data
-    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now marked <strong>Cleaning Required</strong>.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`)
+    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now marked <strong>Cleaning</strong>.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`)
     return NextResponse.json({ ok: true, notified })
   } catch (error: any) {
     console.error('[room-lifecycle]', error)
