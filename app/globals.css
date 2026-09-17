@@ -24,7 +24,7 @@ h1, h2, h3, h4 { @apply font-display; }
   .btn-outline { @apply btn border border-navy-900/20 text-navy-900 px-6 py-3 hover:border-gold-500 hover:text-navy-950 hover:bg-gold-50/50; }
   .btn-ghost-light { @apply btn bg-white/10 border border-white/30 text-white px-6 py-3 backdrop-blur-xl hover:bg-white/20 hover:border-white/50; }
   .btn-sm { @apply px-4 py-2 text-xs; }
-  .card { @apply bg-white border border-black/5 rounded-xl2 shadow-card; transition: transform 300ms cubic-bezier(.22,1,.36,1), box-shadow 300ms ease, border-color 300ms ease; transform: translateZ(0); }
+  .card { @apply bg-white border border-black/5 rounded-xl shadow-card; transition: transform 300ms cubic-bezier(.22,1,.36,1), box-shadow 300ms ease, border-color 300ms ease; transform: translateZ(0); }
   .card:hover { @apply shadow-pop; transform: translateY(-3px); }
   .card:active { transform: translateY(-1px) scale(.997); }
   .glass-card { @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg; }
@@ -75,6 +75,10 @@ h1, h2, h3, h4 { @apply font-display; }
   .loading-pulse { animation: bp-pulse 1.6s ease-in-out infinite; }
   .status-dot { animation: bp-status-pulse 2.2s ease-in-out infinite; }
 }
+
+/* Refined card corners: reduce oversized 2xl/3xl rounding while preserving true pills. */
+[class~="rounded-3xl"]:not([class*="rounded-full"]),
+[class~="rounded-2xl"]:not([class*="rounded-full"]) { border-radius: 0.75rem !important; }
 
 @keyframes bp-fade-up { from { opacity: 0; transform: translate3d(0, 12px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
 @keyframes bp-pop { 0% { opacity: 0; transform: scale(.94); } 70% { opacity: 1; transform: scale(1.025); } 100% { opacity: 1; transform: scale(1); } }
