@@ -6,6 +6,12 @@ import { SITE_URL } from '../../../../lib/siteConfig'
 
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
+async function releaseAbandonedPayment(admin: ReturnType<typeof createSupabaseAdminClient>, bookingId: string, paymentId: string) {
+  await admin.from('payments').update({ status: 'failed' }).eq('id', paymentId).neq('status', 'success')
+  await admin.from('payment_holds').delete().eq('booking_id', bookingId)
+  await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).eq('id', bookingId).eq('status', 'pending').neq('payment_status', 'paid')
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const reference = String(url.searchParams.get('reference') || url.searchParams.get('trxref') || '').trim()
@@ -19,13 +25,33 @@ export async function GET(request: Request) {
     const secret = process.env.PAYSTACK_SECRET_KEY
     if (!secret) return NextResponse.redirect(`${guestUrl}?payment=not-configured`)
     const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secret}` }, cache: 'no-store' })
-    const result = await response.json(); const transaction = result?.data
-    if (!response.ok || !result?.status || transaction?.status !== 'success') return NextResponse.redirect(`${guestUrl}?payment=failed`)
+    const result = await response.json()
+    const transaction = result?.data
 
     const admin = createSupabaseAdminClient()
     const { data: payment, error: paymentLookupError } = await admin.from('payments').select('id,booking_ref,amount,customer_id,status').eq('reference', reference).maybeSingle()
     if (paymentLookupError) throw paymentLookupError
     if (!payment) return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
+
+    const { data: booking, error: bookingLookupError } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status').eq('reference', payment.booking_ref).maybeSingle()
+    if (bookingLookupError) throw bookingLookupError
+    if (!booking) return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
+
+    if (!response.ok || !result?.status) {
+      await releaseAbandonedPayment(admin, booking.id, payment.id)
+      return NextResponse.redirect(`${guestUrl}?payment=failed`)
+    }
+
+    if (transaction?.status !== 'success') {
+      const status = String(transaction?.status || 'failed')
+      console.log('[paystack-callback] non-success transaction', { reference, bookingId: booking.id, status })
+      if (['abandoned', 'failed', 'reversed', 'timeout'].includes(status)) {
+        await releaseAbandonedPayment(admin, booking.id, payment.id)
+        return NextResponse.redirect(`${guestUrl}?payment=cancelled`)
+      }
+      return NextResponse.redirect(`${guestUrl}?payment=pending&reference=${encodeURIComponent(reference)}`)
+    }
+
     if (Number(transaction.amount) !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
 
     if (String(payment.booking_ref).startsWith('RS-')) {
@@ -35,9 +61,6 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${guestDashboard}?payment=processing&room_service=${encodeURIComponent(order.reference)}`)
     }
 
-    const { data: booking, error: bookingLookupError } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,status,payment_status').eq('reference', payment.booking_ref).maybeSingle()
-    if (bookingLookupError) throw bookingLookupError
-    if (!booking) return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
     if (!booking.room_id) return NextResponse.redirect(`${guestUrl}?payment=room-missing`)
 
@@ -47,6 +70,7 @@ export async function GET(request: Request) {
     if (!ownsActiveHold) {
       const { data: refreshedBooking } = await admin.from('bookings').select('status,payment_status').eq('id', booking.id).maybeSingle()
       if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
+      await releaseAbandonedPayment(admin, booking.id, payment.id)
       return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
     }
 
@@ -84,5 +108,8 @@ export async function GET(request: Request) {
       }
     }
     return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
-  } catch (error) { console.error('[paystack-callback]', error); return NextResponse.redirect(`${guestUrl}?payment=error`) }
+  } catch (error) {
+    console.error('[paystack-callback]', error)
+    return NextResponse.redirect(`${guestUrl}?payment=error`)
+  }
 }
