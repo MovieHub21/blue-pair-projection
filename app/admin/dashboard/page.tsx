@@ -49,8 +49,8 @@ export default function AdminDashboardPage() {
   }, [rangeStart, today])
 
   const stats = useMemo(() => {
-    const paid = payments.filter(p => p.status === 'success')
-    const revenue = financialTransactions.length ? financialTransactions.reduce((sum, p) => sum + Number(p.amount || 0), 0) : paid.filter(p => dateInRange(p.date, rangeStart, today)).reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    const paid = payments.filter(p => p.status === 'success' && dateInRange(p.date, rangeStart, today))
+    const revenue = financialTransactions.length ? financialTransactions.reduce((sum, p) => sum + Number(p.amount || 0), 0) : paid.reduce((sum, p) => sum + Number(p.amount || 0), 0)
     const periodBookings = bookings.filter(b => dateInRange(b.createdAt || b.checkIn, rangeStart, today) && b.status !== 'cancelled')
     const scheduledStatuses = new Set(['confirmed', 'checked_in', 'checked_out'])
     const checkIns = bookings.filter(b => dateInRange(b.checkIn, rangeStart, today) && b.paymentStatus === 'paid' && scheduledStatuses.has(b.status)).length
@@ -63,7 +63,11 @@ export default function AdminDashboardPage() {
     const openMaintenance = maintenanceTickets.filter(t => !['resolved', 'closed', 'completed'].includes(String(t.status).toLowerCase())).length
     const openRequests = guestRequests.filter(r => !['resolved', 'completed', 'closed'].includes(String(r.status).toLowerCase())).length
     const sourceMap: Record<string, number> = {}
-    financialTransactions.forEach(t => { const source = revenueSourceLabel(t.outlet); sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0) })
+    if (financialTransactions.length) {
+      financialTransactions.forEach(t => { const source = revenueSourceLabel(t.outlet); sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0) })
+    } else {
+      paid.forEach(p => { const source = 'Bookings'; sourceMap[source] = (sourceMap[source] || 0) + Number(p.amount || 0) })
+    }
     return { revenue, periodBookings, checkIns, checkOuts, occupied, available, cleaning, pending, activeGuests, openMaintenance, openRequests, sourceMap }
   }, [payments, bookings, rooms, maintenanceTickets, guestRequests, financialTransactions, rangeStart, today])
 
