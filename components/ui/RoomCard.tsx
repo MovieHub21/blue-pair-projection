@@ -3,7 +3,7 @@ import { Users, BedDouble, Ruler } from 'lucide-react'
 import { naira } from '../../lib/format'
 import type { RoomType } from '../../data/mock'
 
-export default function RoomCard({ room, availableCount }: { room: RoomType; availableCount?: number }) {
+export default function RoomCard({ room, availableCount, showRoomCount = false }: { room: RoomType; availableCount?: number; showRoomCount?: boolean }) {
   const hasLiveCount = typeof availableCount === 'number'
   const count = hasLiveCount ? availableCount : 0
   const available = hasLiveCount ? count > 0 : true
@@ -13,7 +13,7 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
       <div className="relative h-64 shrink-0 overflow-hidden sm:h-72">
         <img src={room.images[0]} alt={room.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <span className={'absolute left-4 top-4 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95 shadow-sm'}>
-          {available ? `${count} available` : 'Fully booked'}
+          {available ? (showRoomCount ? `${count} rooms` : `${count} available`) : 'Fully booked'}
         </span>
       </div>
 
