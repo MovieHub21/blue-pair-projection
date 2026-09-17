@@ -41,10 +41,10 @@ export async function GET(request: Request) {
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
     if (!booking.room_id) return NextResponse.redirect(`${guestUrl}?payment=room-missing`)
 
-    const { data: room, error: roomError } = await admin.from('rooms').select('id,status,payment_lock_booking_id,payment_lock_expires_at').eq('id', booking.room_id).maybeSingle()
-    if (roomError) throw roomError
-    const ownsActiveLock = room?.payment_lock_booking_id === booking.id && !!room?.payment_lock_expires_at && new Date(room.payment_lock_expires_at).getTime() > Date.now() && room.status === 'available'
-    if (!ownsActiveLock) {
+    const { data: paymentHold, error: holdError } = await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id', booking.id).maybeSingle()
+    if (holdError) throw holdError
+    const ownsActiveHold = paymentHold?.room_id === booking.room_id && !!paymentHold?.expires_at && new Date(paymentHold.expires_at).getTime() > Date.now()
+    if (!ownsActiveHold) {
       const { data: refreshedBooking } = await admin.from('bookings').select('status,payment_status').eq('id', booking.id).maybeSingle()
       if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
       return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
@@ -57,8 +57,8 @@ export async function GET(request: Request) {
     }
     const { error: bookingUpdateError } = await admin.from('bookings').update({ payment_status: 'paid', status: 'confirmed', reservation_expires_at: null }).eq('id', booking.id).in('status', ['pending', 'confirmed']).neq('payment_status', 'paid')
     if (bookingUpdateError) throw bookingUpdateError
-    const { error: lockClearError } = await admin.from('rooms').update({ payment_lock_booking_id: null, payment_lock_expires_at: null }).eq('id', booking.room_id).eq('payment_lock_booking_id', booking.id)
-    if (lockClearError) throw lockClearError
+    const { error: holdClearError } = await admin.from('payment_holds').delete().eq('booking_id', booking.id)
+    if (holdClearError) throw holdClearError
 
     const { data: competitors, error: competitorError } = await admin.from('bookings').select('id,check_in,check_out').eq('room_id', booking.room_id).eq('status', 'pending').neq('payment_status', 'paid')
     if (competitorError) throw competitorError
