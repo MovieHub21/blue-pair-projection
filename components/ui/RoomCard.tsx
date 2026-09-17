@@ -9,7 +9,7 @@ export default function RoomCard({ room, availableCount }: { room: RoomType; ava
   const available = hasLiveCount ? count > 0 : true
 
   return (
-    <div className="card group flex min-h-[620px] flex-col overflow-hidden rounded-[10px] border border-navy-900/10 bg-white shadow-sm">
+    <div className="card group flex min-h-[620px] flex-col overflow-hidden rounded-md border border-navy-900/10 bg-white shadow-sm">
       <div className="relative h-64 shrink-0 overflow-hidden sm:h-72">
         <img src={room.images[0]} alt={room.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         <span className={'absolute left-4 top-4 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95 shadow-sm'}>
