@@ -1,15 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { ArrowRight, Calendar, Coffee, Users, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, Minus, Plus } from 'lucide-react'
+import { ArrowRight, Coffee, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car } from 'lucide-react'
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
 import InteractiveHotelExperience from '../../components/ui/InteractiveHotelExperience'
 import { type RoomType, type Room, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
-import { todayISO, addDaysISO } from '../../lib/format'
 
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1400&q=85',
@@ -19,20 +16,9 @@ const FALLBACK_IMAGES = [
 ]
 
 export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
-  const router = useRouter()
-  const [checkIn, setCheckIn] = useState(todayISO())
-  const [checkOut, setCheckOut] = useState(addDaysISO(2))
-  const [adults, setAdults] = useState(2)
-  const [showOccupancy, setShowOccupancy] = useState(false)
-  const [selectedRoomId, setSelectedRoomId] = useState(roomTypes[0]?.id || '')
-
   const images = gallery.map(item => item.url).filter(Boolean)
   const heroImage = images[0] || FALLBACK_IMAGES[0]
-  const selectedRoom = roomTypes.find(room => room.id === selectedRoomId) || roomTypes[0]
   const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
-  const displayDate = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
-  const displayWeekday = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-NG', { weekday: 'long' })
-  const openAvailability = () => router.push(`/rooms?checkin=${checkIn}&checkout=${checkOut}&guests=${adults}${selectedRoom ? `&room=${selectedRoom.slug}` : ''}`)
 
   const experienceCards = [
     { title: 'Rooms & Suites', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
@@ -48,7 +34,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         <div className="absolute inset-0 bg-gradient-to-r from-navy-950/85 via-navy-950/45 to-navy-950/15" />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-navy-950/30" />
 
-        <div className="relative z-10 container-w flex min-h-[620px] items-center px-5 pb-28 pt-28 md:min-h-[700px] md:px-10 md:pb-36">
+        <div className="relative z-10 container-w flex min-h-[620px] items-center px-5 py-28 md:min-h-[700px] md:px-10 md:py-36">
           <div className="max-w-2xl">
             <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[.2em] text-white/85 backdrop-blur-md">Blue Pair · Uromi</span>
             <h1 className="max-w-2xl font-display text-[2.7rem] font-medium leading-[1.02] tracking-[-.035em] sm:text-5xl md:text-6xl lg:text-[4.8rem]">
@@ -61,34 +47,6 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
             </div>
           </div>
         </div>
-
-        <section className="absolute inset-x-0 bottom-0 z-20 px-3 sm:px-5 md:px-10" aria-labelledby="stay-planner-title">
-          <div className="container-w rounded-t-[1.5rem] border border-white/10 bg-navy-950/90 shadow-2xl backdrop-blur-xl">
-            <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end md:p-6">
-              <label className="relative min-w-0 cursor-pointer rounded-xl border border-white/10 bg-white/[.06] px-4 py-3 transition-colors hover:border-gold-300/50">
-                <span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[.14em] text-white/45"><Calendar size={14} className="text-gold-300" /> Check-in</span>
-                <strong className="mt-1.5 block truncate text-sm text-white">{displayDate(checkIn)}</strong>
-                <span className="mt-0.5 block truncate text-[10px] text-white/35">{displayWeekday(checkIn)} · 2:00 PM</span>
-                <input aria-label="Check-in date" type="date" min={todayISO()} value={checkIn} onChange={event => { setCheckIn(event.target.value); if (event.target.value >= checkOut) setCheckOut(addDaysISO(1, event.target.value)) }} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-              </label>
-              <label className="relative min-w-0 cursor-pointer rounded-xl border border-white/10 bg-white/[.06] px-4 py-3 transition-colors hover:border-gold-300/50">
-                <span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[.14em] text-white/45"><Calendar size={14} className="text-gold-300" /> Check-out</span>
-                <strong className="mt-1.5 block truncate text-sm text-white">{displayDate(checkOut)}</strong>
-                <span className="mt-0.5 block truncate text-[10px] text-white/35">{displayWeekday(checkOut)} · 11:00 AM</span>
-                <input aria-label="Check-out date" type="date" min={addDaysISO(1, checkIn)} value={checkOut} onChange={event => setCheckOut(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-              </label>
-              <div className="rounded-xl border border-white/10 bg-white/[.06] px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <Users size={15} className="text-gold-300" />
-                  <div className="min-w-0 flex-1"><span className="block text-[9px] font-semibold uppercase tracking-[.14em] text-white/45">Guests</span><strong className="mt-1 block truncate text-sm text-white">{adults} {adults === 1 ? 'Adult' : 'Adults'}</strong></div>
-                  <button type="button" onClick={() => setShowOccupancy(value => !value)} className="text-[10px] font-semibold text-gold-300">Change</button>
-                </div>
-                {showOccupancy && <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3"><span className="text-xs text-white/55">Adults</span><div className="flex items-center gap-2"><button type="button" onClick={() => setAdults(value => Math.max(1, value - 1))} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 text-white" aria-label="Remove one adult"><Minus size={12} /></button><strong className="w-5 text-center text-xs text-white">{adults}</strong><button type="button" onClick={() => setAdults(value => Math.min(selectedRoom?.guests || 8, value + 1))} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 text-white" aria-label="Add one adult"><Plus size={12} /></button></div></div>}
-              </div>
-              <button type="button" onClick={openAvailability} className="btn-gold min-h-[62px] justify-center rounded-xl px-6 text-xs uppercase tracking-[.08em] md:min-w-[170px]">Check availability <ArrowRight size={16} /></button>
-            </div>
-          </div>
-        </section>
       </header>
 
       <main>
