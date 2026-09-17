@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import './globals.css'
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
 import RouteProgress from '../components/RouteProgress'
+import GuestEmailWatcher from '../components/GuestEmailWatcher'
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Suspense fallback={null}><RouteProgress /></Suspense>
+        <GuestEmailWatcher />
         {children}
       </body>
     </html>
