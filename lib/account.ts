@@ -138,9 +138,12 @@ export async function getMyBookings() {
     return []
   }
 
+  // Do not embed `rooms` here. The bookings table has multiple relationships in
+  // the PostgREST schema that can resolve to `rooms`, so an implicit `rooms(...)`
+  // embed is ambiguous. Fetch the room records separately by the booking room_ids.
   const { data, error } = await admin
     .from('bookings')
-    .select('*, room_types(*), rooms(room_number,images,image_url)')
+    .select('*, room_types(*)')
     .eq('customer_id', customer.id)
     .order('created_at', { ascending: false })
 
@@ -149,14 +152,32 @@ export async function getMyBookings() {
     return []
   }
 
-  console.log('[account] getMyBookings result', { userId: user.id, customerId: customer.id, count: data?.length ?? 0 })
+  const roomIds = Array.from(new Set((data ?? []).map((booking: any) => booking.room_id).filter(Boolean)))
+  const { data: rooms, error: roomsError } = roomIds.length
+    ? await admin.from('rooms').select('id,room_number,images,image_url').in('id', roomIds)
+    : { data: [], error: null }
 
-  return (data ?? []).map((r: any) => ({
-    ...mapBooking(r),
-    room: r.room_types ? mapRoomType(r.room_types) : null,
-    roomNumber: r.rooms?.room_number ?? null,
-    roomImages: Array.from(new Set([...(r.rooms?.images ?? []), r.rooms?.image_url].filter(Boolean))),
-  }))
+  if (roomsError) {
+    console.error('[account] getMyBookings room lookup failed', roomsError.message)
+  }
+
+  const roomsById = new Map((rooms ?? []).map((room: any) => [room.id, room]))
+
+  console.log('[account] getMyBookings result', {
+    userId: user.id,
+    customerId: customer.id,
+    count: data?.length ?? 0,
+  })
+
+  return (data ?? []).map((r: any) => {
+    const roomRecord = roomsById.get(r.room_id)
+    return {
+      ...mapBooking(r),
+      room: r.room_types ? mapRoomType(r.room_types) : null,
+      roomNumber: roomRecord?.room_number ?? null,
+      roomImages: Array.from(new Set([...(roomRecord?.images ?? []), roomRecord?.image_url].filter(Boolean))),
+    }
+  })
 }
 
 export async function getMyPayments() {
