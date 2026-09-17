@@ -41,6 +41,6 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
     <div className="mt-5 rounded-xl bg-navy-50 border border-black/5 text-navy-600 text-sm p-4">Select a physical room above to see its specific details and the correct booking or reservation action.</div>
    </aside>
   </div>
-  <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} availableCount={availability[r.id] ?? 0}/>)}</div>
+  <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} availableCount={availability[r.id] ?? 0} showAvailabilityBadge={false}/>)}</div>
  </div>
 }
