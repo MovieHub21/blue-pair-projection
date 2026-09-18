@@ -23,7 +23,7 @@ export default function RoomServiceOrdersPanel({ mode = 'restaurant' }: { mode?:
     if (response.ok) setOrders(data.orders ?? [])
     setLoading(false)
   }
-  useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 10000); return () => window.clearInterval(timer) }, [])
+  useEffect(() => { void load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return () => window.removeEventListener('bluepair:database-change',refresh) }, [])
 
   async function updateStatus(orderId: string, status: string) {
     setUpdating(orderId)
