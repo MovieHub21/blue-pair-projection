@@ -72,6 +72,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: 'Unable to process your request. Please try again.' }, { status: 503 })
     }
     return NextResponse.next({ request })
+  }
 
   // Keep local development unchanged: localhost:3000/admin still works.
   // In production, /admin on the main domain is redirected to the admin subdomain.
