@@ -62,10 +62,9 @@ export default function MyBookingsClient({ bookings }: { bookings: BookingWithRo
       if (!cancelled) setReadiness(Object.fromEntries(results))
     }
     void checkReadiness()
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void checkReadiness() }, 5000)
-    const onFocus = () => void checkReadiness()
-    window.addEventListener('focus', onFocus); document.addEventListener('visibilitychange', onFocus)
-    return () => { cancelled = true; window.clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
+    const refresh = () => void checkReadiness()
+    window.addEventListener('bluepair:database-change', refresh)
+    return () => { cancelled = true; window.removeEventListener('bluepair:database-change', refresh) }
   }, [bookings])
 
   async function payForBooking(booking: BookingWithRoom) {
