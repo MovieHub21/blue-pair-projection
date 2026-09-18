@@ -4,6 +4,7 @@ import { getCurrentStaff } from '../../lib/staff'
 import { getMyPermissions } from '../../lib/permissions'
 import { MANAGEMENT_GROUPS, filterGroups } from '../../lib/portalNav'
 import StoreLoader from '../../components/providers/StoreLoader'
+import RealtimeStoreSync from '../../components/providers/RealtimeStoreSync'
 
 export const metadata: Metadata = {
   robots: {
@@ -23,6 +24,7 @@ export default async function AdminLayout({
   return (
     <>
       <StoreLoader />
+      <RealtimeStoreSync />
 
       <PortalShell
         portalName="Admin"
