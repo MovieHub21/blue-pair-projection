@@ -16,7 +16,7 @@ export default function EventReservations() {
   const [filter,setFilter] = useState('pending')
 
   async function load() { setLoading(true); const r=await fetch('/api/admin/event-reservations',{cache:'no-store'}); const d=await r.json(); if(r.ok) setRows(d.reservations||[]); setLoading(false) }
-  useEffect(()=>{ load() },[])
+  useEffect(()=>{ load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return()=>window.removeEventListener('bluepair:database-change',refresh) },[])
   async function update(id:string,status:'reserved'|'declined') { setBusy(id); try { const r=await fetch('/api/admin/event-reservations',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({reservationId:id,status,staffNote:note[id]||''})}); if(r.ok) await load(); } finally { setBusy('') } }
   const filtered=filter==='all'?rows:rows.filter(r=>r.status===filter)
 
