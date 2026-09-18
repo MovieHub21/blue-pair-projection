@@ -24,15 +24,37 @@ export default function RoomAvailability() {
   const rt = room ? roomTypes.find((t) => t.id === room.roomTypeId) : null
 
   const handleDateChange = useCallback((date: string) => {
+    console.info('[admin-status][selected-date]', { date })
     setSelectedDate(date)
   }, [])
 
   async function updateStatus(status: RoomStatus) {
-    if (!room || busy || !selectedDate) return
+    console.info('[admin-status][click]', {
+      roomId: room?.id ?? null,
+      roomNumber: room?.roomNumber ?? null,
+      selectedDate,
+      status,
+      busy,
+    })
+
+    if (!room || busy || !selectedDate) {
+      console.warn('[admin-status][click-ignored]', {
+        reason: !room ? 'no-active-room' : busy ? 'already-busy' : 'no-selected-date',
+      })
+      return
+    }
 
     setBusy(true)
+    const startedAt = Date.now()
 
     try {
+      console.info('[admin-status][request]', {
+        roomId: room.id,
+        roomNumber: room.roomNumber,
+        selectedDate,
+        status,
+      })
+
       const response = await fetch('/api/admin/room-daily-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,6 +66,13 @@ export default function RoomAvailability() {
       })
 
       const data = await response.json().catch(() => ({}))
+
+      console.info('[admin-status][response]', {
+        ok: response.ok,
+        status: response.status,
+        data,
+        elapsedMs: Date.now() - startedAt,
+      })
 
       if (!response.ok) {
         throw new Error(data.error || 'Could not update room status.')
@@ -60,6 +89,13 @@ export default function RoomAvailability() {
 
       setActiveId(null)
     } catch (error: any) {
+      console.error('[admin-status][client-error]', {
+        roomId: room?.id ?? null,
+        selectedDate,
+        status,
+        message: error?.message,
+        error,
+      })
       pushToast(error?.message || 'Could not update room status.', 'error')
     } finally {
       setBusy(false)
