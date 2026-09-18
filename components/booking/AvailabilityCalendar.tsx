@@ -20,10 +20,8 @@ export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheck
   const load=async()=>{const from=month;const to=addDaysISO(1,`${month.slice(0,7)}-${pad(daysInMonth(month))}`);setLoading(true);try{const response=await fetch(`/api/public/room-calendar?roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}&_=${Date.now()}`,{cache:'no-store'});const data=await response.json().catch(()=>null);if(cancelled)return;if(response.ok&&data?.days){setDays(data.days);setError(null);if(!initialCheckIn||initialCheckIn<=today){const availablePair=data.days.find((d:Day,i:number)=>d.date>today&&d.status==='available'&&data.days[i+1]?.date===addDaysISO(1,d.date)&&data.days[i+1]?.status==='available');if(availablePair){const next=addDaysISO(1,availablePair.date);setStart(availablePair.date);setEnd(next);onSelect?.(availablePair.date,next)}}}else setError(data?.error||'Unable to load calendar.')}catch{if(!cancelled)setError('Unable to load calendar.')}finally{if(!cancelled)setLoading(false)}}
   void load()
   const refresh=()=>void load()
-  const interval=window.setInterval(refresh,15000)
-  window.addEventListener('focus',refresh)
-  document.addEventListener('visibilitychange',refresh)
-  return()=>{cancelled=true;window.clearInterval(interval);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}
+  window.addEventListener('bluepair:database-change',refresh)
+  return()=>{cancelled=true;window.removeEventListener('bluepair:database-change',refresh)}
  },[roomId,month])
  const cells=useMemo(()=>{const blanks=Array.from({length:dayOfWeek(month)}).map((_,i)=>({blank:i}));return [...blanks,...days]},[month,days])
  function choose(date:string,status:Day['status']){if(date<today){setNotice('That date has already passed.');return}if(status!=='available'){const day=days.find(d=>d.date===date);if(status==='booked')setNotice(`${date} is already taken for a paid reservation${day?.reference?` (${day.reference})`:''}. Please choose another date.`);else if(status==='held')setNotice(`${date} is temporarily held for another guest. Please choose another date.`);else setNotice(`${date} is currently unavailable. Please choose another date.`);return}setNotice(null);if(!start||end){setStart(date);setEnd('');return}if(date<=start){setStart(date);setEnd('');return}setEnd(date);onSelect?.(start,date)}
