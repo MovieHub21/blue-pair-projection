@@ -104,7 +104,7 @@ export async function GET(request: Request) {
             await sendResendEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, includeAccountCta: false })
           } catch (emailError) { console.error('[paystack-callback] confirmation email failed', emailError) }
         }
-        await admin.from('guest_notifications').insert({ id: `gn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, user_id: customer.user_id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: reference, status: 'confirmed' } })
+        await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: reference, status: 'confirmed' } })
       }
     }
     return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
