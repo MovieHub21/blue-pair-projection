@@ -7,13 +7,16 @@ export default function RealtimeBridge() {
   useEffect(() => {
     const channel = supabase
       .channel('bluepair:database')
-      .on('broadcast', { event: 'db_change' }, (message) => {
-        window.dispatchEvent(new CustomEvent('bluepair:database-change', { detail: message.payload }))
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        window.dispatchEvent(new CustomEvent('bluepair:database-change', {
+          detail: {
+            table: payload.table,
+            operation: payload.eventType,
+          },
+        }))
       })
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          window.dispatchEvent(new CustomEvent('bluepair:realtime-ready'))
-        }
+        console.info('[bluepair-realtime]', status)
       })
 
     return () => {
