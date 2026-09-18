@@ -21,7 +21,7 @@ export default function NotificationsPage() {
     if(response.ok) setItems(data.notifications ?? [])
     setLoading(false)
   }
-  useEffect(()=>{ load() },[])
+  useEffect(()=>{ load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return()=>window.removeEventListener('bluepair:database-change',refresh) },[])
   async function markAll() {
     await fetch('/api/notifications',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'all_read'})})
     setItems(current=>current.map(item=>({...item,read_at:item.read_at||new Date().toISOString()})))
