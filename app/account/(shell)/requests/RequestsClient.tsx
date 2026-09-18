@@ -38,7 +38,7 @@ export default function RequestsClient({ initialRequests, customerId, guestName,
     setLoadingOrders(false)
     if (response.ok) setOrders((data.orders ?? []).map((o: any) => ({ ...o, items: Array.isArray(o.items) ? o.items : [] })))
   }
-  useEffect(() => { void loadOrders(); const timer = window.setInterval(() => void loadOrders(), 15000); return () => window.clearInterval(timer) }, [customerId])
+  useEffect(() => { void loadOrders(); const refresh=()=>void loadOrders(); window.addEventListener('bluepair:database-change',refresh); return () => window.removeEventListener('bluepair:database-change',refresh) }, [customerId])
 
   async function submitRequest() {
     if (!customerId) { pushToast('Please sign in to submit a request', 'error'); return }
