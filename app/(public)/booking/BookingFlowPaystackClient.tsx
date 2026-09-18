@@ -34,7 +34,17 @@ export default function BookingFlowPaystackClient({roomTypes}:{roomTypes:RoomTyp
   window.addEventListener('bluepair:booking-dates-change',onDatesChange)
   return()=>window.removeEventListener('bluepair:booking-dates-change',onDatesChange)
 },[])
-useEffect(()=>{if(!typeId)return; fetch(`/api/rooms?roomTypeId=${encodeURIComponent(typeId)}`).then(r=>r.ok?r.json():[]).then(data=>{setUnits(data); if(!unitId){const a=data.find((x:Unit)=>x.status==='available');if(a)setUnitId(a.id)}}).catch(()=>{})},[typeId])
+useEffect(()=>{
+  if(!typeId||!checkIn||!checkOut||checkIn>=checkOut)return
+  fetch(`/api/public/availability?roomTypeId=${encodeURIComponent(typeId)}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&_=${Date.now()}`,{cache:'no-store'})
+    .then(r=>r.ok?r.json():null)
+    .then(data=>{
+      const available=(data?.rooms??[]).filter((x:Unit&{guest_status?:string})=>x.guest_status==='available')
+      setUnits(available)
+      setUnitId(current=>available.some((x:Unit)=>x.id===current)?current:(available[0]?.id||''))
+    })
+    .catch(()=>setUnits([]))
+},[typeId,checkIn,checkOut])
  useEffect(()=>{if(room)setAdults(a=>Math.min(Math.max(1,a),room.guests))},[room?.id,room?.guests])
  useEffect(()=>{if(auth.customer||auth.profile)setGuest(g=>({...g,name:g.name||auth.customer?.name||auth.profile?.name||'',email:g.email||auth.customer?.email||auth.profile?.email||auth.email||'',phone:g.phone||auth.customer?.phone||auth.profile?.phone||''}))},[auth.customer,auth.profile,auth.email])
  useEffect(()=>{if(paymentResult==='success'&&paymentReference&&auth.userId)void fetch('/api/email/payment-confirmation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reference:paymentReference})})},[paymentResult,paymentReference,auth.userId])
