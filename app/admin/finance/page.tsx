@@ -59,7 +59,7 @@ export default function FinancePage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return()=>window.removeEventListener('bluepair:database-change',refresh) }, [])
 
   const netTone = useMemo(() => (data?.summary.net ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-700', [data])
 
