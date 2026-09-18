@@ -52,7 +52,7 @@ export default function ReportsPage({ params }: { params: { type: string } }) {
       .then(payload => { if (cancelled) return; setFinance({ grossSales: Number(payload.summary?.grossSales || 0), refunds: Number(payload.summary?.refunds || 0), expenses: Number(payload.summary?.expenses || 0), net: Number(payload.summary?.net || 0), byMethod: payload.byMethod || {}, expensesRows: payload.expenses || [] }) })
       .catch(error => { if (!cancelled) setFinanceError(error.message || 'Unable to load finance report.') })
       .finally(() => { if (!cancelled) setFinanceLoading(false) })
-    return () => { cancelled = true }
+    const refresh=()=>{cancelled=false;void (async()=>{try{const response=await fetch('/api/admin/finance',{cache:'no-store'});const payload=await response.json();if(!response.ok)throw new Error(payload.error||'Unable to load finance report.');setFinance({grossSales:Number(payload.summary?.grossSales||0),refunds:Number(payload.summary?.refunds||0),expenses:Number(payload.summary?.expenses||0),net:Number(payload.summary?.net||0),byMethod:payload.byMethod||{},expensesRows:payload.expenses||[]})}catch(error:any){setFinanceError(error?.message||'Unable to load finance report.')}})()};window.addEventListener('bluepair:database-change',refresh);return()=>{cancelled=true;window.removeEventListener('bluepair:database-change',refresh)}
   }, [start, end])
 
   const periodPayments = useMemo(() => payments.filter(p => inRange(p.date, start, end)), [payments, start, end])
