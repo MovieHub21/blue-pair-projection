@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './lib/supabase/config'
 import { sectionForPath, ALWAYS_ALLOWED_SECTIONS } from './lib/permissionSections'
-import { getApiFeatureStatus } from './lib/developerFeatureControls'
+import { readRouteState } from './lib/runtime/resolver'
 
 const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
@@ -61,11 +61,11 @@ export async function middleware(request: NextRequest) {
   if (originalPathname.startsWith('/api/')) {
     const limited = rateLimit(request)
     if (limited) return limited
-    const feature = await getApiFeatureStatus(originalPathname)
-    if (!feature.enabled) {
-      console.error('[developer-feature-controls][blocked]', {
+    const feature = await readRouteState(originalPathname)
+    if (!feature.ok) {
+      console.error('[runtime][blocked]', {
         environment: getEnvironment(),
-        feature: feature.feature,
+        item: feature.item,
         pathname: originalPathname,
         method: request.method,
       })
