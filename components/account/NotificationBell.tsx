@@ -63,18 +63,59 @@ export default function NotificationBell() {
     const setupRealtime = async () => {
       const { data } = await supabase.auth.getUser()
       if (!mounted || !data.user) return
+
+      // Give each mounted bell its own topic. This prevents a second mounted
+      // instance or a React/Next development remount from reusing a channel
+      // that has already been subscribed.
+      const topic = `guest-notifications-${data.user.id}-${crypto.randomUUID()}`
+
       channel = supabase
-        .channel(`guest-notifications-${data.user.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT', schema: 'public', table: 'guest_notifications', filter: `user_id=eq.${data.user.id}`,
-        }, () => { void load() })
-      channel.subscribe()
+        .channel(topic)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'guest_notifications',
+            filter: `user_id=eq.${data.user.id}`,
+          },
+          () => {
+            if (mounted) void load()
+          },
+        )
+
+      try {
+        const status = await channel.subscribe((status, error) => {
+          if (status === 'SUBSCRIBED') {
+            console.debug('[guest-notifications][subscription]', { status, topic })
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error('[guest-notifications][subscription]', {
+              status,
+              topic,
+              error: error?.message ?? error ?? null,
+            })
+          }
+        })
+
+        if (status !== 'SUBSCRIBED' && mounted) {
+          console.warn('[guest-notifications][subscription-not-ready]', { status, topic })
+        }
+      } catch (error) {
+        if (mounted) {
+          console.error('[guest-notifications][subscription-failed]', {
+            topic,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      }
     }
 
     void load()
     void setupRealtime()
+
     const onFocus = () => void load()
     window.addEventListener('focus', onFocus)
+
     return () => {
       mounted = false
       window.removeEventListener('focus', onFocus)
