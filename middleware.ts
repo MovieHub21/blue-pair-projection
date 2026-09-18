@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './lib/supabase/config'
 import { sectionForPath, ALWAYS_ALLOWED_SECTIONS } from './lib/permissionSections'
+import { getApiFeatureStatus } from './lib/developerFeatureControls'
 
 const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
 const GUEST_PREFIXES = ['/account']
@@ -60,8 +61,17 @@ export async function middleware(request: NextRequest) {
   if (originalPathname.startsWith('/api/')) {
     const limited = rateLimit(request)
     if (limited) return limited
+    const feature = await getApiFeatureStatus(originalPathname)
+    if (!feature.enabled) {
+      console.error('[developer-feature-controls][blocked]', {
+        environment: getEnvironment(),
+        feature: feature.feature,
+        pathname: originalPathname,
+        method: request.method,
+      })
+      return NextResponse.json({ error: 'Unable to process your request. Please try again.' }, { status: 503 })
+    }
     return NextResponse.next({ request })
-  }
 
   // Keep local development unchanged: localhost:3000/admin still works.
   // In production, /admin on the main domain is redirected to the admin subdomain.
