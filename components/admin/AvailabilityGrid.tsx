@@ -59,6 +59,13 @@ export default function AvailabilityGrid({
     const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
 
     const loadAvailability = () => {
+      const startedAt = Date.now()
+      console.info('[admin-availability][fetch-start]', {
+        date,
+        url,
+        startedAt: new Date(startedAt).toISOString(),
+      })
+
       return fetch(url, { cache: 'no-store' })
         .then(async (response) => {
           const data = await response.json().catch(() => null)
@@ -68,6 +75,7 @@ export default function AvailabilityGrid({
             date,
             roomCount: data?.rooms?.length ?? 0,
             error: data?.error ?? null,
+            elapsedMs: Date.now() - startedAt,
           })
           return response.ok ? data : null
         })
@@ -110,8 +118,15 @@ export default function AvailabilityGrid({
 
     void loadAvailability()
 
-    const refresh = () => {
+    const refresh = (event: Event) => {
       if (cancelled) return
+      const detail = (event as CustomEvent).detail || {}
+      console.info('[admin-availability][realtime-refresh]', {
+        date,
+        table: detail.table ?? null,
+        operation: detail.operation ?? null,
+        receivedAt: new Date().toISOString(),
+      })
       setLoading(true)
       void loadAvailability()
     }
@@ -121,6 +136,7 @@ export default function AvailabilityGrid({
     return () => {
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
+      console.info('[admin-availability][effect-cleanup]', { date })
     }
   }, [date, rooms.length])
 
