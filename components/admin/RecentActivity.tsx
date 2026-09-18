@@ -25,7 +25,9 @@ export default function RecentActivity() {
       if (!cancelled) setRows((data ?? []) as Row[])
     }
     void load()
-    return () => { cancelled = true }
+    const refresh=()=>void load()
+    window.addEventListener('bluepair:database-change',refresh)
+    return () => { cancelled = true; window.removeEventListener('bluepair:database-change',refresh) }
   }, [])
 
   return (
