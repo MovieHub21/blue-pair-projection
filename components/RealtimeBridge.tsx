@@ -11,32 +11,30 @@ export default function RealtimeBridge() {
 
     console.info('[bluepair-realtime][init]', {
       channel: 'bluepair:database',
+      mode: 'broadcast',
       startedAt: new Date(startedAt).toISOString(),
       watchedTables: [...WATCHED_TABLES],
     })
 
     const channel = supabase
       .channel('bluepair:database')
-      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-        const changed = payload.new as Record<string, unknown> | null
-        const old = payload.old as Record<string, unknown> | null
+      .on('broadcast', { event: 'db_change' }, (message) => {
+        const payload = (message?.payload ?? {}) as Record<string, unknown>
+        const table = typeof payload.table === 'string' ? payload.table : null
+        const operation = typeof payload.operation === 'string' ? payload.operation : null
 
         console.info('[bluepair-realtime][event]', {
-          table: payload.table,
-          operation: payload.eventType,
+          table,
+          operation,
           receivedAt: new Date().toISOString(),
-          relevant: WATCHED_TABLES.has(payload.table),
-          id: changed?.id ?? old?.id ?? null,
-          roomId: changed?.room_id ?? old?.room_id ?? null,
-          status: changed?.status ?? old?.status ?? null,
-          statusDate: changed?.status_date ?? old?.status_date ?? null,
-          bookingReference: changed?.reference ?? old?.reference ?? null,
+          relevant: table ? WATCHED_TABLES.has(table) : false,
+          source: 'broadcast',
         })
 
         window.dispatchEvent(new CustomEvent('bluepair:database-change', {
           detail: {
-            table: payload.table,
-            operation: payload.eventType,
+            table,
+            operation,
           },
         }))
       })
