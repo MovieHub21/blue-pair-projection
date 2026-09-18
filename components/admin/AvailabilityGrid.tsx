@@ -52,6 +52,7 @@ export default function AvailabilityGrid({
     }
 
     let cancelled = false
+    let requestVersion = 0
     setLoading(true)
     setLive({})
 
@@ -59,6 +60,7 @@ export default function AvailabilityGrid({
     const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
 
     const loadAvailability = () => {
+      const version = ++requestVersion
       const startedAt = Date.now()
       console.info('[admin-availability][fetch-start]', {
         date,
@@ -80,7 +82,7 @@ export default function AvailabilityGrid({
           return response.ok ? data : null
         })
         .then((data) => {
-          if (cancelled) return
+          if (cancelled || version !== requestVersion) return
 
           const next: Record<string, string> = {}
           for (const room of data?.rooms || []) {
@@ -105,7 +107,7 @@ export default function AvailabilityGrid({
           if (!cancelled) setLive({})
         })
         .finally(() => {
-          if (!cancelled) setLoading(false)
+          if (!cancelled && version === requestVersion) setLoading(false)
         })
     }
 
