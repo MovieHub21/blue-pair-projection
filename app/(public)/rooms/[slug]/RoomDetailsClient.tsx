@@ -25,6 +25,9 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
   setChecking(true)
   fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'})
    .then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms);}).catch(()=>{}).finally(()=>setChecking(false))
+  const refresh=()=>{setChecking(true);fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms)}).catch(()=>{}).finally(()=>setChecking(false))}
+  window.addEventListener('bluepair:database-change',refresh)
+  return()=>window.removeEventListener('bluepair:database-change',refresh)
  },[checkIn,checkOut,room.id])
 
  const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
