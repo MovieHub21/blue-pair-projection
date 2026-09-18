@@ -49,7 +49,7 @@ export async function PATCH(request: Request) {
     const { data: customer } = await admin.from('customers').select('user_id').eq('id', order.customer_id).maybeSingle()
     if (customer?.user_id) {
       const labels: Record<string, string> = { pending: 'Order received', being_attended_to: 'Restaurant is preparing your order', attended: 'Your order has been prepared', delivered: 'Order delivered', cancelled: 'Order cancelled' }
-      await admin.from('guest_notifications').insert({ id: `gn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, user_id: customer.user_id, type: 'room_service_status', title: labels[status], body: `Room-service order ${order.reference} is now ${status.replaceAll('_', ' ')}.`, href: '/account/requests', metadata: { room_service_order_id: order.id, reference: order.reference, status } })
+      await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'room_service_status', title: labels[status], body: `Room-service order ${order.reference} is now ${status.replaceAll('_', ' ')}.`, href: '/account/requests', metadata: { room_service_order_id: order.id, reference: order.reference, status } })
     }
     return NextResponse.json({ order })
   } catch (error: any) {
