@@ -7,8 +7,8 @@ import { supabase } from '../../lib/supabase/client'
 
 const COLORS: Record<string, string> = {
   available: 'bg-emerald-500',
-  checking: 'bg-slate-300 text-slate-700',
   cleaning_required: 'bg-amber-300 text-navy-950',
+  checking: 'bg-slate-300 text-slate-700',
   cleaning: 'bg-amber-400 text-navy-950',
   maintenance: 'bg-orange-500',
   taken: 'bg-red-600',
@@ -29,11 +29,13 @@ const LABELS: Record<string, string> = {
   available_soon: 'Available Soon',
 }
 
+
 interface GridRoom {
   id: string
   roomNumber: string
   status: string
 }
+
 
 export default function AvailabilityGrid({
   onSelect,
@@ -72,11 +74,15 @@ export default function AvailabilityGrid({
     }
 
     let cancelled = false
+    let requestVersion = 0
+    let refreshTimer: number | null = null
+
     setLoading(true)
     setLive({})
 
     const checkOut = addDaysISO(1, date)
     const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
+
 
     const loadAvailability = () => {
       return fetch(url, { cache: 'no-store' })
@@ -87,22 +93,48 @@ export default function AvailabilityGrid({
         .then((data) => {
           if (cancelled) return
 
-          const next: Record<string, string> = {}
-          for (const room of data?.rooms || []) {
-            next[room.id] = room.admin_status || room.guest_status
-          }
+
+      console.info('[BP-DIAG][admin-grid][fetch-start]', {
+        date,
+        url,
+        version,
+        startedAt: new Date(startedAt).toISOString(),
+      })
+
 
           setLive(next)
+
         })
-        .catch((error) => {
-          console.error('[admin-availability][error]', { date, error })
-          if (!cancelled) setLive({})
+
+        if (!response.ok) return
+
+        const next: Record<string, string> = {}
+        for (const room of data?.rooms || []) {
+          next[room.id] = room.admin_status || room.guest_status
+        }
+
+        console.info('[BP-DIAG][admin-grid][mapped]', {
+          date,
+          version,
+          states: Object.values(next).reduce(
+            (acc: Record<string, number>, state: string) => ({
+              ...acc,
+              [state]: (acc[state] || 0) + 1,
+            }),
+            {},
+          ),
         })
-        .finally(() => {
-          if (!cancelled) setLoading(false)
-        })
+
+        setLive(next)
+      } catch (error: any) {
+        if (cancelled || version !== requestVersion) return
+        console.error('[BP-DIAG][admin-grid][error]', { date, version, error })
+      } finally {
+        if (!cancelled && version === requestVersion) setLoading(false)
+      }
     }
 
+<<<<<<< HEAD
     void loadAvailability()
 
     const RELEVANT_TABLES = new Set(['rooms', 'bookings', 'room_daily_statuses', 'payment_holds', 'housekeeping_tasks'])
@@ -118,6 +150,7 @@ export default function AvailabilityGrid({
       }
       setLoading(true)
       void loadAvailability()
+
     }
 
     window.addEventListener('bluepair:database-change', refresh)
@@ -125,6 +158,8 @@ export default function AvailabilityGrid({
     return () => {
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      console.info('[BP-DIAG][admin-grid][effect-cleanup]', { date })
     }
   }, [date, loadRooms])
 
@@ -134,9 +169,9 @@ export default function AvailabilityGrid({
         <div className="flex items-center gap-2 mb-3">
           <CalendarDays size={15} className="text-gold-600" />
           <div>
-            <p className="text-xs font-semibold">Room status for this day</p>
+            <p className="text-xs font-semibold">Room status and availability</p>
             <p className="text-[10px] text-navy-400">
-              Each room card represents the selected date only.
+              Booking status follows the selected date; operational room status persists until changed.
             </p>
           </div>
           {loading && (
@@ -160,11 +195,7 @@ export default function AvailabilityGrid({
         {['available', 'taken', 'cleaning_required', 'cleaning', 'maintenance', 'available_soon'].map(
           (key) => (
             <span key={key} className="flex items-center gap-1.5">
-              <i
-                className={
-                  'w-2.5 h-2.5 rounded-sm inline-block ' + COLORS[key]
-                }
-              />
+              <i className={'w-2.5 h-2.5 rounded-sm inline-block ' + COLORS[key]} />
               {LABELS[key]}
             </span>
           ),

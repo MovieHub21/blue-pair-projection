@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import SectionHeading from '../../../components/ui/SectionHeading'
 import Modal from '../../../components/ui/Modal'
+
 import { pushToast } from '../../../components/ui/Toast'
+
 import { naira } from '../../../lib/format'
 import { Ruler, MapPin } from 'lucide-react'
 import type { BillboardSpace } from '../../../data/mock'
@@ -13,7 +15,6 @@ export default function BillboardClient({ billboards }: { billboards: BillboardS
 
   function submit() {
     setSubmitted(true)
-    pushToast('Billboard reservation request sent', 'success')
   }
 
   return (
@@ -42,7 +43,7 @@ export default function BillboardClient({ billboards }: { billboards: BillboardS
         </div>
       </div>
 
-      <Modal open={!!active} onClose={() => setActive(null)} title={submitted ? 'Request sent' : `Reserve — ${active?.location}`} subtitle={!submitted ? active?.dimensions : undefined}>
+      <Modal open={!!active} onClose={() => setActive(null)} title={submitted ? 'Request sent' : 'Reserve — ' + active?.location} subtitle={!submitted ? active?.dimensions : undefined}>
         {submitted ? (
           <div className="text-center py-4">
             <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>

@@ -23,7 +23,28 @@ const EXTRA_META:Record<string,{icon:any;description:string}>={
 export default function BookingFlowPaystackClient({roomTypes}:{roomTypes:RoomType[]}){
  const params=useSearchParams(); const pathname=usePathname(); const auth=useAuth(); const typeSlug=params.get('room')||''; const [step,setStep]=useState(0); const [typeId,setTypeId]=useState(roomTypes.find(r=>r.slug===typeSlug)?.id||roomTypes[0]?.id||''); const [unitId,setUnitId]=useState(params.get('unit')||''); const [units,setUnits]=useState<Unit[]>([]); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [adults,setAdults]=useState(2); const [children,setChildren]=useState(0); const [guest,setGuest]=useState({name:'',email:'',phone:'',requests:''}); const [extraIds,setExtraIds]=useState<string[]>([]); const [submitting,setSubmitting]=useState(false); const [submitError,setSubmitError]=useState<string|null>(null); const [submitErrorCode,setSubmitErrorCode]=useState<string|null>(null); const paymentResult=params.get('payment'); const paymentReference=params.get('reference')||''
  const room=roomTypes.find(r=>r.id===typeId); const nights=nightsBetween(checkIn,checkOut); const subtotal=(room?.price||0)*nights; const extraTotal=EXTRA_SERVICES.filter(x=>extraIds.includes(x.id)).reduce((sum,x)=>sum+x.price,0); const taxableSubtotal=subtotal+extraTotal; const tax=Math.round(taxableSubtotal*.075); const total=taxableSubtotal+tax; const selected=units.find(u=>u.id===unitId); const maxChildren=Math.max(0,(room?.guests||1)-adults)
- useEffect(()=>{if(!typeId)return; fetch(`/api/rooms?roomTypeId=${encodeURIComponent(typeId)}`).then(r=>r.ok?r.json():[]).then(data=>{setUnits(data); if(!unitId){const a=data.find((x:Unit)=>x.status==='available');if(a)setUnitId(a.id)}}).catch(()=>{})},[typeId])
+ useEffect(()=>{
+  const onDatesChange=(event:Event)=>{
+    const detail=(event as CustomEvent<{checkIn?:string;checkOut?:string}>).detail
+    if(detail?.checkIn&&detail?.checkOut){
+      setCheckIn(detail.checkIn)
+      setCheckOut(detail.checkOut)
+    }
+  }
+  window.addEventListener('bluepair:booking-dates-change',onDatesChange)
+  return()=>window.removeEventListener('bluepair:booking-dates-change',onDatesChange)
+},[])
+useEffect(()=>{
+  if(!typeId||!checkIn||!checkOut||checkIn>=checkOut)return
+  fetch(`/api/public/availability?roomTypeId=${encodeURIComponent(typeId)}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&_=${Date.now()}`,{cache:'no-store'})
+    .then(r=>r.ok?r.json():null)
+    .then(data=>{
+      const available=(data?.rooms??[]).filter((x:Unit&{guest_status?:string})=>x.guest_status==='available')
+      setUnits(available)
+      setUnitId(current=>available.some((x:Unit)=>x.id===current)?current:(available[0]?.id||''))
+    })
+    .catch(()=>setUnits([]))
+},[typeId,checkIn,checkOut])
  useEffect(()=>{if(room)setAdults(a=>Math.min(Math.max(1,a),room.guests))},[room?.id,room?.guests])
  useEffect(()=>{if(auth.customer||auth.profile)setGuest(g=>({...g,name:g.name||auth.customer?.name||auth.profile?.name||'',email:g.email||auth.customer?.email||auth.profile?.email||auth.email||'',phone:g.phone||auth.customer?.phone||auth.profile?.phone||''}))},[auth.customer,auth.profile,auth.email])
  useEffect(()=>{if(paymentResult==='success'&&paymentReference&&auth.userId)void fetch('/api/email/payment-confirmation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reference:paymentReference})})},[paymentResult,paymentReference,auth.userId])
