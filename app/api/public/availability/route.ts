@@ -7,7 +7,7 @@ function effectiveCheckOut(b:any){const actual=b.checked_out_at?String(b.checked
 function overlaps(a:string,b:string,c:string,d:string){return a<d&&b>c}
 function bookingOverlaps(b:any,a:string,d:string){return overlaps(a,d,b.check_in,effectiveCheckOut(b))}
 function activePending(b:any){return b.status==='pending'&&b.payment_status!=='paid'&&!!b.reservation_expires_at&&new Date(b.reservation_expires_at).getTime()>Date.now()}
-function paid(b:any){return b.payment_status==='paid'&&!['cancelled','refunded'].includes(String(b.status))}
+function paid(b:any){return b.payment_status==='paid'&&['confirmed','checked_in'].includes(String(b.status))}
 export async function GET(request:Request){try{
  const p=new URL(request.url).searchParams;const checkIn=p.get('checkin');const checkOut=p.get('checkout');const roomTypeId=p.get('roomTypeId')
  if(!validDate(checkIn)||!validDate(checkOut)||!checkIn||!checkOut||checkIn>=checkOut)return NextResponse.json({error:'Valid check-in and check-out dates are required.'},{status:400})
