@@ -1,6 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { mapOffer } from '../../../lib/mappers'
+import { pushToast } from '../../../components/ui/Toast'
 import Modal from '../../../components/ui/Modal'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import { Plus } from 'lucide-react'
@@ -9,19 +11,58 @@ import type { Offer } from '../../../data/mock'
 const CATEGORIES: Offer['category'][] = ['Room', 'Restaurant', 'Seasonal', 'Package']
 
 export default function OffersManagement() {
-  const { offers, toggleOfferActive, addOffer, updateOffer, deleteOffer } = useStore()
+  const [offers, setOffers] = useState<Offer[]>([])
+  const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Offer | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Offer | null>(null)
   const [draft, setDraft] = useState({ title: '', description: '', category: 'Room' as Offer['category'], discount: '' })
   const [editDraft, setEditDraft] = useState({ title: '', description: '', category: 'Room' as Offer['category'], discount: '' })
 
-  function submit() {
+  const loadOffers = useCallback(async () => {
+    const { data, error } = await supabase.from('offers').select('*').order('title')
+    if (error) {
+      console.error('[offers] fetch error:', error.message)
+    } else if (data) {
+      setOffers(data.map(mapOffer))
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadOffers()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      if (!e.detail?.table || e.detail.table === 'offers') {
+        loadOffers()
+      }
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => {
+      window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+    }
+  }, [loadOffers])
+
+  async function submit() {
     if (!draft.title) return
     const o: Offer = { id: `o_${Date.now()}`, title: draft.title, description: draft.description, category: draft.category, discount: draft.discount || '—', active: true }
-    addOffer(o)
+    setOffers(prev => [o, ...prev])
     setShowAdd(false)
     setDraft({ title: '', description: '', category: 'Room', discount: '' })
+
+    const { error } = await supabase.from('offers').insert({
+      id: o.id,
+      title: o.title,
+      description: o.description,
+      discount: o.discount,
+      category: o.category,
+      active: o.active,
+    })
+    if (error) {
+      pushToast('Failed to create offer: ' + error.message, 'error')
+      loadOffers()
+    } else {
+      pushToast('Offer created', 'success')
+    }
   }
 
   function openEdit(o: Offer) {
@@ -29,10 +70,46 @@ export default function OffersManagement() {
     setEditDraft({ title: o.title, description: o.description, category: o.category, discount: o.discount })
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editing) return
-    updateOffer(editing.id, editDraft)
+    const id = editing.id
+    const patch = { ...editDraft }
+    setOffers(prev => prev.map(o => o.id === id ? { ...o, ...patch } : o))
     setEditing(null)
+
+    const { error } = await supabase.from('offers').update(patch).eq('id', id)
+    if (error) {
+      pushToast('Failed to update offer: ' + error.message, 'error')
+      loadOffers()
+    } else {
+      pushToast('Offer updated', 'success')
+    }
+  }
+
+  async function toggleOfferActive(id: string) {
+    const target = offers.find(o => o.id === id)
+    if (!target) return
+    const next = !target.active
+    setOffers(prev => prev.map(o => o.id === id ? { ...o, active: next } : o))
+
+    const { error } = await supabase.from('offers').update({ active: next }).eq('id', id)
+    if (error) {
+      pushToast('Failed to toggle offer: ' + error.message, 'error')
+      loadOffers()
+    } else {
+      pushToast('Offer status updated', 'info')
+    }
+  }
+
+  async function deleteOffer(id: string) {
+    setOffers(prev => prev.filter(o => o.id !== id))
+    const { error } = await supabase.from('offers').delete().eq('id', id)
+    if (error) {
+      pushToast('Failed to delete offer: ' + error.message, 'error')
+      loadOffers()
+    } else {
+      pushToast('Offer deleted', 'success')
+    }
   }
 
   return (
@@ -56,7 +133,8 @@ export default function OffersManagement() {
             </div>
           </div>
         ))}
-        {offers.length === 0 && <p className="text-sm text-navy-400">No offers yet.</p>}
+        {!loading && offers.length === 0 && <p className="text-sm text-navy-400">No offers yet.</p>}
+        {loading && <p className="text-sm text-navy-400">Loading offers...</p>}
       </div>
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Create offer">
         <div className="grid gap-4">

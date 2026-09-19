@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { CalendarDays, Loader2 } from 'lucide-react'
 import { addDaysISO, todayISO } from '../../lib/format'
-import { useStore } from '../../store/useStore'
+import { supabase } from '../../lib/supabase/client'
 
 const COLORS: Record<string, string> = {
   available: 'bg-emerald-500',
@@ -29,6 +29,12 @@ const LABELS: Record<string, string> = {
   available_soon: 'Available Soon',
 }
 
+interface GridRoom {
+  id: string
+  roomNumber: string
+  status: string
+}
+
 export default function AvailabilityGrid({
   onSelect,
   onDateChange,
@@ -36,10 +42,24 @@ export default function AvailabilityGrid({
   onSelect?: (roomId: string) => void
   onDateChange?: (date: string) => void
 }) {
-  const { rooms } = useStore()
+  const [rooms, setRooms] = useState<GridRoom[]>([])
   const [date, setDate] = useState(todayISO())
   const [live, setLive] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+
+  const loadRooms = useCallback(async () => {
+    const { data } = await supabase
+      .from('rooms')
+      .select('id, room_number, status')
+      .order('room_number')
+    if (data) {
+      setRooms(data.map(r => ({ id: r.id, roomNumber: r.room_number, status: r.status })))
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadRooms()
+  }, [loadRooms])
 
   useEffect(() => {
     onDateChange?.(date)
@@ -62,13 +82,6 @@ export default function AvailabilityGrid({
       return fetch(url, { cache: 'no-store' })
         .then(async (response) => {
           const data = await response.json().catch(() => null)
-          console.info('[admin-availability][response]', {
-            ok: response.ok,
-            status: response.status,
-            date,
-            roomCount: data?.rooms?.length ?? 0,
-            error: data?.error ?? null,
-          })
           return response.ok ? data : null
         })
         .then((data) => {
@@ -78,17 +91,6 @@ export default function AvailabilityGrid({
           for (const room of data?.rooms || []) {
             next[room.id] = room.admin_status || room.guest_status
           }
-
-          console.info('[admin-availability][mapped]', {
-            date,
-            states: Object.values(next).reduce(
-              (acc: Record<string, number>, state: string) => ({
-                ...acc,
-                [state]: (acc[state] || 0) + 1,
-              }),
-              {},
-            ),
-          })
 
           setLive(next)
         })
@@ -101,17 +103,19 @@ export default function AvailabilityGrid({
         })
     }
 
-    console.info('[admin-availability][request]', {
-      url,
-      date,
-      checkOut,
-      roomCount: rooms.length,
-    })
-
     void loadAvailability()
 
-    const refresh = () => {
+    const RELEVANT_TABLES = new Set(['rooms', 'bookings', 'room_daily_statuses', 'payment_holds', 'housekeeping_tasks'])
+
+    const refresh = (e: Event) => {
       if (cancelled) return
+      const detail = (e as CustomEvent).detail
+      if (detail?.table && !RELEVANT_TABLES.has(detail.table)) {
+        return
+      }
+      if (!detail?.table || detail.table === 'rooms') {
+        void loadRooms()
+      }
       setLoading(true)
       void loadAvailability()
     }
@@ -122,7 +126,7 @@ export default function AvailabilityGrid({
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
     }
-  }, [date, rooms.length])
+  }, [date, loadRooms])
 
   return (
     <div>

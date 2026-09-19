@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, useCallback, type ReactNode } from 'react'
 import { Search, X, Mail, Phone, CalendarDays, BedDouble, Users, CreditCard, MessageSquare, Clock3, ChevronRight, SlidersHorizontal, Activity, ShieldCheck } from 'lucide-react'
-import { useStore } from '../../../store/useStore'
+import { supabase } from '../../../lib/supabase/client'
+import { mapBooking, mapCustomer, mapRoom, mapRoomType, mapPayment, mapGuestRequest, type GuestRequest } from '../../../lib/mappers'
+import type { Customer, Booking, Room, RoomType, Payment } from '../../../data/mock'
 import { formatDate, initials } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 
@@ -11,7 +13,41 @@ const bookingStatusLabel: Record<string, string> = { pending: 'Pending', confirm
 const bookingStatusClass: Record<string, string> = { pending: 'bg-amber-50 text-amber-700', confirmed: 'bg-blue-50 text-blue-700', checked_in: 'bg-emerald-50 text-emerald-700', checked_out: 'bg-slate-100 text-slate-600', cancelled: 'bg-red-50 text-red-700' }
 
 export default function CustomerManagement() {
-  const { customers, bookings, rooms, roomTypes, guestRequests, payments } = useStore()
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
+  const [guestRequests, setGuestRequests] = useState<GuestRequest[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+
+  const loadData = useCallback(async () => {
+    const [cu, bk, rm, rt, gr, pay] = await Promise.all([
+      supabase.from('customers').select('*').order('name'),
+      supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+      supabase.from('rooms').select('*').order('room_number'),
+      supabase.from('room_types').select('*').order('price'),
+      supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
+      supabase.from('payments').select('*').order('date', { ascending: false }),
+    ])
+    if (cu.data) setCustomers(cu.data.map(mapCustomer))
+    if (bk.data) setBookings(bk.data.map(mapBooking))
+    if (rm.data) setRooms(rm.data.map(mapRoom))
+    if (rt.data) setRoomTypes(rt.data.map(mapRoomType))
+    if (gr.data) setGuestRequests(gr.data.map(mapGuestRequest))
+    if (pay.data) setPayments(pay.data.map(mapPayment))
+  }, [])
+
+  useEffect(() => {
+    loadData()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      const t = e.detail?.table
+      if (!t || ['customers','bookings','rooms','room_types','guest_requests','payments'].includes(t)) loadData()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+  }, [loadData])
+
+
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)

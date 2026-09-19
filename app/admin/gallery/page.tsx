@@ -1,15 +1,52 @@
 'use client'
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { mapGalleryImage, type GalleryImage } from '../../../lib/mappers'
+import { pushToast } from '../../../components/ui/Toast'
 import ImageUploader from '../../../components/admin/ImageUploader'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import { Trash2 } from 'lucide-react'
 
 export default function GalleryManagement() {
-  const galleryImages = useStore(s => s.galleryImages)
-  const addGalleryImage = useStore(s => s.addGalleryImage)
-  const removeGalleryImage = useStore(s => s.removeGalleryImage)
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; url: string } | null>(null)
+
+  const loadImages = useCallback(async () => {
+    const { data, error } = await supabase.from('gallery_images').select('*').order('sort_order')
+    if (!error && data) setGalleryImages(data.map(mapGalleryImage))
+  }, [])
+
+  useEffect(() => {
+    loadImages()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      if (!e.detail?.table || e.detail.table === 'gallery_images') loadImages()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+  }, [loadImages])
+
+  async function addGalleryImage(url: string) {
+    const id = `gi_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const sortOrder = galleryImages.length
+    const newImg: GalleryImage = { id, url, sortOrder }
+    setGalleryImages(prev => [...prev, newImg])
+    const { error } = await supabase.from('gallery_images').insert({ id, url, caption: null, sort_order: sortOrder })
+    if (error) {
+      pushToast('Failed to save image: ' + error.message, 'error')
+      loadImages()
+    }
+  }
+
+  async function removeGalleryImage(id: string) {
+    setGalleryImages(prev => prev.filter(x => x.id !== id))
+    const { error } = await supabase.from('gallery_images').delete().eq('id', id)
+    if (error) {
+      pushToast('Failed to remove image: ' + error.message, 'error')
+      loadImages()
+    } else {
+      pushToast('Image removed', 'success')
+    }
+  }
 
   function handleUploaded(urls: string[]) { urls.forEach(u => addGalleryImage(u)) }
 

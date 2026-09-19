@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useStore } from '../../store/useStore'
+import { pushToast } from './Toast'
 
 export default function ApiRateLimitNotifier() {
-  const pushToast = useStore(s => s.pushToast)
-
   useEffect(() => {
     const originalFetch = window.fetch
     let lastShown = 0
@@ -29,7 +27,7 @@ export default function ApiRateLimitNotifier() {
     return () => {
       window.fetch = originalFetch
     }
-  }, [pushToast])
+  }, [])
 
   return null
 }

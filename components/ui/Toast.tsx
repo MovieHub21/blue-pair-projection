@@ -1,9 +1,48 @@
 'use client'
-import { useStore } from '../../store/useStore'
+
+import { useEffect, useState } from 'react'
 import { CheckCircle2, Info, XCircle, X } from 'lucide-react'
 
+export interface ToastMsg {
+  id: number
+  text: string
+  tone: 'success' | 'info' | 'error'
+}
+
+let toastSeq = 1
+
+export function pushToast(text: string, tone: 'success' | 'info' | 'error' = 'success') {
+  if (typeof window === 'undefined') return
+  const id = toastSeq++
+  window.dispatchEvent(
+    new CustomEvent('bluepair:toast', {
+      detail: { id, text, tone },
+    })
+  )
+}
+
 export default function ToastHost() {
-  const { toasts, dismissToast } = useStore()
+  const [toasts, setToasts] = useState<ToastMsg[]>([])
+
+  useEffect(() => {
+    const handleToast = (e: Event) => {
+      const detail = (e as CustomEvent<ToastMsg>).detail
+      if (!detail || !detail.text) return
+      setToasts(prev => [...prev, detail])
+
+      window.setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== detail.id))
+      }, 3600)
+    }
+
+    window.addEventListener('bluepair:toast', handleToast)
+    return () => window.removeEventListener('bluepair:toast', handleToast)
+  }, [])
+
+  const dismissToast = (id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
   return (
     <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 items-center w-full max-w-xl px-3 sm:px-4 pointer-events-none">
       {toasts.map(t => (

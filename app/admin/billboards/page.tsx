@@ -1,6 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { mapBillboard } from '../../../lib/mappers'
+import { pushToast } from '../../../components/ui/Toast'
 import EditablePrice from '../../../components/admin/EditablePrice'
 import Modal from '../../../components/ui/Modal'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
@@ -11,19 +13,41 @@ import type { BillboardSpace } from '../../../data/mock'
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=900&q=80'
 
 export default function BillboardManagement() {
-  const { billboards, addBillboard, updateBillboard, toggleBillboardAvailable, deleteBillboard } = useStore()
+  const [billboards, setBillboards] = useState<BillboardSpace[]>([])
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<BillboardSpace | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<BillboardSpace | null>(null)
   const [draft, setDraft] = useState({ location: '', dimensions: '', price: '', image: DEFAULT_IMAGE })
   const [editDraft, setEditDraft] = useState({ location: '', dimensions: '', price: '', image: '' })
 
-  function submit() {
+  const loadBillboards = useCallback(async () => {
+    const { data, error } = await supabase.from('billboards').select('*').order('price', { ascending: false })
+    if (!error && data) setBillboards(data.map(mapBillboard))
+  }, [])
+
+  useEffect(() => {
+    loadBillboards()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      if (!e.detail?.table || e.detail.table === 'billboards') loadBillboards()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+  }, [loadBillboards])
+
+  async function submit() {
     if (!draft.location) return
     const b: BillboardSpace = { id: `bb_${Date.now()}`, location: draft.location, dimensions: draft.dimensions, price: Number(draft.price) || 0, image: draft.image || DEFAULT_IMAGE, available: true }
-    addBillboard(b)
+    setBillboards(prev => [b, ...prev])
     setShowAdd(false)
     setDraft({ location: '', dimensions: '', price: '', image: DEFAULT_IMAGE })
+
+    const { error } = await supabase.from('billboards').insert({ id: b.id, location: b.location, dimensions: b.dimensions, price: b.price, image: b.image, available: b.available })
+    if (error) {
+      pushToast('Failed to add space: ' + error.message, 'error')
+      loadBillboards()
+    } else {
+      pushToast('Billboard space added', 'success')
+    }
   }
 
   function openEdit(b: BillboardSpace) {
@@ -31,10 +55,52 @@ export default function BillboardManagement() {
     setEditDraft({ location: b.location, dimensions: b.dimensions, price: String(b.price), image: b.image })
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editing) return
-    updateBillboard(editing.id, { location: editDraft.location, dimensions: editDraft.dimensions, price: Number(editDraft.price), image: editDraft.image })
+    const id = editing.id
+    const patch = { location: editDraft.location, dimensions: editDraft.dimensions, price: Number(editDraft.price), image: editDraft.image }
+    setBillboards(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
     setEditing(null)
+
+    const { error } = await supabase.from('billboards').update(patch).eq('id', id)
+    if (error) {
+      pushToast('Failed to update: ' + error.message, 'error')
+      loadBillboards()
+    } else {
+      pushToast('Billboard updated', 'success')
+    }
+  }
+
+  async function updateBillboardPrice(id: string, price: number) {
+    setBillboards(prev => prev.map(b => b.id === id ? { ...b, price } : b))
+    const { error } = await supabase.from('billboards').update({ price }).eq('id', id)
+    if (error) {
+      pushToast('Failed to update price: ' + error.message, 'error')
+      loadBillboards()
+    }
+  }
+
+  async function toggleBillboardAvailable(id: string) {
+    const target = billboards.find(b => b.id === id)
+    if (!target) return
+    const next = !target.available
+    setBillboards(prev => prev.map(b => b.id === id ? { ...b, available: next } : b))
+    const { error } = await supabase.from('billboards').update({ available: next }).eq('id', id)
+    if (error) {
+      pushToast('Failed to update status: ' + error.message, 'error')
+      loadBillboards()
+    }
+  }
+
+  async function deleteBillboard(id: string) {
+    setBillboards(prev => prev.filter(b => b.id !== id))
+    const { error } = await supabase.from('billboards').delete().eq('id', id)
+    if (error) {
+      pushToast('Failed to delete: ' + error.message, 'error')
+      loadBillboards()
+    } else {
+      pushToast('Billboard space deleted', 'success')
+    }
   }
 
   return (
@@ -51,7 +117,7 @@ export default function BillboardManagement() {
               <b className="block">{b.location}</b>
               <span className="text-xs text-navy-400">{b.dimensions}</span>
               <div className="flex justify-between items-center mt-3">
-                <EditablePrice value={b.price} onSave={v => updateBillboard(b.id, { price: v })} />
+                <EditablePrice value={b.price} onSave={v => updateBillboardPrice(b.id, v)} />
                 <button onClick={() => toggleBillboardAvailable(b.id)} className={b.available ? 'pill-green' : 'pill-red'}>{b.available ? 'Available' : 'Reserved'}</button>
               </div>
               <div className="flex gap-2 mt-3"><button onClick={() => openEdit(b)} className="text-xs font-semibold text-navy-900">Edit</button><button onClick={() => setDeleteTarget(b)} className="text-xs font-semibold text-red-600">Delete</button></div>

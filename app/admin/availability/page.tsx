@@ -1,11 +1,13 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { useStore } from '../../../store/useStore'
+import { useCallback, useEffect, useState } from 'react'
+import { pushToast } from '../../../components/ui/Toast'
 import AvailabilityGrid from '../../../components/admin/AvailabilityGrid'
 import AvailabilityCalendar from '../../../components/booking/AvailabilityCalendar'
 import Modal from '../../../components/ui/Modal'
-import type { RoomStatus } from '../../../data/mock'
+import type { Room, RoomStatus, RoomType } from '../../../data/mock'
+import { supabase } from '../../../lib/supabase/client'
+import { mapRoom, mapRoomType } from '../../../lib/mappers'
 
 const STATUS_OPTIONS: { key: RoomStatus; label: string }[] = [
   { key: 'available', label: 'Available' },
@@ -15,10 +17,34 @@ const STATUS_OPTIONS: { key: RoomStatus; label: string }[] = [
 ]
 
 export default function RoomAvailability() {
-  const { rooms, roomTypes, loadAll, pushToast } = useStore()
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
+
+  const loadData = useCallback(async () => {
+    const [rm, rt] = await Promise.all([
+      supabase.from('rooms').select('*').order('room_number'),
+      supabase.from('room_types').select('*').order('price'),
+    ])
+    if (rm.data) setRooms(rm.data.map(mapRoom))
+    if (rt.data) setRoomTypes(rt.data.map(mapRoomType))
+  }, [])
+
+  useEffect(() => {
+    void loadData()
+
+    const refresh = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (!detail?.table || detail.table === 'rooms' || detail.table === 'room_types') {
+        void loadData()
+      }
+    }
+
+    window.addEventListener('bluepair:database-change', refresh)
+    return () => window.removeEventListener('bluepair:database-change', refresh)
+  }, [loadData])
 
   const room = rooms.find((r) => r.id === activeId)
   const rt = room ? roomTypes.find((t) => t.id === room.roomTypeId) : null
@@ -49,9 +75,7 @@ export default function RoomAvailability() {
         throw new Error(data.error || 'Could not update room status.')
       }
 
-      // The database is authoritative. The realtime bridge will also cause
-      // the availability grid/calendar to refetch without a page refresh.
-      await loadAll()
+      await loadData()
 
       pushToast(
         `Room ${room.roomNumber} set to ${STATUS_OPTIONS.find((s) => s.key === status)?.label} for ${selectedDate}.`,

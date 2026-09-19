@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useStore } from '../../../store/useStore'
-import { supabase } from '../../../src/integrations/supabase/client'
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { mapRoom, mapBooking, mapCustomer, mapPayment, mapMaintenanceTicket, mapGuestRequest, type GuestRequest } from '../../../lib/mappers'
+import type { Room, Booking, Customer, Payment, MaintenanceTicket } from '../../../data/mock'
 import { naira, todayISO } from '../../../lib/format'
 import StatCard from '../../../components/ui/StatCard'
 import RecentActivity from '../../../components/admin/RecentActivity'
@@ -31,12 +32,47 @@ function revenueSourceLabel(outlet: string | null | undefined) {
 }
 
 export default function AdminDashboardPage() {
-  const { rooms, bookings, customers, payments, maintenanceTickets, guestRequests, loaded } = useStore()
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [maintenanceTickets, setMaintenanceTickets] = useState<MaintenanceTicket[]>([])
+  const [guestRequests, setGuestRequests] = useState<GuestRequest[]>([])
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week')
   const [financialTransactions, setFinancialTransactions] = useState<Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string }>>([])
   const today = todayISO()
   const weekStart = startOfWeekISO()
   const rangeStart = range === 'week' ? weekStart : range === 'month' ? `${today.slice(0, 7)}-01` : `${today.slice(0, 4)}-01-01`
+
+  useEffect(() => {
+    let active = true
+    async function loadAll() {
+      const [rm, bk, cu, pay, mt, gr] = await Promise.all([
+        supabase.from('rooms').select('*').order('room_number'),
+        supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+        supabase.from('customers').select('*').order('name'),
+        supabase.from('payments').select('*').order('date', { ascending: false }),
+        supabase.from('maintenance_tickets').select('*').order('date_reported', { ascending: false }),
+        supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
+      ])
+      if (!active) return
+      if (rm.data) setRooms(rm.data.map(mapRoom))
+      if (bk.data) setBookings(bk.data.map(mapBooking))
+      if (cu.data) setCustomers(cu.data.map(mapCustomer))
+      if (pay.data) setPayments(pay.data.map(mapPayment))
+      if (mt.data) setMaintenanceTickets(mt.data.map(mapMaintenanceTicket))
+      if (gr.data) setGuestRequests(gr.data.map(mapGuestRequest))
+      setDataLoaded(true)
+    }
+    loadAll()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      const t = e.detail?.table
+      if (!t || ['rooms','bookings','payments','maintenance_tickets','guest_requests'].includes(t)) loadAll()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => { active = false; window.removeEventListener('bluepair:database-change', handleDbChange as EventListener) }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -92,7 +128,7 @@ export default function AdminDashboardPage() {
         <div><span className="eyebrow"><LiveDateTime /></span><h1 className="text-2xl font-semibold mt-1">Hotel overview</h1><p className="text-sm text-navy-400 mt-1">Live operational and financial snapshot.</p></div>
         <div className="flex items-center gap-1 rounded-full border border-black/10 bg-white p-1">{(['week', 'month', 'year'] as const).map(item => <button key={item} onClick={() => setRange(item)} className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${range === item ? 'bg-navy-950 text-white' : 'text-navy-500'}`}>This {item}</button>)}</div>
       </div>
-      {!loaded ? <div className="card p-8 text-center text-sm text-navy-400">Loading live hotel data…</div> : <>
+      {!dataLoaded ? <div className="card p-8 text-center text-sm text-navy-400">Loading live hotel data…</div> : <>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"><StatCard label={`Revenue · this ${range}`} value={naira(stats.revenue)} icon={<Wallet size={17} />} tint="green" /><StatCard label="Current occupancy" value={`${occupancy}%`} icon={<BedDouble size={17} />} delta={`${stats.available} rooms available`} tint="navy" /><StatCard label={`Check-ins · this ${range}`} value={String(stats.checkIns)} icon={<LogIn size={17} />} /><StatCard label={`Check-outs · this ${range}`} value={String(stats.checkOuts)} icon={<LogOut size={17} />} tint="navy" /></div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"><StatCard label="Guests currently staying" value={String(stats.activeGuests)} icon={<Users size={17} />} /><StatCard label="Pending bookings" value={String(stats.pending)} icon={<ClipboardList size={17} />} /><StatCard label="Open guest requests" value={String(stats.openRequests)} /><StatCard label="Open maintenance" value={String(stats.openMaintenance)} icon={<Wrench size={17} />} deltaTone={stats.openMaintenance ? 'down' : undefined} /></div>
         <div className="grid lg:grid-cols-[1.6fr,1fr] gap-6 mb-6"><div className="card p-6"><div className="flex justify-between items-center mb-2"><div><h3 className="font-semibold">Collected revenue</h3><p className="text-xs text-navy-400 mt-1">Successful income recorded during this period.</p></div><span className="pill-gold">{naira(stats.revenue)}</span></div>{revenueByDay.length ? <ResponsiveContainer width="100%" height={220}><BarChart data={revenueByDay}><XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} /><Tooltip formatter={(v: number) => naira(v)} /><Bar dataKey="value" fill="#C79A3E" radius={[6,6,2,2]} /></BarChart></ResponsiveContainer> : <div className="h-[220px] flex items-center justify-center text-sm text-navy-400">No income in this period.</div>}</div><div className="card p-6"><h3 className="font-semibold">Income source</h3><p className="text-xs text-navy-400 mt-1 mb-4">Where this period’s income came from.</p>{sourceData.length ? <div className="flex items-center gap-5"><ResponsiveContainer width={140} height={140}><PieChart><Pie data={sourceData} dataKey="value" innerRadius={40} outerRadius={64} paddingAngle={2}>{sourceData.map((_, i) => <Cell key={i} fill={i ? '#22346E' : '#C79A3E'} />)}</Pie></PieChart></ResponsiveContainer><div className="space-y-2 text-xs">{sourceData.map((d, i) => <span key={d.name} className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-sm" style={{ background: i ? '#22346E' : '#C79A3E' }} />{d.name} — {naira(d.value)}</span>)}</div></div> : <div className="h-[140px] flex items-center text-sm text-navy-400">No income in this period.</div>}</div></div>

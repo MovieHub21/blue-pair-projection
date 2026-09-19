@@ -2,13 +2,12 @@
 import { useState } from 'react'
 import SectionHeading from '../../../components/ui/SectionHeading'
 import Modal from '../../../components/ui/Modal'
-import { useStore } from '../../../store/useStore'
+import { pushToast } from '../../../components/ui/Toast'
 import { naira } from '../../../lib/format'
 import { Ruler, MapPin } from 'lucide-react'
 import type { BillboardSpace } from '../../../data/mock'
 
 export default function BillboardClient({ billboards }: { billboards: BillboardSpace[] }) {
-  const pushToast = useStore(s => s.pushToast)
   const [active, setActive] = useState<typeof billboards[0] | null>(null)
   const [submitted, setSubmitted] = useState(false)
 

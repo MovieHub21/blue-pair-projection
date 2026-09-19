@@ -1,12 +1,30 @@
 'use client'
-import { useStore } from '../../../store/useStore'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../../lib/supabase/client'
+import { mapPayment } from '../../../lib/mappers'
+import type { Payment } from '../../../data/mock'
 import { naira, formatDate } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import StatCard from '../../../components/ui/StatCard'
 import { Wallet, RefreshCcw, Clock } from 'lucide-react'
 
 export default function PaymentManagement() {
-  const { payments } = useStore()
+  const [payments, setPayments] = useState<Payment[]>([])
+
+  const loadPayments = useCallback(async () => {
+    const { data, error } = await supabase.from('payments').select('*').order('date', { ascending: false })
+    if (!error && data) setPayments(data.map(mapPayment))
+  }, [])
+
+  useEffect(() => {
+    loadPayments()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      if (!e.detail?.table || e.detail.table === 'payments') loadPayments()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+  }, [loadPayments])
+
   const total = payments.filter(p=>p.status==='success').reduce((s,p)=>s+p.amount,0)
   const refunded = payments.filter(p=>p.status==='refunded').reduce((s,p)=>s+p.amount,0)
   const pending = payments.filter(p=>p.status==='pending').length

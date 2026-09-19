@@ -1,27 +1,109 @@
 'use client'
-import { useState } from 'react'
-import { useStore } from '../../../../store/useStore'
+
+import { useCallback, useEffect, useState } from 'react'
 import StatusBadge from '../../../../components/ui/StatusBadge'
 import Modal from '../../../../components/ui/Modal'
 import { CheckCircle2 } from 'lucide-react'
+import { pushToast } from '../../../../components/ui/Toast'
+import { supabase } from '../../../../lib/supabase/client'
+import { mapHousekeepingTask } from '../../../../lib/mappers'
+import { todayISO } from '../../../../lib/format'
+import type { HousekeepingTask } from '../../../../data/mock'
 
-const CHECKLIST = ['Strip & remake bed', 'Change towels', 'Clean bathroom', 'Vacuum / mop floor', 'Restock amenities', 'Final inspection']
+const CHECKLIST = [
+  'Strip & remake bed',
+  'Change towels',
+  'Clean bathroom',
+  'Vacuum / mop floor',
+  'Restock amenities',
+  'Final inspection',
+]
 
 export default function Tasks() {
-  const { housekeepingTasks, markCleaningStarted, markCleaned } = useStore()
-  const [active, setActive] = useState<typeof housekeepingTasks[0] | null>(null)
+  const [tasks, setTasks] = useState<HousekeepingTask[]>([])
+  const [active, setActive] = useState<HousekeepingTask | null>(null)
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [done, setDone] = useState<{ room: string; cleaner: string } | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  function openTask(t: typeof housekeepingTasks[0]) {
-    setActive(t); setChecked({}); setDone(null)
-    if (t.status === 'pending') markCleaningStarted(t.id)
+  const loadTasks = useCallback(async () => {
+    const { data } = await supabase
+      .from('housekeeping_tasks')
+      .select('*')
+      .order('room')
+    if (data) setTasks(data.map(mapHousekeepingTask))
+  }, [])
+
+  useEffect(() => {
+    void loadTasks()
+
+    const refresh = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (!detail?.table || detail.table === 'housekeeping_tasks' || detail.table === 'rooms') {
+        void loadTasks()
+      }
+    }
+
+    window.addEventListener('bluepair:database-change', refresh)
+    return () => window.removeEventListener('bluepair:database-change', refresh)
+  }, [loadTasks])
+
+  async function openTask(t: HousekeepingTask) {
+    setActive(t)
+    setChecked({})
+    setDone(null)
+    if (t.status === 'pending') {
+      await supabase.from('housekeeping_tasks').update({ status: 'in_progress' }).eq('id', t.id)
+      await loadTasks()
+    }
   }
 
-  function complete() {
+  async function complete() {
     if (!active) return
-    markCleaned(active.id, 'Musa Danladi')
-    setDone({ room: active.room, cleaner: 'Musa Danladi' })
+    setSaving(true)
+    const cleanerName = 'Musa Danladi'
+    const completedAt = new Date().toISOString()
+    try {
+      await supabase
+        .from('housekeeping_tasks')
+        .update({ status: 'completed', assigned_to: cleanerName, completed_at: completedAt })
+        .eq('id', active.id)
+
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('id, room_number')
+        .eq('room_number', active.room)
+        .maybeSingle()
+
+      if (roomData?.id) {
+        await supabase
+          .from('rooms')
+          .update({ status: 'available' })
+          .eq('id', roomData.id)
+
+        const today = todayISO()
+        await supabase
+          .from('room_daily_statuses')
+          .upsert(
+            {
+              room_id: roomData.id,
+              status: 'available',
+              status_date: today,
+              notes: 'Cleaning completed by housekeeping.',
+              updated_at: completedAt,
+            },
+            { onConflict: 'room_id,status_date' }
+          )
+      }
+
+      await loadTasks()
+      setDone({ room: active.room, cleaner: cleanerName })
+      pushToast(`Room ${active.room} marked as cleaned`, 'success')
+    } catch (err: any) {
+      pushToast(err?.message || 'Failed to complete task', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const allChecked = CHECKLIST.every(c => checked[c])
@@ -30,12 +112,21 @@ export default function Tasks() {
     <div>
       <h1 className="text-2xl font-semibold mb-6">My Tasks</h1>
       <div className="grid gap-3">
-        {housekeepingTasks.map(t => (
-          <button key={t.id} onClick={() => openTask(t)} disabled={t.status === 'completed'} className="card p-5 flex items-center gap-4 text-left disabled:opacity-60">
-            <div className="w-12 h-12 rounded-lg bg-navy-900 text-white flex items-center justify-center font-display font-semibold shrink-0">{t.room}</div>
+        {tasks.map(t => (
+          <button
+            key={t.id}
+            onClick={() => void openTask(t)}
+            disabled={t.status === 'completed'}
+            className="card p-5 flex items-center gap-4 text-left disabled:opacity-60"
+          >
+            <div className="w-12 h-12 rounded-lg bg-navy-900 text-white flex items-center justify-center font-display font-semibold shrink-0">
+              {t.room}
+            </div>
             <div className="flex-1">
               <b className="text-sm">{t.roomType}</b>
-              <div className="text-xs text-navy-400">Checkout {t.checkoutTime} · {t.priority} priority{t.notes ? ` · ${t.notes}` : ''}</div>
+              <div className="text-xs text-navy-400">
+                Checkout {t.checkoutTime} · {t.priority} priority{t.notes ? ` · ${t.notes}` : ''}
+              </div>
               {t.completedAt && <div className="text-xs text-emerald-600 mt-0.5">Completed {t.completedAt}</div>}
             </div>
             <StatusBadge status={t.status} />
@@ -43,27 +134,56 @@ export default function Tasks() {
         ))}
       </div>
 
-      <Modal open={!!active} onClose={() => setActive(null)} title={done ? `Room ${done.room} cleaned successfully` : `Room ${active?.room} — cleaning checklist`} subtitle={!done ? active?.roomType : undefined}>
+      <Modal
+        open={!!active}
+        onClose={() => setActive(null)}
+        title={done ? `Room ${done.room} cleaned successfully` : `Room ${active?.room} — cleaning checklist`}
+        subtitle={!done ? active?.roomType : undefined}
+      >
         {done ? (
           <div className="text-center py-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4"><CheckCircle2 size={30}/></div>
+            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={30} />
+            </div>
             <p className="text-sm text-navy-500">✓ Room {done.room} cleaned successfully</p>
-            <div className="text-xs text-navy-400 mt-2">Cleaner: {done.cleaner} · {new Date().toLocaleDateString('en-NG',{day:'numeric',month:'short'})} · {new Date().toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}</div>
-            <p className="text-xs text-navy-400 mt-4">This room now shows as <b>Available</b> in Room Management.</p>
-            <button onClick={() => setActive(null)} className="btn-primary mt-6">Done</button>
+            <div className="text-xs text-navy-400 mt-2">
+              Cleaner: {done.cleaner} · {new Date().toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })} ·{' '}
+              {new Date().toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <p className="text-xs text-navy-400 mt-4">
+              This room now shows as <b>Available</b> in Room Management.
+            </p>
+            <button onClick={() => setActive(null)} className="btn-primary mt-6">
+              Done
+            </button>
           </div>
         ) : (
           <div>
             <div className="flex flex-col gap-2 mb-6">
               {CHECKLIST.map(c => (
-                <label key={c} className="flex items-center gap-3 text-sm py-2 border-b border-black/5 last:border-none cursor-pointer">
-                  <input type="checkbox" checked={!!checked[c]} onChange={e => setChecked({...checked, [c]: e.target.checked})} className="w-4 h-4" />
+                <label
+                  key={c}
+                  className="flex items-center gap-3 text-sm py-2 border-b border-black/5 last:border-none cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!checked[c]}
+                    onChange={e => setChecked({ ...checked, [c]: e.target.checked })}
+                    className="w-4 h-4"
+                  />
                   {c}
                 </label>
               ))}
             </div>
-            <button disabled={!allChecked} onClick={complete} className={'w-full justify-center text-base py-4 ' + (allChecked ? 'btn-gold' : 'btn-outline opacity-50 cursor-not-allowed')}>
-              MARK AS CLEANED
+            <button
+              disabled={!allChecked || saving}
+              onClick={() => void complete()}
+              className={
+                'w-full justify-center text-base py-4 ' +
+                (allChecked && !saving ? 'btn-gold' : 'btn-outline opacity-50 cursor-not-allowed')
+              }
+            >
+              {saving ? 'UPDATING…' : 'MARK AS CLEANED'}
             </button>
           </div>
         )}

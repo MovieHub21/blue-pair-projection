@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import ContentField from '../../../components/admin/ContentField'
-import { useStore } from '../../../store/useStore'
+import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { Loader2, Check, EyeOff } from 'lucide-react'
 
@@ -27,7 +27,6 @@ const TAB_KEYS: Record<typeof TABS[number], string[]> = {
 
 export default function WebsiteContentClient({ initialContent }: { initialContent: Record<string, string> }) {
   const [tab, setTab] = useState<typeof TABS[number]>('Homepage')
-  const pushToast = useStore(s => s.pushToast)
   const [fields, setFields] = useState(initialContent)
   const [saving, setSaving] = useState(false)
   const set = (key: string, value: string) => setFields(f => ({ ...f, [key]: value }))

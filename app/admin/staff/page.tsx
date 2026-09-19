@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
 import Modal from '../../../components/ui/Modal'
 import { initials } from '../../../lib/format'
 import { STAFF_ROLE_LABELS, ROLE_LABEL_TO_ENUM } from '../../../lib/roles'
 import { supabase } from '../../../lib/supabase/client'
-import { useStore } from '../../../store/useStore'
+import { mapStaff } from '../../../lib/mappers'
+import { pushToast } from '../../../components/ui/Toast'
 import type { StaffMember } from '../../../data/mock'
 
 const ROLES = STAFF_ROLE_LABELS as StaffMember['role'][]
@@ -16,13 +17,40 @@ const ROLES = STAFF_ROLE_LABELS as StaffMember['role'][]
  * grants a portal role to that account; this page never creates passwords.
  */
 export default function StaffManagement() {
-  const { staff, loadAll, toggleStaffStatus, updateStaffRole } = useStore()
-  const pushToast = useStore(s => s.pushToast)
+  const [staff, setStaff] = useState<StaffMember[]>([])
   const [showGrant, setShowGrant] = useState(false)
   const [granting, setGranting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [draft, setDraft] = useState({ email: '', role: 'Reception' as StaffMember['role'], department: 'Front Desk' })
+
+  const loadStaff = useCallback(async () => {
+    const { data, error: fetchError } = await supabase.from('staff').select('*').order('name')
+    if (!fetchError && data) setStaff(data.map(mapStaff))
+  }, [])
+
+  useEffect(() => {
+    loadStaff()
+    const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
+      if (!e.detail?.table || e.detail.table === 'staff') loadStaff()
+    }
+    window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
+    return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
+  }, [loadStaff])
+
+  async function toggleStaffStatus(id: string) {
+    const s = staff.find(x => x.id === id)
+    if (!s) return
+    const next = s.status === 'active' ? 'disabled' : 'active'
+    setStaff(prev => prev.map(x => x.id === id ? { ...x, status: next } : x))
+    await supabase.from('staff').update({ status: next }).eq('id', id)
+  }
+
+  async function updateStaffRole(id: string, role: StaffMember['role']) {
+    setStaff(prev => prev.map(x => x.id === id ? { ...x, role } : x))
+    await supabase.from('staff').update({ role: ROLE_LABEL_TO_ENUM[role] }).eq('id', id)
+  }
+
 
   const filtered = staff.filter(s =>
     !query || s.name.toLowerCase().includes(query.toLowerCase()) || s.email.toLowerCase().includes(query.toLowerCase()) || s.role.toLowerCase().includes(query.toLowerCase())
@@ -75,7 +103,7 @@ export default function StaffManagement() {
       pushToast(`${profile.name} can now sign in with their existing account and access the ${draft.role} portal.`, 'success')
       setShowGrant(false)
       setDraft({ email: '', role: 'Reception', department: 'Front Desk' })
-      await loadAll()
+      await loadStaff()
     } catch (err: any) {
       setError(err?.message || 'Could not grant portal access.')
     } finally {

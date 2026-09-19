@@ -2,19 +2,56 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { useStore } from '../../../store/useStore'
+import { supabase } from '../../../lib/supabase/client'
 import { useAuth, ensureCustomer } from '../../../lib/useAuth'
 import { naira, nightsBetween, formatDate , todayISO, addDaysISO} from '../../../lib/format'
 import { Check, Calendar, Users, CreditCard, Landmark, Wallet, Download, Loader2 } from 'lucide-react'
-import type { RoomType } from '../../../data/mock'
+import type { Booking, RoomType } from '../../../data/mock'
 
 const STEPS = ['Room', 'Dates & Guests', 'Guest Info', 'Summary', 'Payment', 'Confirmation']
+
+async function createDirectBooking(input: {
+  customerId: string
+  roomTypeId: string
+  checkIn: string
+  checkOut: string
+  adults: number
+  children: number
+  amount: number
+  specialRequests?: string
+}): Promise<Booking> {
+  const reference = `BPH-${Math.floor(24900 + Math.random() * 900)}`
+  const id = `b_${Date.now()}`
+  const { error } = await supabase.from('bookings').insert({
+    id,
+    reference,
+    customer_id: input.customerId,
+    room_type_id: input.roomTypeId,
+    room_id: null,
+    check_in: input.checkIn,
+    check_out: input.checkOut,
+    adults: input.adults,
+    children: input.children,
+    amount: input.amount,
+    payment_status: 'pending',
+    status: 'pending',
+    special_requests: input.specialRequests ?? null,
+  })
+  if (error) throw error
+  return {
+    ...input,
+    id,
+    reference,
+    status: 'pending',
+    paymentStatus: 'pending',
+    createdAt: new Date().toISOString().slice(0, 10),
+  }
+}
 
 export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[] }) {
   const params = useSearchParams()
   const pathname = usePathname()
   const auth = useAuth()
-  const { createBooking } = useStore()
   const [step, setStep] = useState(0)
   const [roomId, setRoomId] = useState(roomTypes.find(r => r.slug === params.get('room'))?.id ?? roomTypes[0]?.id ?? '')
   const [checkIn, setCheckIn] = useState(params.get('checkin') || todayISO())
@@ -23,7 +60,7 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
   const [children, setChildren] = useState(0)
   const [guest, setGuest] = useState({ name: '', email: '', phone: '', requests: '' })
   const [payMethod, setPayMethod] = useState<'card'|'transfer'|'paystack'>('paystack')
-  const [booking, setBooking] = useState<ReturnType<typeof createBooking> | null>(null)
+  const [booking, setBooking] = useState<Booking | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -53,7 +90,7 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
     setSubmitError(null)
     try {
       const customerId = await ensureCustomer(auth.userId, guest.name, guest.email, guest.phone)
-      const b = createBooking({
+      const b = await createDirectBooking({
         customerId, roomTypeId: room.id, checkIn, checkOut, adults, children,
         amount: total, specialRequests: guest.requests || undefined,
       })

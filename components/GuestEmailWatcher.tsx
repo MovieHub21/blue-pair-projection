@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useStore } from '../store/useStore'
+import { supabase } from '../lib/supabase/client'
 
 export type EventName =
   | 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified'
@@ -25,30 +25,59 @@ export async function sendGuestTransactionalEmail(event: EventName, input: { boo
 
 export default function GuestEmailWatcher() {
   useEffect(() => {
-    return useStore.subscribe((state, previous) => {
-      const previousBookings = new Map(previous.bookings.map(b => [b.id, b]))
-      for (const booking of state.bookings) {
-        const old = previousBookings.get(booking.id)
-        if (!old) continue
-        if (old.paymentStatus !== 'paid' && booking.paymentStatus === 'paid') void sendGuestTransactionalEmail('payment_successful', { bookingId: booking.id })
-        else if (String(old.paymentStatus) !== 'failed' && String(booking.paymentStatus) === 'failed') void sendGuestTransactionalEmail('payment_failed', { bookingId: booking.id })
-        else if (old.status !== 'cancelled' && booking.status === 'cancelled') void sendGuestTransactionalEmail('booking_cancelled', { bookingId: booking.id })
-        else if (old.status !== 'checked_in' && booking.status === 'checked_in') void sendGuestTransactionalEmail('checkin_welcome', { bookingId: booking.id })
-        else if (old.status !== 'checked_out' && booking.status === 'checked_out') void sendGuestTransactionalEmail('checkout_thank_you', { bookingId: booking.id })
-        else {
-          const changed = old.checkIn !== booking.checkIn || old.checkOut !== booking.checkOut || old.roomTypeId !== booking.roomTypeId || old.roomId !== booking.roomId || old.adults !== booking.adults || old.children !== booking.children || old.amount !== booking.amount || old.specialRequests !== booking.specialRequests
-          if (changed) void sendGuestTransactionalEmail('booking_modified', { bookingId: booking.id })
-        }
-      }
+    const channel = supabase
+      .channel('bluepair:guest-email-watcher')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bookings' }, (payload) => {
+        const old = payload.old as Record<string, any>
+        const current = payload.new as Record<string, any>
+        if (!old || !current) return
 
-      const previousRequests = new Map(previous.guestRequests.map(r => [r.id, r]))
-      for (const request of state.guestRequests) {
-        const old = previousRequests.get(request.id)
-        const isSupport = request.type.toLowerCase().includes('complaint') || request.type.toLowerCase().includes('support')
-        if (!old) void sendGuestTransactionalEmail(isSupport ? 'support_acknowledged' : 'service_request_received', { requestId: request.id })
-        else if (old.status !== request.status) void sendGuestTransactionalEmail(isSupport ? 'support_status' : 'service_request_status', { requestId: request.id })
-      }
-    })
+        if (old.payment_status !== 'paid' && current.payment_status === 'paid') {
+          void sendGuestTransactionalEmail('payment_successful', { bookingId: current.id })
+        } else if (String(old.payment_status) !== 'failed' && String(current.payment_status) === 'failed') {
+          void sendGuestTransactionalEmail('payment_failed', { bookingId: current.id })
+        } else if (old.status !== 'cancelled' && current.status === 'cancelled') {
+          void sendGuestTransactionalEmail('booking_cancelled', { bookingId: current.id })
+        } else if (old.status !== 'checked_in' && current.status === 'checked_in') {
+          void sendGuestTransactionalEmail('checkin_welcome', { bookingId: current.id })
+        } else if (old.status !== 'checked_out' && current.status === 'checked_out') {
+          void sendGuestTransactionalEmail('checkout_thank_you', { bookingId: current.id })
+        } else {
+          const changed =
+            old.check_in !== current.check_in ||
+            old.check_out !== current.check_out ||
+            old.room_type_id !== current.room_type_id ||
+            old.room_id !== current.room_id ||
+            old.adults !== current.adults ||
+            old.children !== current.children ||
+            old.amount !== current.amount ||
+            old.special_requests !== current.special_requests
+          if (changed) void sendGuestTransactionalEmail('booking_modified', { bookingId: current.id })
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_requests' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const request = payload.new as Record<string, any>
+          if (!request) return
+          const isSupport = String(request.type || '').toLowerCase().includes('complaint') || String(request.type || '').toLowerCase().includes('support')
+          void sendGuestTransactionalEmail(isSupport ? 'support_acknowledged' : 'service_request_received', { requestId: request.id })
+        } else if (payload.eventType === 'UPDATE') {
+          const old = payload.old as Record<string, any>
+          const current = payload.new as Record<string, any>
+          if (!old || !current) return
+          if (old.status && current.status && old.status !== current.status) {
+            const isSupport = String(current.type || '').toLowerCase().includes('complaint') || String(current.type || '').toLowerCase().includes('support')
+            void sendGuestTransactionalEmail(isSupport ? 'support_status' : 'service_request_status', { requestId: current.id })
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.info('[guest-email-watcher]', status)
+      })
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
   }, [])
 
   return null
