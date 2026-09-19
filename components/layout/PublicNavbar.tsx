@@ -15,9 +15,9 @@ const explore = [
 const portalByRole: Record<AppRole, { href: string; label: string }> = {
   super_admin: { href: '/admin/dashboard', label: 'Admin Portal' },
   manager: { href: '/admin/dashboard', label: 'Admin Portal' },
-  reception: { href: '/reception/dashboard', label: 'Reception Portal' },
-  housekeeping: { href: '/housekeeping/dashboard', label: 'Housekeeping Portal' },
-  maintenance: { href: '/maintenance/dashboard', label: 'Maintenance Portal' },
+  reception: { href: '/admin/reception/dashboard', label: 'Reception Portal' },
+  housekeeping: { href: '/admin/housekeeping/dashboard', label: 'Housekeeping Portal' },
+  maintenance: { href: '/admin/maintenance/dashboard', label: 'Maintenance Portal' },
   restaurant: { href: '/admin/dashboard', label: 'Management Portal' },
   bar: { href: '/admin/dashboard', label: 'Management Portal' },
   accountant: { href: '/admin/dashboard', label: 'Management Portal' },
