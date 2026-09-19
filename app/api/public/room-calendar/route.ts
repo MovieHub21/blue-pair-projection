@@ -26,8 +26,8 @@ export async function GET(request:Request){try{
   else if(room.status==='maintenance'){status='maintenance';reason='maintenance'}
   else if(room.status==='available_soon'){status='availableSoon';reason='admin_available_soon'}
   else if(adminMode&&daily&&daily.status!=='available'){status=daily.status==='available_soon'?'availableSoon':daily.status;reason='current_operational_status'}
-  console.info('[room-calendar][day]',{roomId,roomNumber:room.room_number,date:day,status,reason,booking:active?.reference??null,dailyStatus:daily?.status??null,roomStatus:room.status})
+  console.info('[BP-DIAG][room-calendar][day]',{roomId,roomNumber:room.room_number,date:day,status,reason,booking:active?.reference??null,dailyStatus:daily?.status??null,roomStatus:room.status})
   rows.push({date:day,status,reason,reference:active?.reference??null,source:active?.source??null,check_in:active?.check_in??null,check_out:active?effectiveCheckOut(active):null,notes:daily?.notes??null})
  }
  return NextResponse.json({room,from,to,checkInTime:'15:00',checkOutTime:'12:00',days:rows})
-}catch(e:any){console.error('[room-calendar][error]',{message:e?.message,code:e?.code,details:e?.details,stack:e?.stack});return NextResponse.json({error:'Unable to load room calendar.'},{status:500})}}
+}catch(e:any){console.error('[BP-DIAG][room-calendar][error]',{message:e?.message,code:e?.code,details:e?.details,stack:e?.stack});return NextResponse.json({error:'Unable to load room calendar.'},{status:500})}}
