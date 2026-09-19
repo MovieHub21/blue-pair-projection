@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { Shirt, UtensilsCrossed, Sparkles, Wrench, MessageCircle, Loader2, Minus, Plus, CreditCard, RefreshCw } from 'lucide-react'
-import { useStore } from '../../../../store/useStore'
+import { pushToast } from '../../../../components/ui/Toast'
 import type { GuestRequest } from '../../../../lib/mappers'
 
 const TYPES = [
@@ -17,7 +17,6 @@ const statusLabel: Record<string, string> = { pending: 'Paid · waiting for rest
 export default function RequestsClient({ initialRequests, customerId, guestName, activeRoom, bookingRef, orderItems }: {
   initialRequests: GuestRequest[]; customerId: string | null; guestName: string; activeRoom?: string; bookingRef?: string; orderItems: OrderItem[]
 }) {
-  const pushToast = useStore(s => s.pushToast)
   const [selected, setSelected] = useState('Extra towels')
   const [note, setNote] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
