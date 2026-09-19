@@ -3,23 +3,27 @@
 import { useCallback, useEffect, useState } from 'react'
 import StatCard from '../../../components/ui/StatCard'
 import AvailabilityGrid from '../../../components/admin/AvailabilityGrid'
+import type { Room } from '../../../data/mock'
 import { LogIn, LogOut, BedDouble, ClipboardList } from 'lucide-react'
 import { supabase } from '../../../lib/supabase/client'
+import { mapRoom } from '../../../lib/mappers'
 
 export default function ReceptionDashboard() {
   const [arrivalsCount, setArrivalsCount] = useState(0)
   const [departuresCount, setDeparturesCount] = useState(0)
   const [availableCount, setAvailableCount] = useState(0)
+  const [rooms, setRooms] = useState<Room[]>([])
 
   const loadCounts = useCallback(async () => {
     const [arrivalsRes, departuresRes, roomsRes] = await Promise.all([
       supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed').eq('payment_status', 'paid'),
       supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'checked_in'),
-      supabase.from('rooms').select('*', { count: 'exact', head: true }).eq('status', 'available'),
+      supabase.from('rooms').select('*', { count: 'exact' }).eq('status', 'available'),
     ])
     setArrivalsCount(arrivalsRes.count ?? 0)
     setDeparturesCount(departuresRes.count ?? 0)
     setAvailableCount(roomsRes.count ?? 0)
+    if (roomsRes.data) setRooms(roomsRes.data.map(mapRoom))
   }, [])
 
   useEffect(() => {
@@ -56,7 +60,7 @@ export default function ReceptionDashboard() {
       </div>
       <div className="card p-6">
         <h3 className="font-semibold mb-4">Occupancy overview</h3>
-        <AvailabilityGrid />
+        <AvailabilityGrid rooms={rooms} />
       </div>
     </div>
   )
