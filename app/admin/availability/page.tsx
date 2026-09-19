@@ -108,7 +108,7 @@ export default function RoomAvailability() {
     <div>
       <h1 className="text-2xl font-semibold mb-1">Room Availability</h1>
       <p className="text-navy-400 text-sm mb-6">
-        Each room card represents the selected day. Paid reservations block their reservation dates; maintenance can remain unavailable indefinitely.
+        Paid reservations follow their booking dates. Maintenance and Available Soon are indefinite; cleaning status follows the room until it is completed.
       </p>
 
       <div className="card p-6">
@@ -137,7 +137,7 @@ export default function RoomAvailability() {
                 {STATUS_OPTIONS.map((s) => (
                   <button
                     key={s.key}
-                    disabled={busy || !selectedDate}
+                    disabled={busy}
                     onClick={() => void updateStatus(s.key)}
                     className={
                       'px-3.5 py-3 rounded-lg border text-xs font-semibold text-left disabled:opacity-50 ' +
