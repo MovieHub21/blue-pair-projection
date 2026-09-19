@@ -56,7 +56,6 @@ export default function AvailabilityGrid({
     let cancelled = false
     let requestVersion = 0
     let refreshTimer: number | null = null
-    let activeController: AbortController | null = null
 
     setLoading(true)
     setLive({})
@@ -66,9 +65,6 @@ export default function AvailabilityGrid({
 
     const loadAvailability = async () => {
       const version = ++requestVersion
-      activeController?.abort()
-      const controller = new AbortController()
-      activeController = controller
       const startedAt = Date.now()
 
       console.info('[BP-DIAG][admin-grid][fetch-start]', {
@@ -81,11 +77,10 @@ export default function AvailabilityGrid({
       try {
         const response = await fetch(url, {
           cache: 'no-store',
-          signal: controller.signal,
         })
         const data = await response.json().catch(() => null)
 
-        if (cancelled || version !== requestVersion || controller.signal.aborted) return
+        if (cancelled || version !== requestVersion) return
 
         console.info('[BP-DIAG][admin-grid][response]', {
           ok: response.ok,
@@ -118,7 +113,7 @@ export default function AvailabilityGrid({
 
         setLive(next)
       } catch (error: any) {
-        if (controller.signal.aborted || cancelled || version !== requestVersion) return
+        if (cancelled || version !== requestVersion) return
         console.error('[BP-DIAG][admin-grid][error]', { date, version, error })
       } finally {
         if (!cancelled && version === requestVersion) setLoading(false)
@@ -168,7 +163,6 @@ export default function AvailabilityGrid({
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
       if (refreshTimer !== null) window.clearTimeout(refreshTimer)
-      activeController?.abort()
       console.info('[BP-DIAG][admin-grid][effect-cleanup]', { date })
     }
   }, [date, rooms.length])
