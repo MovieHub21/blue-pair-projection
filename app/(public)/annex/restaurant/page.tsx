@@ -1,7 +1,8 @@
+import { notFound } from 'next/navigation'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getMenuItems } from '../../../../lib/data'
+import { getMenuItems, getAmenity } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
 import PageHero from '../../../../components/layout/PageHero'
 import SectionHeading from '../../../../components/ui/SectionHeading'
@@ -16,16 +17,16 @@ export const metadata = buildMetadata({
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Restaurant',path:'/annex/restaurant'}]
 
 export default async function AnnexRestaurantPage() {
-  const menuItems = await getMenuItems()
+  const [menuItems, amenity] = await Promise.all([getMenuItems(), getAmenity('annex-restaurant')])
+  if (!amenity || !amenity.published) notFound()
   const items = menuItems.filter(m => m.outlet === 'Annex Restaurant')
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image="https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1600&q=80"
-        eyebrow="Full service" title="Annex Restaurant" crumbs="Home / Annex / Restaurant" height="h-72" />
+      <PageHero image={amenity.heroImage} eyebrow={amenity.eyebrow} title={amenity.name} crumbs={`Home / Annex / restaurant`} height="h-72" />
       <section className="section">
         <div className="container-w">
-          <SectionHeading eyebrow="Menu" title="Annex kitchen" subtitle="A shorter, homestyle menu served to the Annex courtyard and short-let guests." />
+          <SectionHeading eyebrow="Menu" title={amenity.name} subtitle={amenity.description} />
           <div className="grid sm:grid-cols-2 gap-4">
             {items.map(item => (
               <div key={item.id} className="card p-4 flex gap-4 items-center">
