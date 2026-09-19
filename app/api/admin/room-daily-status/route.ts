@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       const { error: upsertError } = await db.from('room_daily_statuses').upsert({
         room_id: roomId,
         status,
-        status_date: new Date().toISOString().slice(0, 10),
+        status_date: null,
         updated_at: new Date().toISOString(),
         notes: `Current room operational status: ${status}`,
       }, { onConflict: 'room_id' })
