@@ -1,5 +1,7 @@
+import { notFound } from 'next/navigation'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import AmenityPage from '../../../../components/ui/AmenityPage'
+import { getAmenity } from '../../../../lib/data'
 
 export const metadata = buildMetadata({
   title: 'Annex VIP Lounge in Uromi, Edo State | Blue Pair Hotel',
@@ -8,19 +10,9 @@ export const metadata = buildMetadata({
   path: '/annex/vip-lounge',
 })
 
-export default function AnnexVipLoungePage() {
-  return <AmenityPage config={{
-    name: 'Annex VIP Lounge', eyebrow: 'Annex exclusive',
-    heroImage: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80',
-    description: 'A quieter, more intimate VIP space within the Annex — ideal for private gatherings and small celebrations.',
-    gallery: [
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80',
-    ],
-    hours: 'Daily, 5:00 PM – 2:00 AM',
-    facilities: ['Private lounge seating', 'Dedicated server', 'Bottle service', 'Outdoor courtyard access', 'Sound system for private events'],
-    pricingNote: 'Reservations from ₦100,000 minimum spend, redeemable at the bar.',
-    ctaLabel: 'Reserve the lounge',
-    breadcrumbs: [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'VIP Lounge',path:'/annex/vip-lounge'}],
-  }} />
+export default async function AnnexVipLoungePage() {
+  const amenity = await getAmenity('annex-vip-lounge')
+  if (!amenity || !amenity.published) notFound()
+
+  return <AmenityPage config={amenity} />
 }
