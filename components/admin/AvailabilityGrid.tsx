@@ -29,6 +29,8 @@ const LABELS: Record<string, string> = {
   available_soon: 'Available Soon',
 }
 
+const REFRESH_TABLES = new Set(['rooms', 'room_daily_statuses', 'bookings', 'payment_holds'])
+
 export default function AvailabilityGrid({
   onSelect,
   onDateChange,
@@ -53,62 +55,74 @@ export default function AvailabilityGrid({
 
     let cancelled = false
     let requestVersion = 0
+    let refreshTimer: number | null = null
+    let activeController: AbortController | null = null
+
     setLoading(true)
     setLive({})
 
     const checkOut = addDaysISO(1, date)
     const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
 
-    const loadAvailability = () => {
+    const loadAvailability = async () => {
       const version = ++requestVersion
+      activeController?.abort()
+      const controller = new AbortController()
+      activeController = controller
       const startedAt = Date.now()
+
       console.info('[BP-DIAG][admin-grid][fetch-start]', {
         date,
         url,
+        version,
         startedAt: new Date(startedAt).toISOString(),
       })
 
-      return fetch(url, { cache: 'no-store' })
-        .then(async (response) => {
-          const data = await response.json().catch(() => null)
-          console.info('[BP-DIAG][admin-grid][response]', {
-            ok: response.ok,
-            status: response.status,
-            date,
-            roomCount: data?.rooms?.length ?? 0,
-            error: data?.error ?? null,
-            elapsedMs: Date.now() - startedAt,
-          })
-          return response.ok ? data : null
+      try {
+        const response = await fetch(url, {
+          cache: 'no-store',
+          signal: controller.signal,
         })
-        .then((data) => {
-          if (cancelled || version !== requestVersion) return
+        const data = await response.json().catch(() => null)
 
-          const next: Record<string, string> = {}
-          for (const room of data?.rooms || []) {
-            next[room.id] = room.admin_status || room.guest_status
-          }
+        if (cancelled || version !== requestVersion || controller.signal.aborted) return
 
-          console.info('[BP-DIAG][admin-grid][mapped]', {
-            date,
-            states: Object.values(next).reduce(
-              (acc: Record<string, number>, state: string) => ({
-                ...acc,
-                [state]: (acc[state] || 0) + 1,
-              }),
-              {},
-            ),
-          })
+        console.info('[BP-DIAG][admin-grid][response]', {
+          ok: response.ok,
+          status: response.status,
+          date,
+          version,
+          roomCount: data?.rooms?.length ?? 0,
+          error: data?.error ?? null,
+          elapsedMs: Date.now() - startedAt,
+        })
 
-          setLive(next)
+        if (!response.ok) return
+
+        const next: Record<string, string> = {}
+        for (const room of data?.rooms || []) {
+          next[room.id] = room.admin_status || room.guest_status
+        }
+
+        console.info('[BP-DIAG][admin-grid][mapped]', {
+          date,
+          version,
+          states: Object.values(next).reduce(
+            (acc: Record<string, number>, state: string) => ({
+              ...acc,
+              [state]: (acc[state] || 0) + 1,
+            }),
+            {},
+          ),
         })
-        .catch((error) => {
-          console.error('[BP-DIAG][admin-grid][error]', { date, error })
-          if (!cancelled) setLive({})
-        })
-        .finally(() => {
-          if (!cancelled && version === requestVersion) setLoading(false)
-        })
+
+        setLive(next)
+      } catch (error: any) {
+        if (controller.signal.aborted || cancelled || version !== requestVersion) return
+        console.error('[BP-DIAG][admin-grid][error]', { date, version, error })
+      } finally {
+        if (!cancelled && version === requestVersion) setLoading(false)
+      }
     }
 
     console.info('[BP-DIAG][admin-grid][request]', {
@@ -123,19 +137,29 @@ export default function AvailabilityGrid({
     const refresh = (event: Event) => {
       if (cancelled) return
       const detail = (event as CustomEvent).detail || {}
+      const table = typeof detail.table === 'string' ? detail.table : null
+      if (!table || !REFRESH_TABLES.has(table)) return
+
       console.info('[BP-DIAG][admin-grid][realtime-refresh]', {
         date,
-        table: detail.table ?? null,
+        table,
         operation: detail.operation ?? null,
         roomId: detail.roomId ?? null,
         status: detail.status ?? null,
         receivedAt: new Date().toISOString(),
       })
+
+      // Preserve the immediate local state while the authoritative request catches up.
       if (typeof detail.roomId === 'string' && typeof detail.status === 'string') {
         setLive((current) => ({ ...current, [detail.roomId]: detail.status }))
       }
-      setLoading(true)
-      void loadAvailability()
+
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null
+        setLoading(true)
+        void loadAvailability()
+      }, 180)
     }
 
     window.addEventListener('bluepair:database-change', refresh)
@@ -143,6 +167,8 @@ export default function AvailabilityGrid({
     return () => {
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      activeController?.abort()
       console.info('[BP-DIAG][admin-grid][effect-cleanup]', { date })
     }
   }, [date, rooms.length])
@@ -179,11 +205,7 @@ export default function AvailabilityGrid({
         {['available', 'taken', 'cleaning_required', 'cleaning', 'maintenance', 'available_soon'].map(
           (key) => (
             <span key={key} className="flex items-center gap-1.5">
-              <i
-                className={
-                  'w-2.5 h-2.5 rounded-sm inline-block ' + COLORS[key]
-                }
-              />
+              <i className={'w-2.5 h-2.5 rounded-sm inline-block ' + COLORS[key]} />
               {LABELS[key]}
             </span>
           ),
