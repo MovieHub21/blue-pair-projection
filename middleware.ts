@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
   const isAdminSubdomain = hostname === ADMIN_HOST
   const isMainProductionHost = MAIN_HOSTS.has(hostname)
 
-  // API routes are shared by the public site and admin subdomain.
+  
   if (originalPathname.startsWith('/api/')) {
     const limited = rateLimit(request)
     if (limited) return limited
@@ -74,8 +74,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
-  // Keep local development unchanged: localhost:3000/admin still works.
-  // In production, /admin on the main domain is redirected to the admin subdomain.
+  
   if (isMainProductionHost && originalPathname.startsWith('/admin')) {
     const url = request.nextUrl.clone()
     const adminPath = originalPathname === '/admin' ? '/' : originalPathname.slice('/admin'.length)
@@ -84,12 +83,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // The admin subdomain is a clean front door to the existing /admin route tree.
-  // Examples:
-  //   admin.bluepairsignature.com/            -> /admin/dashboard
-  //   admin.bluepairsignature.com/bookings    -> /admin/bookings
-  //   admin.bluepairsignature.com/rooms       -> /admin/rooms
-  // The real pathname is rewritten internally, so no second Vercel project is needed.
+  
   let pathname = originalPathname
   let shouldRewriteToAdmin = false
 
