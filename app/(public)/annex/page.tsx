@@ -18,10 +18,11 @@ const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'}]
 
 export default async function AnnexPage() {
   const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getShortLets()])
+  const heroImage = amenities[0]?.heroImage || shortLets[0]?.image || ''
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1600&q=80"
+      <PageHero image={heroImage}
         eyebrow="A world of its own" title="The Annex" crumbs="Home / The Annex" height="h-80" />
       <section className="section">
         <div className="container-w">
