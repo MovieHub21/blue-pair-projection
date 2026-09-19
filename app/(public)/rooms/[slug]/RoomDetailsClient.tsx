@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Users, BedDouble, Ruler, CheckCircle2, ArrowRight } from 'lucide-react'
 import { naira, todayISO, addDaysISO } from '../../../../lib/format'
@@ -18,16 +18,41 @@ function initialGuestStatus(unit: Unit): AvailabilityUnit['guest_status'] {
 export default function RoomDetailsClient({room,units,others,availability}:{room:RoomType;units:Unit[];others:RoomType[];availability:Record<string,number>}){
  const params=useSearchParams()
  const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [liveUnits,setLiveUnits]=useState<AvailabilityUnit[]>(() => units.map(u => ({...u,guest_status:initialGuestStatus(u)}))); const [checking,setChecking]=useState(false)
+ const requestVersionRef=useRef(0)
  const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
 
  useEffect(()=>{
-  if(!checkIn||!checkOut||checkIn>=checkOut)return
-  setChecking(true)
-  fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'})
-   .then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms);}).catch(()=>{}).finally(()=>setChecking(false))
-  const refresh=()=>{setChecking(true);fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms)}).catch(()=>{}).finally(()=>setChecking(false))}
+  let cancelled=false
+  const controller=new AbortController()
+
+  const load=async()=>{
+   if(!checkIn||!checkOut||checkIn>=checkOut)return
+   const version=++requestVersionRef.current
+   setChecking(true)
+   try{
+    const response=await fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store',signal:controller.signal})
+    const data=await response.json().catch(()=>null)
+    if(cancelled||controller.signal.aborted||version!==requestVersionRef.current)return
+    if(response.ok&&Array.isArray(data?.rooms))setLiveUnits(data.rooms)
+   }catch(error:any){
+    if(error?.name!=='AbortError'&&!cancelled)console.error('[room-details][availability-error]',{roomTypeId:room.id,checkIn,checkOut,message:error?.message})
+   }finally{
+    if(!cancelled&&version===requestVersionRef.current)setChecking(false)
+   }
+  }
+
+  void load()
+
+  const refresh=()=>{
+   if(!cancelled)void load()
+  }
   window.addEventListener('bluepair:database-change',refresh)
-  return()=>window.removeEventListener('bluepair:database-change',refresh)
+  return()=>{
+   cancelled=true
+   controller.abort()
+   requestVersionRef.current+=1
+   window.removeEventListener('bluepair:database-change',refresh)
+  }
  },[checkIn,checkOut,room.id])
 
  const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
