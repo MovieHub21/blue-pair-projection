@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
-import { useStore } from '../../store/useStore'
+import { pushToast } from '../ui/Toast'
 import { Wrench, ShieldCheck } from 'lucide-react'
 
 function getEnvironment() {
@@ -15,7 +15,6 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
   const [enabled, setEnabled] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
-  const pushToast = useStore(s => s.pushToast)
   const environment = getEnvironment()
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
         setLoaded(true)
       })
     return () => { active = false }
-  }, [environment, pushToast])
+  }, [environment])
 
   async function toggle() {
     if (!canEdit || saving) return
