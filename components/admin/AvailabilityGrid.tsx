@@ -134,7 +134,7 @@ export default function AvailabilityGrid({
       }
     }
 
-<<<<<<< HEAD
+
     void loadAvailability()
 
     const RELEVANT_TABLES = new Set(['rooms', 'bookings', 'room_daily_statuses', 'payment_holds', 'housekeeping_tasks'])
