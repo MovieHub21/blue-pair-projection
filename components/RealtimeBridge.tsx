@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { supabase } from '../lib/supabase/client'
 
-const WATCHED_TABLES = new Set(['rooms', 'room_daily_statuses', 'bookings'])
+const WATCHED_TABLES = new Set(['rooms', 'room_daily_statuses', 'bookings', 'payment_holds'])
 
 export default function RealtimeBridge() {
   useEffect(() => {
@@ -24,6 +24,7 @@ export default function RealtimeBridge() {
         const operation = typeof payload.operation === 'string' ? payload.operation : null
         const roomId = typeof payload.roomId === 'string' ? payload.roomId : null
         const status = typeof payload.status === 'string' ? payload.status : null
+        const relevant = !!table && WATCHED_TABLES.has(table)
 
         console.info('[BP-DIAG][realtime][event]', {
           table,
@@ -32,17 +33,16 @@ export default function RealtimeBridge() {
           status,
           rawPayload: payload,
           receivedAt: new Date().toISOString(),
-          relevant: table ? WATCHED_TABLES.has(table) : false,
+          relevant,
           source: 'broadcast',
         })
 
+        // Do not wake room availability consumers for unrelated database activity
+        // such as activity_logs, notifications, payments ledger writes, etc.
+        if (!relevant) return
+
         window.dispatchEvent(new CustomEvent('bluepair:database-change', {
-          detail: {
-            table,
-            operation,
-            roomId,
-            status,
-          },
+          detail: { table, operation, roomId, status },
         }))
       })
       .subscribe((status, err) => {
