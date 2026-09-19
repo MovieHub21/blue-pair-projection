@@ -7,8 +7,9 @@ import AvailabilityCalendar from '../../../components/booking/AvailabilityCalend
 import Modal from '../../../components/ui/Modal'
 import type { RoomStatus } from '../../../data/mock'
 
-const STATUS_OPTIONS: { key: RoomStatus; label: string }[] = [
+const STATUS_OPTIONS: { key: RoomStatus | 'cleaning_required'; label: string }[] = [
   { key: 'available', label: 'Available' },
+  { key: 'cleaning_required', label: 'Cleaning Required' },
   { key: 'cleaning', label: 'Cleaning' },
   { key: 'maintenance', label: 'Maintenance' },
   { key: 'available_soon', label: 'Available Soon' },
@@ -28,7 +29,7 @@ export default function RoomAvailability() {
     setSelectedDate(date)
   }, [])
 
-  async function updateStatus(status: RoomStatus) {
+  async function updateStatus(status: RoomStatus | 'cleaning_required') {
     console.info('[admin-status][click]', {
       roomId: room?.id ?? null,
       roomNumber: room?.roomNumber ?? null,
@@ -60,7 +61,6 @@ export default function RoomAvailability() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomId: room.id,
-          statusDate: selectedDate,
           status,
         }),
       })
@@ -78,12 +78,14 @@ export default function RoomAvailability() {
         throw new Error(data.error || 'Could not update room status.')
       }
 
-      // The database is authoritative. The realtime bridge will also cause
-      // the availability grid/calendar to refetch without a page refresh.
-      await loadAll()
+      // The database is authoritative. Trigger the same realtime refresh locally
+      // as soon as the server confirms the write, without waiting for the full store.
+      window.dispatchEvent(new CustomEvent('bluepair:database-change', {
+        detail: { table: 'rooms', operation: 'UPDATE', roomId: room.id, status },
+      }))
 
       pushToast(
-        `Room ${room.roomNumber} set to ${STATUS_OPTIONS.find((s) => s.key === status)?.label} for ${selectedDate}.`,
+        `Room ${room.roomNumber} set to ${STATUS_OPTIONS.find((s) => s.key === status)?.label}.`,
         'success',
       )
 
