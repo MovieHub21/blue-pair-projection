@@ -6,7 +6,10 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGri
 import StatCard from '../../../../components/ui/StatCard'
 import { naira, todayISO } from '../../../../lib/format'
 import { Wallet, TrendingUp, CalendarCheck, Sparkles, Wrench, Download, Users, BedDouble, Activity, ReceiptText, CircleDollarSign } from 'lucide-react'
-import { useStore } from '../../../../store/useStore'
+import { supabase } from '../../../../lib/supabase/client'
+import { mapBooking, mapCustomer, mapHousekeepingTask, mapMaintenanceTicket, mapPayment, mapRoom, mapGuestRequest } from '../../../../lib/mappers'
+import type { Booking, Customer, HousekeepingTask, MaintenanceTicket, Payment, Room } from '../../../../data/mock'
+import type { GuestRequest } from '../../../../lib/mappers'
 
 const REPORTS = [
   { key: 'revenue', label: 'Revenue' }, { key: 'occupancy', label: 'Occupancy' }, { key: 'bookings', label: 'Bookings' },
@@ -28,7 +31,15 @@ function downloadCsv(filename: string, headers: string[], rows: unknown[][]) { c
 export default function ReportsPage({ params }: { params: { type: string } }) {
   const router = useRouter()
   const active = params.type ?? 'revenue'
-  const { bookings, payments, rooms, customers, housekeepingTasks, maintenanceTickets, guestRequests, loaded } = useStore()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [housekeepingTasks, setHousekeepingTasks] = useState<HousekeepingTask[]>([])
+  const [maintenanceTickets, setMaintenanceTickets] = useState<MaintenanceTicket[]>([])
+  const [guestRequests, setGuestRequests] = useState<GuestRequest[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [dataError, setDataError] = useState('')
   const today = todayISO()
   const [range, setRange] = useState<Range>('week')
   const [customStart, setCustomStart] = useState(startOfWeek())
@@ -36,6 +47,54 @@ export default function ReportsPage({ params }: { params: { type: string } }) {
   const [finance, setFinance] = useState<FinanceSnapshot | null>(null)
   const [financeLoading, setFinanceLoading] = useState(false)
   const [financeError, setFinanceError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    let requestVersion = 0
+
+    const loadReportData = async () => {
+      const version = ++requestVersion
+      setLoaded(false)
+      setDataError('')
+
+      const [bookingsResult, paymentsResult, roomsResult, customersResult, housekeepingResult, maintenanceResult, requestsResult] = await Promise.all([
+        supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+        supabase.from('payments').select('*').gte('date', start).lte('date', end).order('date', { ascending: false }),
+        supabase.from('rooms').select('*').order('room_number'),
+        supabase.from('customers').select('*').order('name'),
+        supabase.from('housekeeping_tasks').select('*').order('room'),
+        supabase.from('maintenance_tickets').select('*').order('date_reported', { ascending: false }),
+        supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
+      ])
+
+      if (cancelled || version !== requestVersion) return
+
+      const firstError = [bookingsResult, paymentsResult, roomsResult, customersResult, housekeepingResult, maintenanceResult, requestsResult].find(result => result.error)?.error
+      if (firstError) {
+        setDataError(firstError.message || 'Unable to load report data.')
+        setLoaded(true)
+        return
+      }
+
+      setBookings((bookingsResult.data ?? []).map(mapBooking))
+      setPayments((paymentsResult.data ?? []).map(mapPayment))
+      setRooms((roomsResult.data ?? []).map(mapRoom))
+      setCustomers((customersResult.data ?? []).map(mapCustomer))
+      setHousekeepingTasks((housekeepingResult.data ?? []).map(mapHousekeepingTask))
+      setMaintenanceTickets((maintenanceResult.data ?? []).map(mapMaintenanceTicket))
+      setGuestRequests((requestsResult.data ?? []).map(mapGuestRequest))
+      setLoaded(true)
+    }
+
+    void loadReportData()
+
+    const refresh = () => void loadReportData()
+    window.addEventListener('bluepair:database-change', refresh)
+    return () => {
+      cancelled = true
+      window.removeEventListener('bluepair:database-change', refresh)
+    }
+  }, [start, end])
 
   const { start, end } = useMemo(() => {
     if (range === 'custom') return { start: customStart, end: customEnd }
