@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
-import { useStore } from '../../../store/useStore'
+import { pushToast } from '../../../components/ui/Toast'
 
 interface Section { id: string; section: string; label: string; allowed: boolean }
 interface RoleGroup { role: string; label: string; sections: Section[] }
@@ -10,7 +10,6 @@ export default function PermissionsClient({ roles, canEdit }: { roles: RoleGroup
   const [active, setActive] = useState(roles[2]?.role || roles[0]?.role)
   const [data, setData] = useState(roles)
   const [savingId, setSavingId] = useState<string | null>(null)
-  const pushToast = useStore(s => s.pushToast)
 
   const group = data.find(r => r.role === active)!
 
