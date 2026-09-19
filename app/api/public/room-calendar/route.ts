@@ -8,7 +8,7 @@ function addDays(date:string,n:number){const d=new Date(`${date}T00:00:00Z`);d.s
 function paidReservation(b:any){return b.payment_status==='paid'&&!['cancelled','refunded'].includes(String(b.status))}
 function bookingOverlaps(b:any,from:string,to:string){return overlaps(from,to,b.check_in,effectiveCheckOut(b))}
 export async function GET(request:Request){try{
- const p=new URL(request.url).searchParams;const roomId=p.get('roomId');const from=p.get('from');const to=p.get('to')
+ const p=new URL(request.url).searchParams;const roomId=p.get('roomId');const from=p.get('from');const to=p.get('to');const adminMode=p.get('admin')==='1'
  if(!roomId||!validDate(from)||!validDate(to)||!from||!to||from>=to)return NextResponse.json({error:'Valid room and calendar range are required.'},{status:400})
  const db=createSupabaseAdminClient()
  const [{data:room,error:roomError},{data:bookings,error:bookingError},{data:daily,error:dailyError}]=await Promise.all([
@@ -25,7 +25,7 @@ export async function GET(request:Request){try{
   if(active){status=paidReservation(active)?'booked':'held';reason=status}
   else if(room.status==='maintenance'){status='maintenance';reason='maintenance'}
   else if(room.status==='available_soon'){status='availableSoon';reason='admin_available_soon'}
-  else if(daily&&daily.status!=='available'){status=daily.status==='available_soon'?'availableSoon':daily.status;reason='current_operational_status'}
+  else if(adminMode&&daily&&daily.status!=='available'){status=daily.status==='available_soon'?'availableSoon':daily.status;reason='current_operational_status'}
   console.info('[room-calendar][day]',{roomId,roomNumber:room.room_number,date:day,status,reason,booking:active?.reference??null,dailyStatus:daily?.status??null,roomStatus:room.status})
   rows.push({date:day,status,reason,reference:active?.reference??null,source:active?.source??null,check_in:active?.check_in??null,check_out:active?effectiveCheckOut(active):null,notes:daily?.notes??null})
  }
