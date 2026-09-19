@@ -3,7 +3,15 @@
 import { useEffect } from 'react'
 import { supabase } from '../lib/supabase/client'
 
-const WATCHED_TABLES = new Set(['rooms', 'room_daily_statuses', 'bookings', 'payment_holds'])
+const WATCHED_TABLES = new Set([
+  'user_roles','profiles','room_types','rooms','customers','bookings','staff',
+  'menu_items','drinks','short_lets','events','maintenance_tickets','housekeeping_tasks',
+  'billboards','parking_zones','payments','offers','guest_requests','gallery_images',
+  'amenities','role_permissions','site_content','email_logs','activity_logs','blog_posts',
+  'event_reservations','contact_conversations','contact_messages','guest_reviews',
+  'guest_notifications','financial_transactions','financial_expenses','site_settings',
+  'room_service_orders','payment_holds','room_daily_statuses',
+])
 
 export default function RealtimeBridge() {
   useEffect(() => {
@@ -37,8 +45,8 @@ export default function RealtimeBridge() {
           source: 'broadcast',
         })
 
-        // Do not wake room availability consumers for unrelated database activity
-        // such as activity_logs, notifications, payments ledger writes, etc.
+        // The database broadcast is the shared source-of-truth invalidation signal. Each
+        // consumer decides whether the changed table affects its own data.
         if (!relevant) return
 
         window.dispatchEvent(new CustomEvent('bluepair:database-change', {
