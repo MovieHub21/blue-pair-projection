@@ -25,21 +25,17 @@ export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheck
   let cancelled=false
   let requestVersion=0
   let refreshTimer:number|null=null
-  let activeController:AbortController|null=null
 
   const load=async()=>{
    const version=++requestVersion
-   activeController?.abort()
-   const controller=new AbortController()
-   activeController=controller
    const startedAt=Date.now()
    const from=month
    const to=addDaysISO(1,`${month.slice(0,7)}-${pad(daysInMonth(month))}`)
    setLoading(true)
    try{
-    const response=await fetch(`/api/public/room-calendar?roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}${adminMode?'&admin=1':''}&_=${Date.now()}`,{cache:'no-store',signal:controller.signal})
+    const response=await fetch(`/api/public/room-calendar?roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}${adminMode?'&admin=1':''}&_=${Date.now()}`,{cache:'no-store'})
     const data=await response.json().catch(()=>null)
-    if(cancelled||version!==requestVersion||controller.signal.aborted)return
+    if(cancelled||version!==requestVersion)return
     console.info('[BP-DIAG][room-calendar][client-response]',{roomId,from,to,adminMode,version,ok:response.ok,status:response.status,dayCount:data?.days?.length??0,error:data?.error??null,elapsedMs:Date.now()-startedAt})
     if(response.ok&&data?.days){
       setDays(data.days)
@@ -50,7 +46,7 @@ export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheck
       }
     }else setError(data?.error||'Unable to load calendar.')
    }catch(error:any){
-    if(!controller.signal.aborted&&!cancelled&&version===requestVersion)console.error('[BP-DIAG][room-calendar][error]',{roomId,version,error})
+    if(!cancelled&&version===requestVersion)console.error('[BP-DIAG][room-calendar][error]',{roomId,version,error})
    }finally{
     if(!cancelled&&version===requestVersion)setLoading(false)
    }
@@ -75,7 +71,6 @@ export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheck
    cancelled=true
    window.removeEventListener('bluepair:database-change',refresh)
    if(refreshTimer!==null)window.clearTimeout(refreshTimer)
-   activeController?.abort()
    console.info('[BP-DIAG][room-calendar][effect-cleanup]',{roomId,month,adminMode})
   }
  },[roomId,month,adminMode])
