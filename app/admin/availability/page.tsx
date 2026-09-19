@@ -62,7 +62,7 @@ export default function RoomAvailability() {
     if (!room || busy) return
 
     setBusy(true)
-    setNotice(null)
+    setNotice(null) 
 
     try {
       const response = await fetch('/api/admin/room-daily-status', {
