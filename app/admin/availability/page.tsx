@@ -112,7 +112,7 @@ export default function RoomAvailability() {
       )}
 
       <div className="card p-6">
-        <AvailabilityGrid onSelect={setActiveId} onDateChange={handleDateChange} />
+        <AvailabilityGrid rooms={rooms} onSelect={setActiveId} onDateChange={handleDateChange} />
       </div>
 
       <Modal
