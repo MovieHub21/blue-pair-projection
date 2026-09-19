@@ -126,7 +126,7 @@ export default function RoomAvailability() {
       >
         {room && (
           <div>
-            <AvailabilityCalendar roomId={room.id} />
+            <AvailabilityCalendar roomId={room.id} adminMode />
 
             <div className="mt-5">
               <label className="field-label mb-2 block">
