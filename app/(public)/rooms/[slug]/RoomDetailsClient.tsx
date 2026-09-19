@@ -60,7 +60,7 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
    requestVersionRef.current+=1
    window.removeEventListener('bluepair:database-change',refresh)
   }
- },[checkIn,checkOut,room.id,units])
+ },[checkIn,checkOut,room.id])
 
  const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
 
