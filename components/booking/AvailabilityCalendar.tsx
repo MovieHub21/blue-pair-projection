@@ -11,7 +11,7 @@ function pad(n:number){return String(n).padStart(2,'0')}
 function daysInMonth(v:string){const d=new Date(`${v}T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);d.setUTCDate(0);return d.getUTCDate()}
 function dayOfWeek(v:string){return new Date(`${v}T00:00:00Z`).getUTCDay()}
 
-export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheckOut,onSelect}:{roomId:string;initialCheckIn?:string;initialCheckOut?:string;onSelect?:(checkIn:string,checkOut:string)=>void}){
+export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheckOut,onSelect,adminMode=false}:{roomId:string;initialCheckIn?:string;initialCheckOut?:string;onSelect?:(checkIn:string,checkOut:string)=>void;adminMode?:boolean}){
  const today=todayISO()
  const defaultStart=addDaysISO(1,today)
  const initialStart=initialCheckIn&&initialCheckIn>today?initialCheckIn:defaultStart
