@@ -16,7 +16,7 @@ const STATUS_OPTIONS: { key: RoomStatus | 'cleaning_required'; label: string }[]
 ]
 
 export default function RoomAvailability() {
-  const { rooms, roomTypes, loadAll, pushToast } = useStore()
+  const { rooms, roomTypes, pushToast } = useStore()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
@@ -38,9 +38,9 @@ export default function RoomAvailability() {
       busy,
     })
 
-    if (!room || busy || !selectedDate) {
+    if (!room || busy) {
       console.warn('[admin-status][click-ignored]', {
-        reason: !room ? 'no-active-room' : busy ? 'already-busy' : 'no-selected-date',
+        reason: !room ? 'no-active-room' : 'already-busy',
       })
       return
     }
