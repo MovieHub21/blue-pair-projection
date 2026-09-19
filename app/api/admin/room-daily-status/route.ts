@@ -14,7 +14,7 @@ async function staff() {
   const { data, error } = await db.from('user_roles').select('role').eq('user_id', user.id)
   const roles = (data ?? []).map((r: any) => String(r.role))
   const allowed = roles.some((role) => ['super_admin', 'manager', 'reception', 'housekeeping'].includes(role))
-  console.info('[room-status][auth]', { authenticated: true, userId: user.id, roles, allowed, authError: authError?.message ?? null, queryError: error?.message ?? null })
+  console.info('[BP-DIAG][room-status][auth]', { authenticated: true, userId: user.id, roles, allowed, authError: authError?.message ?? null, queryError: error?.message ?? null })
   return { allowed, reason: allowed ? 'role-allowed' : 'role-not-allowed' }
 }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (roomError) throw roomError
     if (!room) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
 
-    console.info('[room-status][update]', { requestId, roomId, roomNumber: room.room_number, from: room.status, to: status })
+    console.info('[BP-DIAG][room-status][update]', { requestId, roomId, roomNumber: room.room_number, from: room.status, to: status })
 
     if (status === 'maintenance' || status === 'available_soon') {
       const { error } = await db.from('rooms').update({ status }).eq('id', roomId)
@@ -61,10 +61,11 @@ export async function POST(request: Request) {
       if (upsertError) throw upsertError
     }
 
-    console.info('[room-status][saved]', { requestId, roomId, roomNumber: room.room_number, status, elapsedMs: Date.now() - startedAt })
+    const { data: verifiedRoom, error: verifyError } = await db.from('rooms').select('id,room_number,status').eq('id',roomId).maybeSingle()
+    console.info('[BP-DIAG][room-status][saved]', { requestId, roomId, roomNumber: room.room_number, requestedStatus: status, verifiedDbStatus: verifiedRoom?.status ?? null, verifyError: verifyError?.message ?? null, elapsedMs: Date.now() - startedAt })
     return NextResponse.json({ ok: true, roomId, status, requestId })
   } catch (error: any) {
-    console.error('[room-status][error]', { requestId, message: error?.message, code: error?.code, details: error?.details, stack: error?.stack })
+    console.error('[BP-DIAG][room-status][error]', { requestId, message: error?.message, code: error?.code, details: error?.details, stack: error?.stack })
     return NextResponse.json({ error: error?.message || 'Unable to update room status.' }, { status: 500 })
   }
 }
