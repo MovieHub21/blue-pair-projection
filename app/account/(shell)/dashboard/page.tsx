@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3 } from 'lucide-react'
+import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3 } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
+import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
 import StatusBadge from '../../../../components/ui/StatusBadge'
 import CancelBookingButton from '../CancelBookingButton'
@@ -9,7 +10,10 @@ import ReviewForm from '../ReviewForm'
 import ImageCarousel from '../../../../components/ui/ImageCarousel'
 
 export default async function DashboardPage() {
-  const { profile } = await getCurrentUser()
+  const { user, profile } = await getCurrentUser()
+  const supabase = createSupabaseServerClient()
+  const { data: roleRows } = user ? await supabase.from('user_roles').select('role').eq('user_id', user.id) : { data: [] as { role: string }[] }
+  const isAdmin = (roleRows ?? []).some((row: any) => ['super_admin', 'manager'].includes(row.role))
   const [bookings, payments] = await Promise.all([getMyBookings(), getMyPayments()])
   const upcoming = bookings.find(b => ['confirmed', 'checked_in'].includes(b.status))
   const firstName = (profile?.name || 'there').split(' ')[0]
@@ -39,6 +43,7 @@ export default async function DashboardPage() {
       <GuestDateWeather />
 
       <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
+        {isAdmin && <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-900 hover:bg-gold-500/20"><ShieldCheck size={14} /> Admin Portal</Link>}
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
         <span className="rounded-full border border-navy-900/10 bg-white/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-navy-800 backdrop-blur-md shadow-sm">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
       </div>
