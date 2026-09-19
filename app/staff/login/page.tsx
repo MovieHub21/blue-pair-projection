@@ -18,10 +18,16 @@ function StaffLoginForm() {
     setError(null)
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) { setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message); return }
-    router.push(params.get('redirect') || '/admin/dashboard')
-    router.refresh()
+    if (error) {
+      setLoading(false)
+      setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message)
+      return
+    }
+
+    // Let the App Router perform one authenticated navigation. The old
+    // push()+refresh() sequence caused a second render/request and left the
+    // login screen looking frozen while the admin layout was resolving.
+    router.replace(params.get('redirect') || '/admin/dashboard')
   }
 
   return (
