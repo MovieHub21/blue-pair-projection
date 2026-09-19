@@ -19,6 +19,7 @@ export async function GET(request:Request){try{
   db.from('room_daily_statuses').select('room_id,status,status_date,notes')
  ])
  if(re)throw re;if(be)throw be;if(de)throw de
+ console.info('[BP-DIAG][public-availability][db-snapshot]',{roomTypeId,checkIn,checkOut,rooms:(rooms??[]).map((r:any)=>({id:r.id,roomNumber:r.room_number,status:r.status,paymentLockExpiresAt:r.payment_lock_expires_at}))})
  let currentCustomerId:string|null=null
  try{const authDb=createSupabaseServerClient();const{data:{user}}=await authDb.auth.getUser();if(user){const{data:customer}=await db.from('customers').select('id').eq('user_id',user.id).maybeSingle();currentCustomerId=customer?.id??null}}catch{}
  const bookingRows:any[]=bookings??[];const dailyRows:any[]=dailyStatuses??[]
@@ -36,5 +37,6 @@ export async function GET(request:Request){try{
  })
  const byType:Record<string,any>={}
  for(const room of result){const row=byType[room.room_type_id]??{available:0,availableSoon:0,taken:0,reserved:0,pending:0,held:0,earliestAvailable:null};if(room.guest_status==='available')row.available++;else if(room.guest_status==='availableSoon')row.availableSoon++;else if(room.guest_status==='reserved')row.reserved++;else if(room.guest_status==='held'){row.held++;row.pending++}else row.taken++;if(room.available_from&&(!row.earliestAvailable||room.available_from<row.earliestAvailable))row.earliestAvailable=room.available_from;byType[room.room_type_id]=row}
+ console.info('[BP-DIAG][public-availability][result]',{roomTypeId,checkIn,checkOut,rooms:result.map((r:any)=>({id:r.id,roomNumber:r.room_number,dbStatus:r.status,guestStatus:r.guest_status,adminStatus:r.admin_status,reason:r.availability_reason}))})
  return NextResponse.json({checkIn,checkOut,checkInTime:'15:00',checkOutTime:'12:00',rooms:result,byType})
-}catch(error:any){console.error('[public-availability][error]',{message:error?.message,code:error?.code,details:error?.details,stack:error?.stack});return NextResponse.json({error:error?.message||'Unable to check availability.'},{status:500})}}
+}catch(error:any){console.error('[BP-DIAG][public-availability][error]',{message:error?.message,code:error?.code,details:error?.details,stack:error?.stack});return NextResponse.json({error:error?.message||'Unable to check availability.'},{status:500})}}
