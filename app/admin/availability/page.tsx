@@ -102,7 +102,7 @@ export default function RoomAvailability() {
     <div>
       <h1 className="text-2xl font-semibold mb-1">Room Availability</h1>
       <p className="text-navy-400 text-sm mb-6">
-        Paid reservations follow their booking dates. Maintenance and Available Soon are indefinite; cleaning status follows the room until it is completed.
+        Paid reservations follow their booking dates. kijohtrokiytrhyoi hyoitphoiyhutioyuytiMaintenance and Available Soon are indefinite; cleaning status follows the room until it is completed.
       </p>
 
       {notice && (

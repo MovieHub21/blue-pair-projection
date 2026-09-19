@@ -20,7 +20,7 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
           <div>
             <h5 className="text-white text-xs font-bold uppercase tracking-wider mb-4">Explore</h5>
             <div className="flex flex-col gap-2.5 text-sm">
-              <Link href="/rooms" className="hover:text-white">Roomssssssss &amp; Suites</Link><Link href="/dining" className="hover:text-white">Dining</Link><Link href="/annex" className="hover:text-white">The Annex</Link><Link href="/events" className="hover:text-white">Events</Link><Link href="/offers" className="hover:text-white">Offers</Link>
+              <Link href="/rooms" className="hover:text-white">Rooms &amp; Suites</Link><Link href="/dining" className="hover:text-white">Dining</Link><Link href="/annex" className="hover:text-white">The Annex</Link><Link href="/events" className="hover:text-white">Events</Link><Link href="/offers" className="hover:text-white">Offers</Link>
             </div>
           </div>
           <div>
