@@ -62,7 +62,7 @@ export default function AvailabilityGrid({
     const loadAvailability = () => {
       const version = ++requestVersion
       const startedAt = Date.now()
-      console.info('[admin-availability][fetch-start]', {
+      console.info('[BP-DIAG][admin-grid][fetch-start]', {
         date,
         url,
         startedAt: new Date(startedAt).toISOString(),
@@ -71,7 +71,7 @@ export default function AvailabilityGrid({
       return fetch(url, { cache: 'no-store' })
         .then(async (response) => {
           const data = await response.json().catch(() => null)
-          console.info('[admin-availability][response]', {
+          console.info('[BP-DIAG][admin-grid][response]', {
             ok: response.ok,
             status: response.status,
             date,
@@ -89,7 +89,7 @@ export default function AvailabilityGrid({
             next[room.id] = room.admin_status || room.guest_status
           }
 
-          console.info('[admin-availability][mapped]', {
+          console.info('[BP-DIAG][admin-grid][mapped]', {
             date,
             states: Object.values(next).reduce(
               (acc: Record<string, number>, state: string) => ({
@@ -103,7 +103,7 @@ export default function AvailabilityGrid({
           setLive(next)
         })
         .catch((error) => {
-          console.error('[admin-availability][error]', { date, error })
+          console.error('[BP-DIAG][admin-grid][error]', { date, error })
           if (!cancelled) setLive({})
         })
         .finally(() => {
@@ -111,7 +111,7 @@ export default function AvailabilityGrid({
         })
     }
 
-    console.info('[admin-availability][request]', {
+    console.info('[BP-DIAG][admin-grid][request]', {
       url,
       date,
       checkOut,
@@ -123,7 +123,7 @@ export default function AvailabilityGrid({
     const refresh = (event: Event) => {
       if (cancelled) return
       const detail = (event as CustomEvent).detail || {}
-      console.info('[admin-availability][realtime-refresh]', {
+      console.info('[BP-DIAG][admin-grid][realtime-refresh]', {
         date,
         table: detail.table ?? null,
         operation: detail.operation ?? null,
@@ -143,7 +143,7 @@ export default function AvailabilityGrid({
     return () => {
       cancelled = true
       window.removeEventListener('bluepair:database-change', refresh)
-      console.info('[admin-availability][effect-cleanup]', { date })
+      console.info('[BP-DIAG][admin-grid][effect-cleanup]', { date })
     }
   }, [date, rooms.length])
 
