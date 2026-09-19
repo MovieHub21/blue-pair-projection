@@ -27,9 +27,9 @@ export const PATH_SECTIONS: { prefix: string; section: string }[] = [
   { prefix: '/admin/permissions', section: 'permissions' },
   { prefix: '/admin/reports', section: 'reports' },
   { prefix: '/admin/activity', section: 'reports' },
-  { prefix: '/housekeeping', section: 'housekeeping' },
-  { prefix: '/maintenance', section: 'maintenance' },
-  { prefix: '/reception', section: 'reception' },
+  { prefix: '/admin/housekeeping', section: 'housekeeping' },
+  { prefix: '/admin/maintenance', section: 'maintenance' },
+  { prefix: '/admin/reception', section: 'reception' },
 ]
 
 export function sectionForPath(pathname: string): string | null {
