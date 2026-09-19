@@ -127,8 +127,13 @@ export default function AvailabilityGrid({
         date,
         table: detail.table ?? null,
         operation: detail.operation ?? null,
+        roomId: detail.roomId ?? null,
+        status: detail.status ?? null,
         receivedAt: new Date().toISOString(),
       })
+      if (typeof detail.roomId === 'string' && typeof detail.status === 'string') {
+        setLive((current) => ({ ...current, [detail.roomId]: detail.status }))
+      }
       setLoading(true)
       void loadAvailability()
     }
