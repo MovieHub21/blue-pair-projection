@@ -137,4 +137,4 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|favicon.png||.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|avif|css|js|map|woff|woff2|ttf|otf)$).*)'] }
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|favicon.png|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|avif|css|js|map|woff|woff2|ttf|otf)$).*)'] }
