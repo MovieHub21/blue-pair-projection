@@ -194,7 +194,7 @@ export async function middleware(request: NextRequest) {
         const rows = permRows ?? []
         if (rows.length > 0 && !rows.some((r: any) => r.allowed)) {
           const url = request.nextUrl.clone()
-          url.pathname = list.includes('reception') ? '/reception/dashboard' : list.includes('housekeeping') ? '/housekeeping/dashboard' : list.includes('maintenance') ? '/maintenance/dashboard' : '/admin/dashboard'
+          url.pathname = list.includes('reception') ? '/admin/reception/dashboard' : list.includes('housekeeping') ? '/admin/housekeeping/dashboard' : list.includes('maintenance') ? '/admin/maintenance/dashboard' : '/admin/dashboard'
           url.searchParams.set('restricted', '1')
           return NextResponse.redirect(url)
         }
