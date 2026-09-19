@@ -30,7 +30,7 @@ export async function GET(request:Request){try{
   else if(pending.length){guestStatus='held';availableFrom=null;reason='payment_hold'}
   else if(room.status==='maintenance'){guestStatus='availableSoon';availableFrom=null;reason='maintenance'}
   else if(room.status==='available_soon'){guestStatus='availableSoon';availableFrom=null;reason='admin_available_soon'}
-  else if(daily&&daily.status!=='available'){guestStatus='availableSoon';availableFrom=null;reason=`current_${daily.status}`}
+
   const adminStatus=room.status==='maintenance'?'maintenance':room.status==='available_soon'?'available_soon':paidRows.length?'taken':pending.length?'held':(daily?.status??'available')
   return {...room,payment_lock_booking_id:undefined,payment_lock_expires_at:room.payment_lock_expires_at,guest_status:ownReservation?'reserved':guestStatus,admin_status:adminStatus,availability_reason:reason,available_from:availableFrom,payment_ready:!!ownReservation,payment_locked:Boolean(room.payment_lock_expires_at&&new Date(room.payment_lock_expires_at).getTime()>Date.now()),payment_locked_by_me:!!ownReservation,pending:pending.length>0,pending_count:pending.length,reservation_id:ownReservation?.id,reservation_expires_at:ownReservation?.reservation_expires_at}
  })
