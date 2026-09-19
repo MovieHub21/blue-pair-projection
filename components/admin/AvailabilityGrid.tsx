@@ -7,8 +7,8 @@ import { useStore } from '../../store/useStore'
 
 const COLORS: Record<string, string> = {
   available: 'bg-emerald-500',
-  checking: 'bg-slate-300 text-slate-700',
   cleaning_required: 'bg-amber-300 text-navy-950',
+  checking: 'bg-slate-300 text-slate-700',
   cleaning: 'bg-amber-400 text-navy-950',
   maintenance: 'bg-orange-500',
   taken: 'bg-red-600',
@@ -148,9 +148,9 @@ export default function AvailabilityGrid({
         <div className="flex items-center gap-2 mb-3">
           <CalendarDays size={15} className="text-gold-600" />
           <div>
-            <p className="text-xs font-semibold">Room status for this day</p>
+            <p className="text-xs font-semibold">Room status and availability</p>
             <p className="text-[10px] text-navy-400">
-              Each room card represents the selected date only.
+              Booking status follows the selected date; operational room status persists until changed.
             </p>
           </div>
           {loading && (
