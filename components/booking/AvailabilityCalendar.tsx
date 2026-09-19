@@ -2,99 +2,31 @@
 import {useEffect,useMemo,useState} from 'react'
 import {ChevronLeft,ChevronRight,CalendarDays} from 'lucide-react'
 import {addDaysISO,todayISO} from '../../lib/format'
+import {onAvailabilityChange} from '../../lib/availabilityRealtime'
 
 type Day={date:string;status:'available'|'booked'|'held'|'availableSoon';reference?:string|null;source?:string|null;check_in?:string|null;check_out?:string|null}
-
 function monthStart(v:string){return `${v.slice(0,7)}-01`}
 function monthLabel(v:string){return new Date(`${v}T00:00:00`).toLocaleDateString('en-NG',{month:'long',year:'numeric'})}
 function pad(n:number){return String(n).padStart(2,'0')}
 function daysInMonth(v:string){const d=new Date(`${v}T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);d.setUTCDate(0);return d.getUTCDate()}
 function dayOfWeek(v:string){return new Date(`${v}T00:00:00Z`).getUTCDay()}
 
-const PUBLIC_REFRESH_TABLES=new Set(['rooms','bookings','payment_holds'])
-const ADMIN_REFRESH_TABLES=new Set(['rooms','room_daily_statuses','bookings','payment_holds'])
-
-export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheckOut,onSelect,adminMode=false}:{roomId:string;initialCheckIn?:string;initialCheckOut?:string;onSelect?:(checkIn:string,checkOut:string)=>void;adminMode?:boolean}){
+export default function AvailabilityCalendar({roomId,initialCheckIn,initialCheckOut,onSelect}:{roomId:string;initialCheckIn?:string;initialCheckOut?:string;onSelect?:(checkIn:string,checkOut:string)=>void}){
  const today=todayISO()
  const defaultStart=addDaysISO(1,today)
  const initialStart=initialCheckIn&&initialCheckIn>today?initialCheckIn:defaultStart
  const initialEnd=initialCheckOut&&initialCheckOut>initialStart?initialCheckOut:addDaysISO(1,initialStart)
  const [month,setMonth]=useState(monthStart(initialStart));const [days,setDays]=useState<Day[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState<string|null>(null);const [notice,setNotice]=useState<string|null>(null);const [start,setStart]=useState(initialStart);const [end,setEnd]=useState(initialEnd)
-
- useEffect(()=>{
-  let cancelled=false
-  let requestVersion=0
-  let refreshTimer:number|null=null
-
-  const load=async()=>{
-   const version=++requestVersion
-   const startedAt=Date.now()
-   const from=month
-   const to=addDaysISO(1,`${month.slice(0,7)}-${pad(daysInMonth(month))}`)
-   setLoading(true)
-   try{
-    const response=await fetch(`/api/public/room-calendar?roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}${adminMode?'&admin=1':''}&_=${Date.now()}`,{cache:'no-store'})
-    const data=await response.json().catch(()=>null)
-    if(cancelled||version!==requestVersion)return
-    console.info('[BP-DIAG][room-calendar][client-response]',{roomId,from,to,adminMode,version,ok:response.ok,status:response.status,dayCount:data?.days?.length??0,error:data?.error??null,elapsedMs:Date.now()-startedAt})
-    if(response.ok&&data?.days){
-      setDays(data.days)
-      setError(null)
-      if(!initialCheckIn||initialCheckIn<=today){
-       const availablePair=data.days.find((d:Day,i:number)=>d.date>today&&d.status==='available'&&data.days[i+1]?.date===addDaysISO(1,d.date)&&data.days[i+1]?.status==='available')
-       if(availablePair){const next=addDaysISO(1,availablePair.date);setStart(availablePair.date);setEnd(next)}
-      }
-    }else setError(data?.error||'Unable to load calendar.')
-   }catch(error:any){
-    if(!cancelled&&version===requestVersion)console.error('[BP-DIAG][room-calendar][error]',{roomId,version,error})
-   }finally{
-    if(!cancelled&&version===requestVersion)setLoading(false)
-   }
-  }
-
+ useEffect(()=>{let cancelled=false;let requestVersion=0
+  const load=async()=>{const version=++requestVersion;const startedAt=Date.now();const from=month;const to=addDaysISO(1,`${month.slice(0,7)}-${pad(daysInMonth(month))}`);setLoading(true);try{const response=await fetch(`/api/public/room-calendar?roomId=${encodeURIComponent(roomId)}&from=${from}&to=${to}&_=${Date.now()}`,{cache:'no-store'});const data=await response.json().catch(()=>null);console.info('[room-calendar][client-response]',{roomId,from,to,ok:response.ok,status:response.status,dayCount:data?.days?.length??0,error:data?.error??null,elapsedMs:Date.now()-startedAt});if(cancelled||version!==requestVersion)return;if(response.ok&&data?.days){setDays(data.days);setError(null);if(!initialCheckIn||initialCheckIn<=today){const availablePair=data.days.find((d:Day,i:number)=>d.date>today&&d.status==='available'&&data.days[i+1]?.date===addDaysISO(1,d.date)&&data.days[i+1]?.status==='available');if(availablePair){const next=addDaysISO(1,availablePair.date);setStart(availablePair.date);setEnd(next)}}}else setError(data?.error||'Unable to load calendar.')}catch{if(!cancelled)setError('Unable to load calendar.')}finally{if(!cancelled&&version===requestVersion)setLoading(false)}}
   void load()
-
-  const refresh=(event:Event)=>{
-   const detail=(event as CustomEvent).detail||{}
-   const table=typeof detail.table==='string'?detail.table:null
-   const relevant=table&&(adminMode?ADMIN_REFRESH_TABLES:PUBLIC_REFRESH_TABLES).has(table)
-   if(!relevant)return
-
-   console.info('[BP-DIAG][room-calendar][realtime-refresh]',{roomId,month,adminMode,table,operation:detail.operation??null,roomIdFromEvent:detail.roomId??null,status:detail.status??null,receivedAt:new Date().toISOString()})
-
-   if(refreshTimer!==null)window.clearTimeout(refreshTimer)
-   refreshTimer=window.setTimeout(()=>{refreshTimer=null;void load()},180)
-  }
-
-  window.addEventListener('bluepair:database-change',refresh)
-  return()=>{
-   cancelled=true
-   window.removeEventListener('bluepair:database-change',refresh)
-   if(refreshTimer!==null)window.clearTimeout(refreshTimer)
-   console.info('[BP-DIAG][room-calendar][effect-cleanup]',{roomId,month,adminMode})
-  }
- },[roomId,month,adminMode])
-
+  const refresh=(detail:{table:string|null;operation:string|null})=>{console.info('[room-calendar][realtime-refresh]',{roomId,month,table:detail.table??null,operation:detail.operation??null,receivedAt:new Date().toISOString()});void load()}
+  const stopListening=onAvailabilityChange(refresh)
+  return()=>{cancelled=true;stopListening();console.info('[room-calendar][effect-cleanup]',{roomId,month})}
+ },[roomId,month])
  const cells=useMemo(()=>{const blanks=Array.from({length:dayOfWeek(month)}).map((_,i)=>({blank:i}));return [...blanks,...days]},[month,days])
-
- function choose(date:string,status:Day['status']){
-  if(date<today){setNotice('That date has already passed.');return}
-  if(status!=='available'){
-   const day=days.find(d=>d.date===date)
-   if(status==='booked')setNotice(`${date} is already taken for a paid reservation${day?.reference?` (${day.reference})`:''}. Please choose another date.`)
-   else if(status==='held')setNotice(`${date} is temporarily held for another guest. Please choose another date.`)
-   else setNotice(`${date} is currently unavailable. Please choose another date.`)
-   return
-  }
-  setNotice(null)
-  if(!start||end){setStart(date);setEnd('');return}
-  if(date<=start){setStart(date);setEnd('');return}
-  setEnd(date)
-  onSelect?.(start,date)
- }
-
+ function choose(date:string,status:Day['status']){if(date<today){setNotice('That date has already passed.');return}if(status!=='available'){const day=days.find(d=>d.date===date);if(status==='booked')setNotice(`${date} is already taken for a paid reservation${day?.reference?` (${day.reference})`:''}. Please choose another date.`);else if(status==='held')setNotice(`${date} is temporarily held for another guest. Please choose another date.`);else setNotice(`${date} is currently unavailable. Please choose another date.`);return}setNotice(null);if(!start||end){setStart(date);setEnd('');return}if(date<=start){setStart(date);setEnd('');return}setEnd(date);onSelect?.(start,date)}
  const previousMonthDisabled=month<=monthStart(today)
-
  return (
   <div className="rounded-2xl border border-black/[0.07] bg-white p-4 sm:p-5 shadow-sm">
    <div className="flex items-center justify-between mb-4"><div><div className="flex items-center gap-2"><CalendarDays size={15} className="text-gold-600"/><h3 className="text-sm font-semibold">Room availability</h3></div><p className="text-[10px] text-navy-400 mt-1">Select your reservation dates</p></div><div className="flex gap-1"><button type="button" disabled={previousMonthDisabled} onClick={()=>{const d=new Date(`${month}T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()-1);const next=`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-01`;if(next>=monthStart(today))setMonth(next)}} className="w-7 h-7 rounded-lg border border-black/10 flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={14}/></button><button type="button" onClick={()=>{const d=new Date(`${month}T00:00:00Z`);d.setUTCMonth(d.getUTCMonth()+1);setMonth(`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-01`)}} className="w-7 h-7 rounded-lg border border-black/10 flex items-center justify-center"><ChevronRight size={14}/></button></div></div>
