@@ -25,9 +25,9 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/admin/staff', 'staff'],
   ['/admin/permissions', 'permissions'],
   ['/admin/reports', 'reports'],
-  ['/reception', 'reception'],
-  ['/housekeeping', 'housekeeping'],
-  ['/maintenance', 'maintenance'],
+  ['/admin/reception', 'reception'],
+  ['/admin/housekeeping', 'housekeeping'],
+  ['/admin/maintenance', 'maintenance'],
 ]
 
 export function sectionForPath(pathname: string): string | null {
