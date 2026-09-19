@@ -1,11 +1,13 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config'
+import { noStoreFetch } from './noStoreFetch'
 
 /** Supabase client for server components / route handlers (reads the signed-in session from cookies). */
 export function createSupabaseServerClient() {
   const cookieStore = cookies()
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { fetch: noStoreFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll()
@@ -24,6 +26,7 @@ export function createSupabaseServerClient() {
 /** Anonymous client for public, cacheable reads (no session needed). */
 export function createSupabasePublicClient() {
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { fetch: noStoreFetch },
     cookies: { getAll: () => [], setAll: () => {} },
   })
 }

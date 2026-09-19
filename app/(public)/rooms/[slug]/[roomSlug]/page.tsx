@@ -6,6 +6,9 @@ import { SITE_URL } from '../../../../../lib/siteConfig'
 import { getRoomTypes, getRoomTypeBySlug, getRoomBySlug } from '../../../../../lib/data'
 import IndividualRoomClient from './IndividualRoomClient'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function generateStaticParams(){
  const types=await getRoomTypes(); const out:{slug:string;roomSlug:string}[]=[]
  for(const t of types){ const {data}=await (await import('../../../../../lib/supabase/server')).createSupabasePublicClient().from('rooms').select('slug').eq('room_type_id',t.id); for(const r of data??[])out.push({slug:t.slug,roomSlug:r.slug}) }

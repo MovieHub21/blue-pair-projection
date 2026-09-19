@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { CalendarDays, Loader2 } from 'lucide-react'
-import { addDaysISO, todayISO } from '../../lib/format'\nimport type { Room } from '../../data/mock'
+import { addDaysISO, todayISO } from '../../lib/format'
+import { useStore } from '../../store/useStore'
 import { onAvailabilityChange } from '../../lib/availabilityRealtime'
 
 const COLORS: Record<string, string> = {
@@ -33,10 +34,10 @@ export default function AvailabilityGrid({
   onSelect,
   onDateChange,
 }: {
-  rooms: Room[]
   onSelect?: (roomId: string) => void
   onDateChange?: (date: string) => void
 }) {
+  const { rooms } = useStore()
   const [date, setDate] = useState(todayISO())
   const [live, setLive] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
