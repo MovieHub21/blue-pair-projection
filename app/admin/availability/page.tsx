@@ -130,7 +130,7 @@ export default function RoomAvailability() {
 
             <div className="mt-5">
               <label className="field-label mb-2 block">
-                Set status for {selectedDate || 'selected day'}
+                Set current room status
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
