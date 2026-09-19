@@ -5,6 +5,7 @@ import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../lib/siteConfig'
 import RouteProgress from '../components/RouteProgress'
 import GuestEmailWatcher from '../components/GuestEmailWatcher'
 import RealtimeBridge from '../components/RealtimeBridge'
+import ServiceWorkerCleanup from '../components/ServiceWorkerCleanup'
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><RouteProgress /></Suspense>
         <GuestEmailWatcher />
         <RealtimeBridge />
+        <ServiceWorkerCleanup />
         {children}
       </body>
     </html>
