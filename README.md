@@ -837,7 +837,7 @@ The objective is to make the guest dashboard useful throughout the entire stay r
 
 ### State Management
 
-* Zustand
+* React local state + Supabase-backed data fetching and Realtime
 
 ### Deployment
 
