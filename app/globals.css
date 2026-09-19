@@ -154,3 +154,12 @@ h1, h2, h3, h4 { @apply font-display; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+
+/* Action feedback: active operations stay visibly inactive while work is in progress. */
+@keyframes bp-action-spin { to { transform: rotate(360deg); } }
+.action-loading,
+.action-loading:hover,
+.action-loading:active { opacity: .58 !important; filter: grayscale(.35); cursor: wait !important; transform: none !important; pointer-events: none; box-shadow: none !important; }
+.action-loading::before { content: ''; width: .9rem; height: .9rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 999px; animation: bp-action-spin .7s linear infinite; flex: 0 0 auto; }
+.action-loading::after { display: none !important; }
