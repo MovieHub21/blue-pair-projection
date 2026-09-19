@@ -9,7 +9,7 @@ export default function RealtimeBridge() {
   useEffect(() => {
     const startedAt = Date.now()
 
-    console.info('[bluepair-realtime][init]', {
+    console.info('[BP-DIAG][realtime][init]', {
       channel: 'bluepair:database',
       mode: 'broadcast',
       startedAt: new Date(startedAt).toISOString(),
@@ -22,10 +22,15 @@ export default function RealtimeBridge() {
         const payload = (message?.payload ?? {}) as Record<string, unknown>
         const table = typeof payload.table === 'string' ? payload.table : null
         const operation = typeof payload.operation === 'string' ? payload.operation : null
+        const roomId = typeof payload.roomId === 'string' ? payload.roomId : null
+        const status = typeof payload.status === 'string' ? payload.status : null
 
-        console.info('[bluepair-realtime][event]', {
+        console.info('[BP-DIAG][realtime][event]', {
           table,
           operation,
+          roomId,
+          status,
+          rawPayload: payload,
           receivedAt: new Date().toISOString(),
           relevant: table ? WATCHED_TABLES.has(table) : false,
           source: 'broadcast',
@@ -35,11 +40,13 @@ export default function RealtimeBridge() {
           detail: {
             table,
             operation,
+            roomId,
+            status,
           },
         }))
       })
       .subscribe((status, err) => {
-        console.info('[bluepair-realtime][subscription]', {
+        console.info('[BP-DIAG][realtime][subscription]', {
           status,
           error: err?.message ?? null,
           errorCode: err?.code ?? null,
@@ -47,7 +54,7 @@ export default function RealtimeBridge() {
         })
 
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('[bluepair-realtime][subscription-failed]', {
+          console.error('[BP-DIAG][realtime][subscription-failed]', {
             status,
             error: err,
           })
@@ -55,7 +62,7 @@ export default function RealtimeBridge() {
       })
 
     return () => {
-      console.info('[bluepair-realtime][cleanup]')
+      console.info('[BP-DIAG][realtime][cleanup]')
       void supabase.removeChannel(channel)
     }
   }, [])
