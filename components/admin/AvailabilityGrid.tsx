@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { CalendarDays, Loader2 } from 'lucide-react'
-import { addDaysISO, todayISO } from '../../lib/format'\nimport type { Room } from '../../data/mock'
+import { addDaysISO, todayISO } from '../../lib/format'
+import type { Room } from '../../data/mock'
 import { onAvailabilityChange } from '../../lib/availabilityRealtime'
 
 const COLORS: Record<string, string> = {
