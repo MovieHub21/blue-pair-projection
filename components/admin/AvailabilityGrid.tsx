@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { CalendarDays, Loader2 } from 'lucide-react'
-import { addDaysISO, todayISO } from '../../lib/format'
+import { addDaysISO, todayISO } from '../../lib/format'\nimport type { Room } from '../../data/mock'
 import { useStore } from '../../store/useStore'
 import { onAvailabilityChange } from '../../lib/availabilityRealtime'
 
