@@ -19,11 +19,11 @@ const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{na
 
 export default async function ShortLetsPage() {
   const shortLets = await getShortLets()
+  const heroImage = shortLets[0]?.image || ''
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1600&q=80"
-        eyebrow="Extended stays" title="Accommodation & Short-lets" crumbs="Home / Annex / Short-lets" height="h-72" />
+      <PageHero image={heroImage} eyebrow="Extended stays" title="Accommodation & Short-lets" crumbs="Home / Annex / Short-lets" height="h-72" />
       <section className="section">
         <div className="container-w">
           <SectionHeading eyebrow="Available properties" title="Annex short-let listings" subtitle="Self-contained apartments and duplexes for stays of a week or longer, in Uromi, Edo State." />
