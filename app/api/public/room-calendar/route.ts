@@ -5,7 +5,7 @@ function validDate(v:string|null){return !!v&&/^\d{4}-\d{2}-\d{2}$/.test(v)}
 function effectiveCheckOut(b:any){const actual=b.checked_out_at?String(b.checked_out_at).slice(0,10):'';return actual&&actual<b.check_out?actual:b.check_out}
 function overlaps(a:string,b:string,c:string,d:string){return a<d&&b>c}
 function addDays(date:string,n:number){const d=new Date(`${date}T00:00:00Z`);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
-function paidReservation(b:any){return b.payment_status==='paid'&&!['cancelled','refunded'].includes(String(b.status))}
+function paidReservation(b:any){return b.payment_status==='paid'&&['confirmed','checked_in'].includes(String(b.status))}
 function bookingOverlaps(b:any,from:string,to:string){return overlaps(from,to,b.check_in,effectiveCheckOut(b))}
 export async function GET(request:Request){try{
  const p=new URL(request.url).searchParams;const roomId=p.get('roomId');const from=p.get('from');const to=p.get('to');const adminMode=p.get('admin')==='1'
