@@ -48,6 +48,12 @@ export default function ReportsPage({ params }: { params: { type: string } }) {
   const [financeLoading, setFinanceLoading] = useState(false)
   const [financeError, setFinanceError] = useState('')
 
+  const { start, end } = useMemo(() => {
+    if (range === 'custom') return { start: customStart, end: customEnd }
+    if (range === 'week') return { start: startOfWeek(), end: today }
+    if (range === 'month') return { start: `${today.slice(0, 7)}-01`, end: today }
+    return { start: `${today.slice(0, 4)}-01-01`, end: today }
+  }, [range, customStart, customEnd, today])
   useEffect(() => {
     let cancelled = false
     let requestVersion = 0
@@ -96,12 +102,6 @@ export default function ReportsPage({ params }: { params: { type: string } }) {
     }
   }, [start, end])
 
-  const { start, end } = useMemo(() => {
-    if (range === 'custom') return { start: customStart, end: customEnd }
-    if (range === 'week') return { start: startOfWeek(), end: today }
-    if (range === 'month') return { start: `${today.slice(0, 7)}-01`, end: today }
-    return { start: `${today.slice(0, 4)}-01-01`, end: today }
-  }, [range, customStart, customEnd, today])
 
   useEffect(() => {
     let cancelled = false
