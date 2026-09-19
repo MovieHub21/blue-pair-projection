@@ -4,7 +4,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './lib/supabase/config'
 import { sectionForPath, ALWAYS_ALLOWED_SECTIONS } from './lib/permissionSections'
 import { readRouteState } from './lib/runtime/resolver'
 
-const STAFF_PREFIXES = ['/admin', '/reception', '/housekeeping', '/maintenance']
+const STAFF_PREFIXES = ['/admin']
 const GUEST_PREFIXES = ['/account']
 const PUBLIC_PATHS = ['/account/login', '/account/register', '/account/forgot-password', '/account/reset-password', '/staff/login']
 const MAINTENANCE_PATH = '/site-maintenance'
@@ -89,6 +89,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Legacy staff portal paths on the main domain now live under the admin route tree.
+  // Send them to the admin subdomain so there is no dead /reception, /housekeeping or
+  // /maintenance route left on the public host.
+  if (isMainProductionHost && /^\/(reception|housekeeping|maintenance)(\/|$)/.test(originalPathname)) {
+    const url = request.nextUrl.clone()
+    url.hostname = ADMIN_HOST
+    return NextResponse.redirect(url)
+  }
+
   // The admin subdomain is a clean front door to the existing /admin route tree.
   // Examples:
   //   admin.bluepairsignature.com/            -> /admin/dashboard
@@ -112,6 +121,9 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request })
   if (pathname === MAINTENANCE_PATH) return response
 
+  // Calculate route class before the maintenance-mode lookup. Staff routes are
+  // exempt from guest maintenance handling, so there is no reason to query the
+  // site-settings table during staff navigation/login.
   const needsStaff = STAFF_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const needsGuest = GUEST_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isAuthPath = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
@@ -132,7 +144,9 @@ export async function middleware(request: NextRequest) {
   })
 
   const environment = getEnvironment()
-  const { data: siteSetting } = await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
+  const { data: siteSetting } = needsStaff
+    ? { data: null }
+    : await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
 
   if (siteSetting?.maintenance_mode && !needsStaff) {
     const { data: { user } } = await supabase.auth.getUser()
