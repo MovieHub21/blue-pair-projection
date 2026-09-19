@@ -77,22 +77,13 @@ export default function AvailabilityGrid({
     let requestVersion = 0
     let refreshTimer: number | null = null
 
-    setLoading(true)
-    setLive({})
+    const loadAvailability = async () => {
+      const version = ++requestVersion
+      const startedAt = Date.now()
+      setLoading(true)
 
-    const checkOut = addDaysISO(1, date)
-    const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
-
-
-    const loadAvailability = () => {
-      return fetch(url, { cache: 'no-store' })
-        .then(async (response) => {
-          const data = await response.json().catch(() => null)
-          return response.ok ? data : null
-        })
-        .then((data) => {
-          if (cancelled) return
-
+      const checkOut = addDaysISO(1, date)
+      const url = `/api/public/availability?checkin=${encodeURIComponent(date)}&checkout=${encodeURIComponent(checkOut)}`
 
       console.info('[BP-DIAG][admin-grid][fetch-start]', {
         date,
@@ -101,16 +92,25 @@ export default function AvailabilityGrid({
         startedAt: new Date(startedAt).toISOString(),
       })
 
+      try {
+        const response = await fetch(url, { cache: 'no-store' })
+        const data = await response.json().catch(() => null)
 
-          setLive(next)
-
-        })
-
-        if (!response.ok) return
+        if (cancelled || version !== requestVersion) return
+        if (!response.ok) {
+          console.error('[BP-DIAG][admin-grid][error]', {
+            date,
+            version,
+            status: response.status,
+          })
+          return
+        }
 
         const next: Record<string, string> = {}
         for (const room of data?.rooms || []) {
-          next[room.id] = room.admin_status || room.guest_status
+          if (room?.id) {
+            next[room.id] = room.admin_status || room.guest_status || 'available'
+          }
         }
 
         console.info('[BP-DIAG][admin-grid][mapped]', {
@@ -134,7 +134,6 @@ export default function AvailabilityGrid({
       }
     }
 
-
     void loadAvailability()
 
     const RELEVANT_TABLES = new Set(['rooms', 'bookings', 'room_daily_statuses', 'payment_holds', 'housekeeping_tasks'])
@@ -142,15 +141,16 @@ export default function AvailabilityGrid({
     const refresh = (e: Event) => {
       if (cancelled) return
       const detail = (e as CustomEvent).detail
-      if (detail?.table && !RELEVANT_TABLES.has(detail.table)) {
-        return
-      }
+      if (detail?.table && !RELEVANT_TABLES.has(detail.table)) return
+
       if (!detail?.table || detail.table === 'rooms') {
         void loadRooms()
       }
-      setLoading(true)
-      void loadAvailability()
 
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        void loadAvailability()
+      }, 120)
     }
 
     window.addEventListener('bluepair:database-change', refresh)
