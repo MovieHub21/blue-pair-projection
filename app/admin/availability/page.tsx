@@ -25,12 +25,12 @@ export default function RoomAvailability() {
   const rt = room ? roomTypes.find((t) => t.id === room.roomTypeId) : null
 
   const handleDateChange = useCallback((date: string) => {
-    console.info('[admin-status][selected-date]', { date })
+    console.info('[BP-DIAG][admin-status][selected-date]', { date })
     setSelectedDate(date)
   }, [])
 
   async function updateStatus(status: RoomStatus | 'cleaning_required') {
-    console.info('[admin-status][click]', {
+    console.info('[BP-DIAG][admin-status][click]', {
       roomId: room?.id ?? null,
       roomNumber: room?.roomNumber ?? null,
       selectedDate,
@@ -39,7 +39,7 @@ export default function RoomAvailability() {
     })
 
     if (!room || busy) {
-      console.warn('[admin-status][click-ignored]', {
+      console.warn('[BP-DIAG][admin-status][click-ignored]', {
         reason: !room ? 'no-active-room' : 'already-busy',
       })
       return
@@ -49,7 +49,7 @@ export default function RoomAvailability() {
     const startedAt = Date.now()
 
     try {
-      console.info('[admin-status][request]', {
+      console.info('[BP-DIAG][admin-status][request]', {
         roomId: room.id,
         roomNumber: room.roomNumber,
         selectedDate,
@@ -67,7 +67,7 @@ export default function RoomAvailability() {
 
       const data = await response.json().catch(() => ({}))
 
-      console.info('[admin-status][response]', {
+      console.info('[BP-DIAG][admin-status][response]', {
         ok: response.ok,
         status: response.status,
         data,
@@ -91,7 +91,7 @@ export default function RoomAvailability() {
 
       setActiveId(null)
     } catch (error: any) {
-      console.error('[admin-status][client-error]', {
+      console.error('[BP-DIAG][admin-status][client-error]', {
         roomId: room?.id ?? null,
         selectedDate,
         status,
