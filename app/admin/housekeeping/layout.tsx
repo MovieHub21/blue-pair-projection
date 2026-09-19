@@ -1,14 +1,12 @@
+import { getStaffPortalContext } from '../../../lib/staffPortal'
 import type { Metadata } from 'next'
 import PortalShell from '@/components/layout/PortalShell'
-import { getCurrentStaff } from '@/lib/staff'
-import { getMyPermissions } from '@/lib/permissions'
 import { MANAGEMENT_GROUPS, filterGroups } from '@/lib/portalNav'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 export default async function HousekeepingShellLayout({ children }: { children: React.ReactNode }) {
-  const { name, roleLabel } = await getCurrentStaff()
-  const { allowed } = await getMyPermissions()
+  const { name, roleLabel, allowed } = await getStaffPortalContext()
   return (
     <>
       <PortalShell
