@@ -51,6 +51,9 @@ export async function POST(request: Request) {
     const location = String(body.location || '')
     const bookingId = body.bookingId ? String(body.bookingId) : null
     const notes = String(body.notes || '').trim().slice(0, 1000)
+    const contactEmail = String(body.contactEmail || '').trim().slice(0, 160)
+    const contactPhone = String(body.contactPhone || '').trim().slice(0, 40)
+    const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0, 500)
 
     if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one drink.' }, { status: 400 })
     if (!LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
 
     for (const requested of requestedItems) {
       const drink = drinkMap.get(String(requested.id || ''))
-      if (!drink || drink.available === false) return NextResponse.json({ error: \`\${String(requested.name || 'This drink')} is no longer available.\` }, { status: 400 })
+      if (!drink || drink.available === false) return NextResponse.json({ error: `${String(requested.name || 'This drink')} is no longer available.` }, { status: 400 })
       const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
       const unitPrice = Number(drink.price)
       const lineTotal = unitPrice * quantity
@@ -100,7 +103,7 @@ export async function POST(request: Request) {
         if (!booking.room_id) return NextResponse.json({ error: 'That booking has no room assigned.' }, { status: 400 })
         const { data: room } = await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()
         if (!room?.room_number) return NextResponse.json({ error: 'Your room could not be found.' }, { status: 400 })
-        deliveryLabel = \`Room \${room.room_number}\`
+        deliveryLabel = `Room ${room.room_number}`
       } else {
         if (!booking.short_let_id) return NextResponse.json({ error: 'Select your active short-let booking.' }, { status: 400 })
         const { data: property } = await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle()
@@ -109,17 +112,17 @@ export async function POST(request: Request) {
       }
     }
 
-    const reference = \`BAR-\${Date.now()}-\${Math.random().toString(36).slice(2,7).toUpperCase()}\`
-    const orderId = \`bar_\${Date.now()}_\${Math.random().toString(36).slice(2,7)}\`
+    const reference = `BAR-${Date.now()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`
+    const orderId = `bar_${Date.now()}_${Math.random().toString(36).slice(2,7)}`
     const { error: orderError } = await admin.from('bar_orders').insert({
       id: orderId, reference, customer_id: customer.id, booking_id: resolvedBookingId,
-      delivery_location: location, delivery_label: deliveryLabel, notes,
+      delivery_location: location, delivery_label: deliveryLabel, notes: [notes, contactEmail ? `Email: ${contactEmail}` : '', contactPhone ? `Phone: ${contactPhone}` : '', deliveryAddress ? `Address: ${deliveryAddress}` : ''].filter(Boolean).join(' · '),
       subtotal, total: subtotal, status: 'pending',
     })
     if (orderError) throw orderError
 
     const { error: itemError } = await admin.from('bar_order_items').insert(normalized.map(item => ({
-      id: \`boi_\${Date.now()}_\${Math.random().toString(36).slice(2,8)}\`,
+      id: `boi_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
       order_id: orderId, drink_id: item.drinkId, drink_name: item.drinkName,
       unit_price: item.unitPrice, quantity: item.quantity, line_total: item.lineTotal,
     })))
@@ -160,7 +163,7 @@ export async function PATCH(request: Request) {
       const labels: Record<string,string> = { pending:'Order received', accepted:'Order accepted', preparing:'Your drinks are being prepared', ready:'Your order is ready', delivered:'Order delivered', cancelled:'Order cancelled' }
       await admin.from('guest_notifications').insert({
         user_id: customer.user_id, type: 'bar_order_status', title: labels[status],
-        body: \`Bar order \${order.reference} is now \${status.replaceAll('_',' ')}.\`,
+        body: `Bar order ${order.reference} is now ${status.replaceAll('_',' ')}.`,
         href: '/account/requests', metadata: { bar_order_id: order.id, reference: order.reference, status },
       })
     }
