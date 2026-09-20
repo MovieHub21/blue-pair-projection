@@ -24,6 +24,16 @@ type Amenity = {
   published: boolean
 }
 
+type ShortLetDraft = {
+  name: string
+  type: string
+  price: string
+  bedrooms: string
+  amenities: string
+  image: string
+  description: string
+}
+
 type BookingRow = {
   id: string
   reference: string
@@ -83,7 +93,7 @@ export default function AnnexManagement() {
   const [showAddShortLet, setShowAddShortLet] = useState(false)
   const [deleteShortLet, setDeleteShortLet] = useState<ShortLet | null>(null)
   const [saving, setSaving] = useState(false)
-  const [shortLetDraft, setShortLetDraft] = useState({
+  const [shortLetDraft, setShortLetDraft] = useState<ShortLetDraft>({
     name: '',
     type: 'Apartment',
     price: '',
@@ -900,16 +910,8 @@ function ShortLetModal({
   onSave,
 }: {
   open: boolean
-  draft: {
-    name: string
-    type: string
-    price: string
-    bedrooms: string
-    amenities: string
-    image: string
-    description: string
-  }
-  onChange: (draft: typeof draft) => void
+  draft: ShortLetDraft
+  onChange: (draft: ShortLetDraft) => void
   onClose: () => void
   onSave: () => void
 }) {
