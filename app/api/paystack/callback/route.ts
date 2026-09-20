@@ -101,7 +101,8 @@ export async function GET(request: Request) {
     if (customer?.user_id) {
       const { data: existingNotification } = await admin.from('guest_notifications').select('id').eq('user_id', customer.user_id).eq('type', 'payment').contains('metadata', { payment_reference: reference }).limit(1).maybeSingle()
       if (!existingNotification) {
-        const { data: roomType } = booking.room_type_id ? await admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle() : { data: null }\n        const { data: shortLet } = booking.short_let_id ? await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle() : { data: null }
+        const { data: roomType } = booking.room_type_id ? await admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle() : { data: null }
+        const { data: shortLet } = booking.short_let_id ? await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle() : { data: null }
         if (customer.email) {
           try {
             const email = paymentSuccessfulEmail({ guestName: customer.name || 'Guest', reference: booking.reference, roomName: shortLet?.name || roomType?.name || 'Short-let', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount), paymentReference: reference })
