@@ -32,6 +32,9 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const [location, setLocation] = useState<'room' | 'short_let' | 'bar' | 'outdoor_eatery' | 'vip_lounge' | ''>('')
   const [bookingId, setBookingId] = useState('')
   const [notes, setNotes] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [placing, setPlacing] = useState(false)
   const [orderMessage, setOrderMessage] = useState('')
   const isBar = mode === 'bar'
@@ -67,10 +70,10 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
     if ((location === 'room' || location === 'short_let') && !bookingId) return setOrderMessage('Select the current booking for that delivery location.')
     setPlacing(true); setOrderMessage('')
     try {
-      const response = await fetch('/api/bar/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes }) })
+      const response = await fetch('/api/bar/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes, contactEmail, contactPhone, deliveryAddress }) })
       const result = await response.json()
       if (!response.ok) throw new Error(result?.error || 'Unable to place your order.')
-      setCart([]); setNotes(''); setBookingId(''); setLocation(''); setOrderMessage(`Order ${result.reference} received. ${result.deliveryLabel} will receive it.`)
+      setCart([]); setNotes(''); setContactEmail(''); setContactPhone(''); setDeliveryAddress(''); setBookingId(''); setLocation(''); setOrderMessage(`Order ${result.reference} received. ${result.deliveryLabel} will receive it.`)
     } catch (error: any) {
       setOrderMessage(error?.message || 'Unable to place your order.')
     } finally { setPlacing(false) }
@@ -186,7 +189,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   <p className={isBar ? 'mt-5 text-sm leading-7 text-white/48' : 'mt-5 text-sm leading-7 text-[#697282]'}>{isBar ? 'A signature choice from the Annex selection.' : 'One of the selections that defines the Annex table.'}</p>
                   <div className="mt-8 flex items-center justify-between border-t border-current/10 pt-5">
                     <span className="font-display text-xl text-[#c39a45]">{naira(lead.price)}</span>
-                    {lead.available ? <button type="button" onClick={() => addToOrder(lead)} className="rounded-full bg-[#d7b66a] px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add to order</button> : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
+                    {lead.available ? <button type="button" onClick={() => addToOrder(lead)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7b66a] text-xl font-semibold text-[#08101d]">+</button> : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
                   </div>
                 </div>
               </article>
@@ -208,7 +211,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
-                  <div className="flex justify-end"><button type="button" disabled={!item.available} onClick={() => addToOrder(item)} className={item.available ? 'rounded-full bg-[#d7b66a] px-3 py-2 text-[9px] font-bold uppercase tracking-[.1em] text-[#08101d]' : 'rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25'}>{item.available ? 'Add' : 'Unavailable'}</button></div>
+                  <div className="flex justify-end"><button type="button" disabled={!item.available} onClick={() => addToOrder(item)} className={item.available ? 'flex h-9 w-9 items-center justify-center rounded-full bg-[#d7b66a] text-lg font-semibold text-[#08101d]' : 'rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25'}>{item.available ? '+' : 'Unavailable'}</button></div>
                 </article>
               ))}
             </div>
@@ -258,7 +261,12 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     ].map(([value,label]) => <button key={value} type="button" onClick={() => { setLocation(value as any); if (value !== 'room' && value !== 'short_let') setBookingId('') }} className={location === value ? 'rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'rounded-xl border border-white/10 bg-white/[.03] p-4 text-left'}><span className="block text-sm font-semibold">{label}</span>{(value === 'room' || value === 'short_let') ? <span className="mt-1 block text-xs text-white/35">{activeBookings.filter(b => b.type === value).length ? 'Choose your active booking below' : 'No active booking'}</span> : <span className="mt-1 block text-xs text-white/35">{activeBookings.length ? 'Available during your stay' : 'Venue service'}</span>}</button>)}
                   </div>
                   {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
-                  <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-4 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                    <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                  </div>
+                  <input value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Delivery location / address" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                  <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                 </div>
                 {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
                 <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
