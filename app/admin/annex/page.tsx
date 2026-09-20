@@ -116,7 +116,7 @@ export default function AnnexManagement() {
   })
 
   const load = useCallback(async () => {
-    const [a, m, d, s, b] = await Promise.all([
+    const [a, m, d, s, b, o] = await Promise.all([
       supabase.from('amenities').select('*').like('key', 'annex-%').order('name'),
       supabase.from('menu_items').select('*').in('outlet', MENU_OUTLETS.map(x => x.outlet)).order('name'),
       supabase.from('drinks').select('*').eq('bar', 'Annex Bar').order('name'),
@@ -166,7 +166,7 @@ export default function AnnexManagement() {
     void load()
     const refresh = (event: Event) => {
       const table = (event as CustomEvent).detail?.table
-      if (!table || ['amenities', 'menu_items', 'drinks', 'short_lets', 'bookings'].includes(table)) void load()
+      if (!table || ['amenities', 'menu_items', 'drinks', 'short_lets', 'bookings', 'bar_orders', 'bar_order_items'].includes(table)) void load()
     }
     window.addEventListener('bluepair:database-change', refresh)
     return () => window.removeEventListener('bluepair:database-change', refresh)
@@ -328,6 +328,25 @@ export default function AnnexManagement() {
         </div>
       )}
 
+      {tab === 'Orders' && (
+        <div className="card overflow-hidden">
+          <div className="border-b border-black/5 p-5"><h2 className="font-semibold">Annex Bar Orders</h2><p className="mt-1 text-xs text-navy-400">Live guest drink orders and their delivery locations.</p></div>
+          <div className="divide-y divide-black/5">
+            {barOrders.map(order => <div key={order.id} className="p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div><div className="flex flex-wrap items-center gap-3"><b>{order.reference}</b><span className="pill-green capitalize">{String(order.status).replaceAll('_',' ')}</span></div><p className="mt-2 text-sm font-semibold">{order.delivery_label}</p><p className="mt-1 text-xs text-navy-400">{new Date(order.created_at).toLocaleString()} · {nairaOrder(order.total)}</p></div>
+                <select className="field-input max-w-[190px]" value={order.status} onChange={async e => { const status=e.target.value; const result=await fetch('/api/bar/orders',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.id,status})}); if(result.ok) await load(); else pushToast('Failed to update bar order','error') }}>
+                  {['pending','accepted','preparing','ready','delivered','cancelled'].map(status => <option key={status} value={status}>{status.replaceAll('_',' ')}</option>)}
+                </select>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">{(order.bar_order_items ?? []).map((item:any) => <div key={item.id} className="rounded-lg bg-cream-50 p-3 text-sm"><span className="font-medium">{item.quantity} × {item.drink_name}</span><span className="float-right">{nairaOrder(item.line_total)}</span></div>)}</div>
+              {order.notes && <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-navy-500">Note: {order.notes}</p>}
+            </div>)}
+            {barOrders.length === 0 && <div className="p-10 text-center text-sm text-navy-400">No Annex Bar orders yet.</div>}
+          </div>
+        </div>
+      )}
+
       {tab === 'Short-lets' && (
         <div>
           <div className="mb-4 flex items-center justify-between gap-4"><div><h2 className="font-semibold">Annex short-let properties</h2><p className="mt-1 text-xs text-navy-400">Properties, pricing, descriptions, images and amenities.</p></div><button type="button" onClick={newShortLet} className="btn-primary btn-sm"><Plus size={14}/>Add property</button></div>
@@ -405,6 +424,8 @@ function ShortLetModal({open,draft,onChange,onClose,onSave}:{open:boolean;draft:
     <button className="btn-primary w-full justify-center" onClick={onSave}>Save property</button>
   </div></Modal>
 }
+
+function nairaOrder(value: number) { return '₦' + Number(value || 0).toLocaleString() }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="field-label">{label}</label>{children}</div>
