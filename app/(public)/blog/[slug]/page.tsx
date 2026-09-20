@@ -50,7 +50,7 @@ export default async function BlogStoryPage({ params }: Props) {
   ]
 
   return (
-    <main className="bg-cream-50 min-h-screen">\n      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />\n      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />
+    <main className="bg-cream-50 min-h-screen">\n      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />
       <article>
         <div className="relative h-[48vh] min-h-[360px] max-h-[620px] overflow-hidden bg-navy-950">
           <img src={post.image_url} alt={post.title} className="w-full h-full object-cover opacity-80" />
