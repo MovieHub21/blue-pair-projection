@@ -49,11 +49,12 @@ export default function BookingManagement() {
   const [error, setError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
-    const [bk, rt, cu, rm] = await Promise.all([
+    const [bk, rt, cu, rm, sl] = await Promise.all([
       supabase.from('bookings').select('*').order('created_at', { ascending: false }),
       supabase.from('room_types').select('*').order('price'),
       supabase.from('customers').select('*').order('name'),
       supabase.from('rooms').select('*').order('room_number'),
+      supabase.from('short_lets').select('*').order('price'),
     ])
     if (bk.data) setBookings(bk.data.map(mapBooking))
     if (rt.data) {
@@ -68,7 +69,7 @@ export default function BookingManagement() {
   useEffect(() => {
     void loadData()
 
-    const RELEVANT_TABLES = new Set(['bookings', 'rooms', 'customers', 'room_types'])
+    const RELEVANT_TABLES = new Set(['bookings', 'rooms', 'customers', 'room_types', 'short_lets'])
     const refresh = (e: Event) => {
       const detail = (e as CustomEvent).detail
       if (!detail?.table || RELEVANT_TABLES.has(detail.table)) {
@@ -107,6 +108,7 @@ export default function BookingManagement() {
 
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
+  const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
   const physicalRoomOf = (id?: string) => id ? rooms.find(r => r.id === id) : undefined
   const filtered = bookings.filter(b => {
     if (paymentFilter !== 'all' && b.paymentStatus !== paymentFilter) return false
@@ -245,7 +247,7 @@ export default function BookingManagement() {
                 <td className="p-4 font-medium">{b.reference}</td>
                 <td className="p-4">{custOf(b.customerId)?.name}</td>
                 <td className="p-4">{(b as any).source === 'walk_in' ? <span className="rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] font-semibold">Walk-in</span> : <span className="text-xs text-navy-400">Online</span>}</td>
-                <td className="p-4 text-navy-500">{physicalRoomOf(b.roomId)?.roomNumber ? `Room ${physicalRoomOf(b.roomId)?.roomNumber}` : roomOf(b.roomTypeId)?.name}</td>
+                <td className="p-4 text-navy-500">{(b as any).shortLetId ? `${shortLetOf((b as any).shortLetId)?.name || 'Short-let'} · Short-let` : (physicalRoomOf(b.roomId)?.roomNumber ? `Room ${physicalRoomOf(b.roomId)?.roomNumber}` : roomOf(b.roomTypeId)?.name)}</td>
                 <td className="p-4 text-navy-500">{formatDate(b.checkIn)}</td>
                 <td className="p-4 text-navy-500">{formatDate(b.checkOut)}</td>
                 <td className="p-4 font-display">{naira(b.amount)}</td>
@@ -255,8 +257,8 @@ export default function BookingManagement() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => openBooking(b)} className="text-xs font-semibold text-navy-900">View</button>
                     {b.paymentStatus !== 'paid' && b.status !== 'cancelled' && <button onClick={() => { setConfirmingPayment(b); setPaymentMethod(null); setError(null) }} className="text-xs font-semibold text-gold-700">Payment</button>}
-                    {b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
-                    {b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
+                    {!(b as any).shortLetId && b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
+                    {!(b as any).shortLetId && b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
                     {['pending','confirmed'].includes(b.status) && <button onClick={() => void cancelBooking(b.id)} className="text-xs font-semibold text-red-600">Cancel</button>}
                   </div>
                 </td>
@@ -276,7 +278,7 @@ export default function BookingManagement() {
                 ['Email', custOf(active.customerId)?.email],
                 ['Phone', custOf(active.customerId)?.phone],
                 ['Source', (active as any).source === 'walk_in' ? 'Walk-in / Front desk' : 'Online'],
-                ['Room', physicalRoomOf(active.roomId)?.roomNumber ? `Room ${physicalRoomOf(active.roomId)?.roomNumber} · ${roomOf(active.roomTypeId)?.name}` : roomOf(active.roomTypeId)?.name],
+                ['Property', (active as any).shortLetId ? `${shortLetOf((active as any).shortLetId)?.name || 'Short-let'} · Short-let` : (physicalRoomOf(active.roomId)?.roomNumber ? `Room ${physicalRoomOf(active.roomId)?.roomNumber} · ${roomOf(active.roomTypeId)?.name}` : roomOf(active.roomTypeId)?.name)],
                 ['Dates', `${formatDate(active.checkIn)} → ${formatDate(active.checkOut)}`],
                 ['Guests', `${active.adults} adults, ${active.children} children`],
                 ['Payment', active.paymentStatus],
