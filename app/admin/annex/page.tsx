@@ -41,6 +41,7 @@ type DrinkDraft = {
   category: string
   name: string
   price: string
+  image: string
   available: boolean
 }
 
@@ -55,7 +56,7 @@ const emptyMenu = (outlet: MenuOutlet): MenuDraft => ({
 })
 
 const emptyDrink: DrinkDraft = {
-  bar: 'Annex Bar', category: '', name: '', price: '', available: true,
+  bar: 'Annex Bar', category: '', name: '', price: '', image: '', available: true,
 }
 
 export default function AnnexManagement() {
@@ -128,6 +129,7 @@ export default function AnnexManagement() {
       category: draft.category.trim() || 'General',
       name: draft.name.trim(),
       price: Number(draft.price) || 0,
+      image: draft.image,
       available: draft.available,
     }
     if (!patch.name) return pushToast('Drink name is required', 'error')
@@ -213,7 +215,7 @@ export default function AnnexManagement() {
             <button type="button" className="btn-primary btn-sm" onClick={() => setEditingDrink({...emptyDrink})}><Plus size={14}/>Add drink</button>
           </div>
           <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-black/5 text-left text-xs text-navy-400"><th className="p-4">Name</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Status</th><th className="p-4 text-right">Actions</th></tr></thead><tbody>
-            {drinks.map(item => <tr key={item.id} className="border-b border-black/5"><td className="p-4 font-medium">{item.name}</td><td className="p-4">{item.category}</td><td className="p-4">₦{Number(item.price).toLocaleString()}</td><td className="p-4"><span className={item.available ? 'pill-green' : 'pill-red'}>{item.available ? 'Available' : 'Sold out'}</span></td><td className="p-4"><div className="flex justify-end gap-3"><button className="text-xs font-semibold" onClick={() => setEditingDrink({id:item.id,bar:'Annex Bar',category:item.category,name:item.name,price:String(item.price),available:item.available})}><Pencil size={14}/></button><button className="text-red-600" onClick={() => setDeleteDrink(item)}><Trash2 size={14}/></button></div></td></tr>)}
+            {drinks.map(item => <tr key={item.id} className="border-b border-black/5"><td className="p-4 font-medium"><div className="flex items-center gap-3">{item.image && <img src={item.image} className="h-10 w-10 rounded object-cover" alt=""/>}<span>{item.name}</span></div></td><td className="p-4">{item.category}</td><td className="p-4">₦{Number(item.price).toLocaleString()}</td><td className="p-4"><span className={item.available ? 'pill-green' : 'pill-red'}>{item.available ? 'Available' : 'Sold out'}</span></td><td className="p-4"><div className="flex justify-end gap-3"><button className="text-xs font-semibold" onClick={() => setEditingDrink({id:item.id,bar:'Annex Bar',category:item.category,name:item.name,price:String(item.price),image:item.image,available:item.available})}><Pencil size={14}/></button><button className="text-red-600" onClick={() => setDeleteDrink(item)}><Trash2 size={14}/></button></div></td></tr>)}
             {drinks.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-navy-400">No Annex Bar drinks yet.</td></tr>}
           </tbody></table></div>
         </div>
@@ -279,6 +281,7 @@ function DrinkModalInner({item,onClose,onSave}:{item:DrinkDraft;onClose:()=>void
     <input className="field-input" placeholder="Drink name" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/>
     <input className="field-input" placeholder="Category" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}/>
     <input type="number" className="field-input" placeholder="Price" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})}/>
+    <div><label className="field-label">Drink image</label><input className="field-input" placeholder="Image URL" value={draft.image} onChange={e=>setDraft({...draft,image:e.target.value})}/><ImageUploader folder="annex/drinks" label="Upload drink image" onUploaded={urls=>setDraft({...draft,image:urls[0]||''})}/></div>
     <label className="flex gap-2 text-sm"><input type="checkbox" checked={draft.available} onChange={e=>setDraft({...draft,available:e.target.checked})}/>Available</label>
     <button className="btn-primary w-full justify-center" onClick={()=>onSave(draft)}><Save size={14}/>Save drink</button>
   </div></Modal>
