@@ -10,7 +10,7 @@ const WATCHED_TABLES = new Set([
   'amenities','role_permissions','site_content','email_logs','activity_logs','blog_posts',
   'event_reservations','contact_conversations','contact_messages','guest_reviews',
   'guest_notifications','financial_transactions','financial_expenses','site_settings',
-  'room_service_orders','payment_holds','room_daily_statuses',
+  'room_service_orders','bar_orders','bar_order_items','payment_holds','room_daily_statuses',
 ])
 
 type ChangeDetail = { table: string; operation: string | null; roomId: string | null; status: string | null }
