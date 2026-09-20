@@ -343,7 +343,16 @@ export default function AnnexManagement() {
                 </select>
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">{(order.bar_order_items ?? []).map((item:any) => <div key={item.id} className="rounded-lg bg-cream-50 p-3 text-sm"><span className="font-medium">{item.quantity} × {item.drink_name}</span><span className="float-right">{nairaOrder(item.line_total)}</span></div>)}</div>
-              {order.notes && <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-navy-500">Note: {order.notes}</p>}
+              {order.takeout && (
+                <div className="mt-3 rounded-lg border border-[#d7b66a]/30 bg-[#d7b66a]/5 p-4 text-xs text-navy-500">
+                  <p className="font-semibold text-navy-950">Takeaway order</p>
+                  {order.contact_email && <p className="mt-1">Email: {order.contact_email}</p>}
+                  {order.contact_phone && <p className="mt-1">Phone: {order.contact_phone}</p>}
+                  {order.delivery_address && <p className="mt-1">Address: {order.delivery_address}</p>}
+                  {order.notes && <p className="mt-1">Instructions: {order.notes}</p>}
+                </div>
+              )}
+              {!order.takeout && order.notes && <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-navy-500">Note: {order.notes}</p>}
             </div>)}
             {barOrders.length === 0 && <div className="p-10 text-center text-sm text-navy-400">No Annex Bar orders yet.</div>}
           </div>
