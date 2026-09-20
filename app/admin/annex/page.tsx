@@ -859,11 +859,21 @@ function EditDrinkModal({
             setDraft({ ...draft, price: Number(event.target.value) })
           }
         />
-        <input
+        <select
           className="field-input"
           value={draft.bar}
-          onChange={(event) => setDraft({ ...draft, bar: event.target.value })}
-        />
+          onChange={(event) =>
+            setDraft({
+              ...draft,
+              bar: event.target.value as Drink['bar'],
+            })
+          }
+        >
+          <option value="Main Bar">Main Bar</option>
+          <option value="VIP Bar">VIP Bar</option>
+          <option value="Outdoor Bar">Outdoor Bar</option>
+          <option value="Annex Bar">Annex Bar</option>
+        </select>
         <label className="flex gap-2 text-sm">
           <input
             type="checkbox"
