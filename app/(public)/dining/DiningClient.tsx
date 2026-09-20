@@ -1,46 +1,48 @@
 'use client'
+
 import { useState } from 'react'
-import SectionHeading from '../../../components/ui/SectionHeading'
+import AnnexMenuExperience from '../../../components/annex/AnnexMenuExperience'
 import type { MenuItem } from '../../../data/mock'
-import { naira } from '../../../lib/format'
-import { Clock } from 'lucide-react'
+
+const OUTLETS = ['Blue Pair Restaurant', 'Outdoor Bar & Eatery'] as const
 
 export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
-  const [outlet, setOutlet] = useState<'Blue Pair Restaurant' | 'Outdoor Bar & Eatery'>('Blue Pair Restaurant')
-  const items = menuItems.filter(m => m.outlet === outlet)
-  const categories = Array.from(new Set(items.map(i => i.category)))
+  const [outlet, setOutlet] = useState<typeof OUTLETS[number]>('Blue Pair Restaurant')
+  const items = menuItems.filter(item => item.outlet === outlet)
+
+  const isRestaurant = outlet === 'Blue Pair Restaurant'
 
   return (
-    <section className="section">
-      <div className="container-w">
-        <div className="flex gap-3 mb-10">
-          {(['Blue Pair Restaurant', 'Outdoor Bar & Eatery'] as const).map(o => (
-            <button key={o} onClick={() => setOutlet(o)} className={'px-5 py-3 rounded-full text-sm font-semibold border ' + (outlet===o ? 'bg-navy-950 text-white border-navy-950' : 'border-black/15 text-navy-700')}>{o}</button>
+    <section>
+      <div className="mx-auto max-w-7xl px-5 pt-10 md:px-10 md:pt-14">
+        <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+          {OUTLETS.map(option => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setOutlet(option)}
+              className={outlet === option
+                ? 'shrink-0 rounded-full bg-[#d7b66a] px-5 py-2.5 text-[11px] font-bold text-[#08101d]'
+                : 'shrink-0 rounded-full border border-[#111b2f]/10 bg-white px-5 py-2.5 text-[11px] font-semibold text-[#4c5668] transition hover:border-[#d7b66a] hover:text-[#111b2f]'}
+            >
+              {option}
+            </button>
           ))}
         </div>
-        <SectionHeading eyebrow={outlet === 'Blue Pair Restaurant' ? 'Fine dining' : 'Casual & al fresco'} title={outlet}
-          subtitle={outlet === 'Blue Pair Restaurant' ? 'Open daily 7:00 AM – 11:00 PM. A market-driven menu of Nigerian classics and continental favourites, in the heart of Uromi.' : 'Open daily 4:00 PM – 2:00 AM. Small chops, suya, and cold drinks on the outdoor terrace.'} />
-        {categories.map(cat => (
-          <div key={cat} className="mb-10">
-            <h4 className="text-lg font-semibold mb-4">{cat}</h4>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {items.filter(i => i.category === cat).map(item => (
-                <div key={item.id} className="card p-4 flex gap-4 items-center">
-                  <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start gap-2">
-                      <b className="text-sm">{item.name}</b>
-                      <span className="font-display text-sm shrink-0">{naira(item.price)}</span>
-                    </div>
-                    <span className={'mt-1.5 inline-block ' + (item.available ? 'pill-green' : 'pill-red')}>{item.available ? 'Available' : 'Sold out'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-        <div className="card p-6 flex items-center gap-3 text-sm text-navy-500 mt-4"><Clock size={16} className="text-gold-500" /> Prices include VAT. A 10% service charge applies to all dine-in orders.</div>
       </div>
+
+      <AnnexMenuExperience
+        mode="food"
+        eyebrow={isRestaurant ? 'Fine dining' : 'Casual & al fresco'}
+        title={outlet}
+        description={isRestaurant
+          ? 'Explore Nigerian classics and continental favourites at Blue Pair Restaurant in Uromi, Edo State.'
+          : 'Discover small chops, grilled favourites and cold drinks at the Outdoor Bar & Eatery in Uromi, Edo State.'}
+        heroImage=""
+        items={items}
+        showAnnexNavigation={false}
+        footerLabel="Blue Pair Hotel · Dining"
+      />
     </section>
   )
 }
