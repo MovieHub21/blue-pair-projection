@@ -63,7 +63,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                 <span className="hidden text-[10px] uppercase tracking-[.2em] text-white/45 sm:block">The Annex · Blue Pair</span>
               </div>
               <h1 className="font-display text-6xl font-semibold leading-[.86] tracking-[-.055em] text-white md:text-8xl">{title}</h1>
-              <p className="mt-7 max-w-xl text-sm leading-7 text-white/68 md:text-base">{description}</p>
+              <p className="mt-7 max-w-xl text-sm leading-7 text-white md:text-base">{description}</p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <a href="#menu" className="inline-flex items-center gap-2 rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] transition hover:-translate-y-0.5 hover:bg-[#e5c87d]">
                   Explore the menu <ArrowDown size={15} />
@@ -119,7 +119,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
           <div className="max-w-2xl">
             <span className={isBar ? 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#d7b66a]' : 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#9d7428]'}>{isBar ? 'The drink list' : 'The kitchen selection'}</span>
             <h2 className="mt-3 font-display text-5xl leading-none tracking-[-.04em] md:text-6xl">{isBar ? 'What are you having tonight?' : 'Choose your craving.'}</h2>
-            <p className={isBar ? 'mt-5 max-w-xl text-sm leading-7 text-white/48' : 'mt-5 max-w-xl text-sm leading-7 text-[#5d6676]'}>A curated selection from the Annex. Take your time — there is something worth discovering.</p>
+            <p className={isBar ? 'mt-5 max-w-xl text-sm leading-7 text-white/48' : 'mt-5 max-w-xl text-sm leading-7 text-[#5d6676]'}>A curated selection from the Annex. Take your time there is something worth discovering.</p>
           </div>
 
           <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
