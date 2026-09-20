@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { getPublishedAmenities, getShortLets } from '../../../lib/data'
+import { getAmenity, getPublishedAmenities, getShortLets } from '../../../lib/data'
+import { notFound } from 'next/navigation'
 import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
@@ -7,27 +8,22 @@ import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
 import { ArrowRight } from 'lucide-react'
 
-export const metadata = buildMetadata({
-  title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Hotel',
-  description: 'Explore the Blue Pair Hotel Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
-  keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state, apartment for rent uromi',
-  path: '/annex',
-})
+export async function generateMetadata() { const home = await getAmenity('annex-home'); return buildMetadata({ title: home?.name || 'The Annex', description: home?.description || '', keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state', path: '/annex', image: home?.heroImage || undefined }) }
 
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'}]
 
 export default async function AnnexPage() {
-  const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getShortLets()])
-  const heroImage = amenities[0]?.heroImage || shortLets[0]?.image || ''
+  const [home, amenities, shortLets] = await Promise.all([getAmenity('annex-home'), getPublishedAmenities('annex-'), getShortLets()])
+  if (!home || !home.published) notFound()
+  const heroImage = home.heroImage || amenities[0]?.heroImage || shortLets[0]?.image || ''
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
       <PageHero image={heroImage}
-        eyebrow="A world of its own" title="The Annex" crumbs="Home / The Annex" height="h-80" />
+        eyebrow={home.eyebrow} title={home.name} crumbs="Home / The Annex" height="h-80" />
       <section className="section">
         <div className="container-w">
-          <SectionHeading eyebrow="Introducing" title="A second campus, built for longer stays and open-air evenings"
-            subtitle="The Annex sits just behind the main hotel in Uromi — short-let apartments, an open-air eatery and grill, a dedicated bar and VIP lounge, and its own restaurant." />
+          <SectionHeading eyebrow={home.ctaLabel || home.eyebrow} title={home.name} subtitle={home.description} />
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
             {amenities.map(a => (
               <Link key={a.key} href={`/annex/${a.key.replace(/^annex-/, '')}`} className="card overflow-hidden group">
