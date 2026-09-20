@@ -76,7 +76,7 @@ export interface StaffMember {
 
 export interface MenuItem {
   id: string
-  outlet: 'Blue Pair Restaurant' | 'Outdoor Bar & Eatery' | 'Annex Restaurant' | 'Annex Grilling'
+  outlet: 'Blue Pair Restaurant' | 'Outdoor Bar & Eatery' | 'Annex Restaurant' | 'Annex Grilling' | 'Annex Outdoor Eatery'
   category: string
   name: string
   price: number
