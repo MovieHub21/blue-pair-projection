@@ -184,14 +184,60 @@ export default function AnnexManagement() {
 
       {tab === 'Short-lets' && (
         <div>
-          <div className="flex justify-between items-center mb-4"><div><h2 className="font-semibold">Annex short-let properties</h2><p className="text-xs text-navy-400 mt-1">Properties, pricing, descriptions, images and amenities are editable here.</p></div><button onClick={newShortLet} className="btn-primary btn-sm"><Plus size={14}/>Add property</button></div>
-          <div className="grid md:grid-cols-2 gap-4">{shortLets.map(sl => {
-            const activeBooking = bookings.find(b => b.short_let_id === sl.id && ['confirmed','checked_in'].includes(b.status) && b.payment_status === 'paid' && b.check_in <= new Date().toISOString().slice(0,10) && b.check_out > new Date().toISOString().slice(0,10))
-            const booked = Boolean(activeBooking)
-            return <div key={sl.id} className="card overflow-hidden grid grid-cols-[100px_minmax(0,1fr)]"><img src={sl.image} className="w-full h-full min-h-[170px] object-cover" alt={sl.name}/><div className="p-4 min-w-0"><div className="flex justify-between gap-2"><div><b>{sl.name}</b><p className="text-xs text-navy-400 mt-1">{sl.type} · {sl.bedrooms} bedrooms</p></div><span className={booked ? 'pill-red' : sl.available ? 'pill-green' : 'pill-red'}>{booked ? 'Booked' : sl.available ? 'Available' : 'Disabled'}</span></div><p className="text-xs text-navy-500 mt-3 line-clamp-2">{sl.description}</p><div className="font-display mt-3">₦{sl.price.toLocaleString()}<span className="text-xs font-body text-navy-400"> /night</span></div><div className="flex gap-3 mt-4"><button onClick={()=>editShortLet(sl)} className="text-xs font-semibold flex items-center gap-1"><Pencil size={12}/>Edit</button><button onClick={()=>setDeleteShortLet(sl)} className="text-xs font-semibold text-red-600 flex items-center gap-1"><Trash2 size={12}/>Delete</button></div></div></div>
-          })}</div>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="font-semibold">Annex short-let properties</h2>
+              <p className="text-xs text-navy-400 mt-1">Properties, pricing, descriptions, images and amenities are editable here.</p>
+            </div>
+            <button onClick={newShortLet} className="btn-primary btn-sm"><Plus size={14} />Add property</button>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {shortLets.map((sl) => {
+              const today = new Date().toISOString().slice(0, 10)
+              const activeBooking = bookings.find(
+                (b) =>
+                  b.short_let_id === sl.id &&
+                  ['confirmed', 'checked_in'].includes(b.status) &&
+                  b.payment_status === 'paid' &&
+                  b.check_in <= today &&
+                  b.check_out > today,
+              )
+              const booked = Boolean(activeBooking)
+
+              return (
+                <div key={sl.id} className="card overflow-hidden grid grid-cols-[100px_minmax(0,1fr)]">
+                  <img src={sl.image} className="w-full h-full min-h-[170px] object-cover" alt={sl.name} />
+                  <div className="p-4 min-w-0">
+                    <div className="flex justify-between gap-2">
+                      <div>
+                        <b>{sl.name}</b>
+                        <p className="text-xs text-navy-400 mt-1">{sl.type} · {sl.bedrooms} bedrooms</p>
+                      </div>
+                      <span className={booked ? 'pill-red' : sl.available ? 'pill-green' : 'pill-red'}>
+                        {booked ? 'Booked' : sl.available ? 'Available' : 'Disabled'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-navy-500 mt-3 line-clamp-2">{sl.description}</p>
+                    <div className="font-display mt-3">
+                      ₦{sl.price.toLocaleString()}
+                      <span className="text-xs font-body text-navy-400"> /night</span>
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <button onClick={() => editShortLet(sl)} className="text-xs font-semibold flex items-center gap-1">
+                        <Pencil size={12} />Edit
+                      </button>
+                      <button onClick={() => setDeleteShortLet(sl)} className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                        <Trash2 size={12} />Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
+
 
       {tab === 'Bookings' && <div className="card overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-xs text-navy-400 border-b border-black/5"><th className="p-4">Property</th><th className="p-4">Guest</th><th className="p-4">Dates</th><th className="p-4">Amount</th><th className="p-4">Payment</th><th className="p-4">Status</th></tr></thead><tbody>{selectedBookings.map(b => <tr key={b.id} className="border-b border-black/5"><td className="p-4 font-medium">{shortLets.find(s=>s.id===b.short_let_id)?.name || 'Short-let'}</td><td className="p-4">{b.customers?.name || b.customers?.email || 'Guest'}</td><td className="p-4">{b.check_in} → {b.check_out}</td><td className="p-4">₦{Number(b.amount).toLocaleString()}</td><td className="p-4 capitalize">{b.payment_status}</td><td className="p-4 capitalize">{b.status}</td></tr>)}{selectedBookings.length===0&&<tr><td colSpan={6} className="p-8 text-center text-navy-400">No short-let bookings yet.</td></tr>}</tbody></table></div>}
 
