@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import AmenityPage from '../../../../components/ui/AmenityPage'
 import { getAmenity } from '../../../../lib/data'
@@ -12,7 +11,16 @@ export const metadata = buildMetadata({
 
 export default async function AnnexVipLoungePage() {
   const amenity = await getAmenity('annex-vip-lounge')
-  if (!amenity || !amenity.published) notFound()
-
-  return <AmenityPage config={amenity} />
+  const config = amenity || {
+    name: 'Annex VIP Lounge',
+    eyebrow: 'Private lounge',
+    heroImage: '',
+    description: 'A private, intimate VIP lounge within the Blue Pair Hotel Annex — ideal for small celebrations and relaxed evenings.',
+    gallery: [],
+    hours: 'Daily, 5pm–2am',
+    facilities: ['Private lounge seating', 'Small celebrations', 'Priority access for hotel guests'],
+    pricingNote: '',
+    ctaLabel: 'Reserve now',
+  }
+  return <AmenityPage config={config} />
 }
