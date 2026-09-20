@@ -62,16 +62,22 @@ export async function GET(request: Request) {
     }
 
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
-    if (!booking.room_id) return NextResponse.redirect(`${guestUrl}?payment=room-missing`)
-
-    const { data: paymentHold, error: holdError } = await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id', booking.id).maybeSingle()
-    if (holdError) throw holdError
-    const ownsActiveHold = paymentHold?.room_id === booking.room_id && !!paymentHold?.expires_at && new Date(paymentHold.expires_at).getTime() > Date.now()
-    if (!ownsActiveHold) {
-      const { data: refreshedBooking } = await admin.from('bookings').select('status,payment_status').eq('id', booking.id).maybeSingle()
-      if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
-      await releaseAbandonedPayment(admin, booking.id, payment.id)
-      return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
+    if (!booking.room_id && !booking.short_let_id) return NextResponse.redirect(`${guestUrl}?payment=property-missing`)
+    if (booking.short_let_id) {
+      if (!booking.reservation_expires_at || new Date(booking.reservation_expires_at).getTime() <= Date.now()) {
+        await releaseAbandonedPayment(admin, booking.id, payment.id)
+        return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
+      }
+    } else {
+      const { data: paymentHold, error: holdError } = await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id', booking.id).maybeSingle()
+      if (holdError) throw holdError
+      const ownsActiveHold = paymentHold?.room_id === booking.room_id && !!paymentHold?.expires_at && new Date(paymentHold.expires_at).getTime() > Date.now()
+      if (!ownsActiveHold) {
+        const { data: refreshedBooking } = await admin.from('bookings').select('status,payment_status').eq('id', booking.id).maybeSingle()
+        if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
+        await releaseAbandonedPayment(admin, booking.id, payment.id)
+        return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
+      }
     }
 
     const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
