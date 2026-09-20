@@ -32,7 +32,7 @@ export default function ShortLetBookingClient({ shortLet }: { shortLet: { id:str
 
   async function book() {
     if (!auth.userId) {
-      router.push(`/account/login?redirect=\${encodeURIComponent(window.location.pathname)}`)
+      router.push(`/account/login?redirect=${encodeURIComponent(window.location.pathname)}`)
       return
     }
     if (checkIn >= checkOut) { setError('Check-out must be after check-in.'); return }
