@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '../../../../lib/supabase/server'
-import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { SITE_URL } from '../../../../lib/siteConfig'
+import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
+import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
+import { SITE_URL } from '../../../../../lib/siteConfig'
 
 const LOCATIONS = new Set(['room','short_let','bar','outdoor_eatery','vip_lounge'])
 function isActiveBooking(booking: any, today: string) { return ['confirmed','checked_in'].includes(String(booking.status)) && booking.payment_status === 'paid' && booking.check_in <= today && booking.check_out > today }
