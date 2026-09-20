@@ -62,3 +62,14 @@ for each row execute function public.touch_bar_order();
 
 alter table public.bar_orders replica identity full;
 alter table public.bar_order_items replica identity full;
+
+
+drop trigger if exists bluepair_realtime_change on public.bar_orders;
+create trigger bluepair_realtime_change
+after insert or update or delete on public.bar_orders
+for each row execute function public.broadcast_bluepair_database_change();
+
+drop trigger if exists bluepair_realtime_change on public.bar_order_items;
+create trigger bluepair_realtime_change
+after insert or update or delete on public.bar_order_items
+for each row execute function public.broadcast_bluepair_database_change();
