@@ -6,13 +6,9 @@ import { getPublishedBlogPost, getPublishedBlogPosts } from '../../../../lib/blo
 import { SITE_URL } from '../../../../lib/siteConfig'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 type Props = { params: { slug: string } }
-
-export async function generateStaticParams() {
-  const posts = await getPublishedBlogPosts()
-  return posts.map(post => ({ slug: post.slug }))
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPublishedBlogPost(params.slug)
