@@ -1,44 +1,15 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
-import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
-import { SITE_URL } from '../../../../lib/siteConfig'
 import { getMenuItems, getAmenity } from '../../../../lib/data'
-import { naira } from '../../../../lib/format'
-import PageHero from '../../../../components/layout/PageHero'
-import SectionHeading from '../../../../components/ui/SectionHeading'
+import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 export const metadata = buildMetadata({
   title: 'Grill Menu & Prices in Uromi, Edo State | Blue Pair Hotel Annex',
-  description: 'Whole chicken, fish and suya grilled fresh over open coal at the Blue Pair Hotel Annex, Uromi, Edo State. View the grill menu and prices.',
+  description: 'Explore the Annex Grilling menu at Blue Pair Hotel, Uromi, Edo State.',
   keywords: 'grill menu uromi, suya uromi, annex grilling blue pair, grill house edo state',
   path: '/annex/grilling',
 })
 
-const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Grilling',path:'/annex/grilling'}]
-
 export default async function GrillingPage() {
   const [menuItems, amenity] = await Promise.all([getMenuItems(), getAmenity('annex-grilling')])
-  const items = menuItems.filter(m => m.outlet === 'Annex Grilling')
-  return (
-    <div>
-      <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image={amenity?.heroImage || ''} eyebrow={amenity?.eyebrow || 'Grilling'} title={amenity?.name || 'Annex Grilling'} crumbs="Home / Annex / Grilling" height="h-72" />
-      <section className="section">
-        <div className="container-w">
-          <SectionHeading eyebrow="Menu" title={amenity?.name || 'Annex Grilling'} subtitle={amenity?.description || 'Freshly grilled food prepared at the Blue Pair Hotel Annex.'} />
-          <div className="grid sm:grid-cols-2 gap-4">
-            {items.map(item => (
-              <div key={item.id} className="card p-4 flex gap-4 items-center">
-                {item.image ? <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" /> : <div className="w-20 h-20 rounded-lg bg-cream-100 shrink-0" />}
-                <div className="flex-1">
-                  <div className="flex justify-between items-start gap-2"><b className="text-sm">{item.name}</b><span className="font-display text-sm">{naira(item.price)}</span></div>
-                  <span className={'mt-1.5 inline-block ' + (item.available ? 'pill-green' : 'pill-red')}>{item.available ? 'Available' : 'Sold out'}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          {items.length === 0 && <div className="card p-6 text-sm text-navy-500">The grilling menu is being updated.</div>}
-        </div>
-      </section>
-    </div>
-  )
+  return <AnnexMenuExperience mode="food" eyebrow={amenity?.eyebrow || 'Fire & flavour'} title={amenity?.name || 'Annex Grilling'} description={amenity?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.'} heroImage={amenity?.heroImage || ''} items={menuItems.filter(item => item.outlet === 'Annex Grilling')} />
 }
