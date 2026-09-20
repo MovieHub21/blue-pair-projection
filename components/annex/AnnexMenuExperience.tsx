@@ -71,13 +71,18 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
     if ((location === 'room' || location === 'short_let') && !bookingId) return setOrderMessage('Select the current booking for that delivery location.')
     setPlacing(true); setOrderMessage('')
     try {
-      const response = await fetch('/api/bar/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes, contactEmail, contactPhone, deliveryAddress }) })
+      const response = await fetch('/api/bar/orders/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes, contactEmail, contactPhone, deliveryAddress }),
+      })
       const result = await response.json()
-      if (!response.ok) throw new Error(result?.error || 'Unable to place your order.')
-      setCart([]); setNotes(''); setContactEmail(''); setContactPhone(''); setDeliveryAddress(''); setBookingId(''); setLocation(''); setOrderMessage(`Order ${result.reference} received. ${result.deliveryLabel} will receive it.`)
+      if (!response.ok) throw new Error(result?.error || 'Unable to start payment.')
+      window.location.href = result.authorizationUrl
     } catch (error: any) {
-      setOrderMessage(error?.message || 'Unable to place your order.')
-    } finally { setPlacing(false) }
+      setOrderMessage(error?.message || 'Unable to start payment.')
+      setPlacing(false)
+    }
   }
 
   return (
