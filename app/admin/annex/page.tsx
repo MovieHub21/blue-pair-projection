@@ -21,6 +21,7 @@ type BookingRow = {
 }
 
 const OUTLETS = [
+  { key: 'annex-home', label: 'Annex Home' },
   { key: 'annex-outdoor-eatery', label: 'Outdoor Eatery' },
   { key: 'annex-grilling', label: 'Grilling' },
   { key: 'annex-bar', label: 'Bar' },
