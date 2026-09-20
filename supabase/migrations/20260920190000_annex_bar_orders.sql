@@ -73,3 +73,14 @@ drop trigger if exists bluepair_realtime_change on public.bar_order_items;
 create trigger bluepair_realtime_change
 after insert or update or delete on public.bar_order_items
 for each row execute function public.broadcast_bluepair_database_change();
+
+
+drop trigger if exists activity_bar_orders on public.bar_orders;
+create trigger activity_bar_orders
+after insert or update or delete on public.bar_orders
+for each row execute function public.record_activity_change();
+
+drop trigger if exists activity_bar_order_items on public.bar_order_items;
+create trigger activity_bar_order_items
+after insert or update or delete on public.bar_order_items
+for each row execute function public.record_activity_change();
