@@ -199,8 +199,8 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
             <div className={isBar ? 'overflow-hidden border-y border-white/10' : 'overflow-hidden border-y border-[#111b2f]/10'}>
               {menuWithoutLead.map((item, index) => (
                 <article key={item.id} className={isBar
-                  ? 'group grid grid-cols-[72px_1fr_auto] items-center gap-5 border-b border-white/10 py-5 last:border-b-0 md:grid-cols-[110px_1fr_auto_30px] md:gap-7'
-                  : 'group grid grid-cols-[82px_1fr_auto] items-center gap-5 border-b border-[#111b2f]/10 py-5 last:border-b-0 md:grid-cols-[130px_1fr_auto_30px] md:gap-8'}>
+                  ? 'group grid grid-cols-[72px_minmax(0,1fr)_auto_auto] items-center gap-4 border-b border-white/10 py-5 last:border-b-0 md:grid-cols-[110px_minmax(0,1fr)_auto_auto] md:gap-7'
+                  : 'group grid grid-cols-[82px_minmax(0,1fr)_auto_auto] items-center gap-4 border-b border-[#111b2f]/10 py-5 last:border-b-0 md:grid-cols-[130px_minmax(0,1fr)_auto_auto] md:gap-8'}>
                   <div className="relative aspect-square overflow-hidden bg-black/10">
                     {item.image ? <img src={item.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" /> : <div className={isBar ? 'h-full w-full bg-[#111a28]' : 'h-full w-full bg-[#ece5da]'} />}
                   </div>
@@ -212,7 +212,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
-                  <div className="flex justify-end">{item.available ? (cartItem(item.id) ? <div className="flex items-center gap-1 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-sm">−</button><span className="w-5 text-center text-xs">{cartItem(item.id)?.quantity}</span><button type="button" onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d7b66a] text-sm font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(item)} className="rounded-full bg-[#d7b66a] px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add</button>) : <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25">Unavailable</span>}</div>
+                  <div className="flex shrink-0 justify-end">{item.available ? (cartItem(item.id) ? <div className="flex items-center gap-1 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-sm">−</button><span className="w-5 text-center text-xs">{cartItem(item.id)?.quantity}</span><button type="button" onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d7b66a] text-sm font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(item)} className="rounded-full bg-[#d7b66a] px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add</button>) : <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25">Unavailable</span>}</div>
                 </article>
               ))}
             </div>
