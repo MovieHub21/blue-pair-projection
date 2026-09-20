@@ -11,7 +11,7 @@ import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatch
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
 import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '../../../lib/mappers'
-import type { Booking, Customer, Room, RoomType } from '../../../data/mock'
+import type { Booking, Customer, Room, RoomType, ShortLet } from '../../../data/mock'
 
 type PaymentMethod = 'Transfer' | 'Cash' | 'POS'
 type ExtraService = { id: string; name: string; price: number }
@@ -33,6 +33,7 @@ export default function BookingManagement() {
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
+  const [shortLets, setShortLets] = useState<ShortLet[]>([])
 
   const [active, setActive] = useState<Booking | null>(null)
   const [q, setQ] = useState('')
@@ -64,6 +65,7 @@ export default function BookingManagement() {
     }
     if (cu.data) setCustomers(cu.data.map(mapCustomer))
     if (rm.data) setRooms(rm.data.map(mapRoom))
+    if (sl.data) setShortLets(sl.data.map((row:any) => ({ id:row.id,name:row.name,type:row.type,price:Number(row.price),bedrooms:row.bedrooms,amenities:row.amenities??[],image:row.image,available:row.available,description:row.description })))
   }, [])
 
   useEffect(() => {
@@ -108,6 +110,7 @@ export default function BookingManagement() {
 
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
+  const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
   const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
   const physicalRoomOf = (id?: string) => id ? rooms.find(r => r.id === id) : undefined
   const filtered = bookings.filter(b => {
