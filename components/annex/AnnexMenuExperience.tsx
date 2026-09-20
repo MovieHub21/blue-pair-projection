@@ -64,6 +64,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
     setOrderMessage('')
   }
   const updateQuantity = (id: string, delta: number) => setCart(current => current.map(x => x.id === id ? { ...x, quantity: Math.max(0, Math.min(50, x.quantity + delta)) } : x).filter(x => x.quantity > 0))
+  const cartItem = (id: string) => cart.find(x => x.id === id)
   const submitOrder = async () => {
     if (!cart.length) return
     if (!location) return setOrderMessage('Choose where you want your order served.')
@@ -189,7 +190,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   <p className={isBar ? 'mt-5 text-sm leading-7 text-white/48' : 'mt-5 text-sm leading-7 text-[#697282]'}>{isBar ? 'A signature choice from the Annex selection.' : 'One of the selections that defines the Annex table.'}</p>
                   <div className="mt-8 flex items-center justify-between border-t border-current/10 pt-5">
                     <span className="font-display text-xl text-[#c39a45]">{naira(lead.price)}</span>
-                    {lead.available ? <button type="button" onClick={() => addToOrder(lead)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7b66a] text-xl font-semibold text-[#08101d]">+</button> : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
+                    {lead.available ? (cartItem(lead.id) ? <div className="flex items-center gap-2 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(lead.id, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-base">−</button><span className="w-5 text-center text-sm">{cartItem(lead.id)?.quantity}</span><button type="button" onClick={() => addToOrder(lead)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d7b66a] text-base font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(lead)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7b66a] text-xl font-semibold text-[#08101d]">+</button>) : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
                   </div>
                 </div>
               </article>
@@ -211,7 +212,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
-                  <div className="flex justify-end"><button type="button" disabled={!item.available} onClick={() => addToOrder(item)} className={item.available ? 'flex h-9 w-9 items-center justify-center rounded-full bg-[#d7b66a] text-lg font-semibold text-[#08101d]' : 'rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25'}>{item.available ? '+' : 'Unavailable'}</button></div>
+                  <div className="flex justify-end">{item.available ? (cartItem(item.id) ? <div className="flex items-center gap-1 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-sm">−</button><span className="w-5 text-center text-xs">{cartItem(item.id)?.quantity}</span><button type="button" onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d7b66a] text-sm font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(item)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d7b66a] text-lg font-semibold text-[#08101d]">+</button>) : <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25">Unavailable</span>}</div>
                 </article>
               ))}
             </div>
@@ -239,9 +240,17 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         )}
       {isBar && (
         <>
-          <button type="button" onClick={() => setShowOrder(true)} className="fixed bottom-5 right-5 z-40 rounded-full bg-[#d7b66a] px-5 py-3 text-xs font-bold text-[#08101d] shadow-2xl shadow-black/40">
-            Your order · {cartCount} {cartCount === 1 ? 'item' : 'items'} · {naira(cartTotal)}
-          </button>
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05080e]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[9px] uppercase tracking-[.2em] text-white/35">Your order</p>
+                <p className="truncate font-display text-lg text-white">{cartCount} {cartCount === 1 ? 'item' : 'items'} · {naira(cartTotal)}</p>
+              </div>
+              <button type="button" onClick={() => setShowOrder(true)} disabled={!cart.length} className="shrink-0 rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] shadow-lg disabled:cursor-not-allowed disabled:opacity-35">
+                Checkout
+              </button>
+            </div>
+          </div>
           {showOrder && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
               <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto bg-[#0a1019] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
@@ -254,7 +263,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   {!cart.length && <p className="py-8 text-sm text-white/40">Your order is empty.</p>}
                 </div>
                 <div className="mt-7">
-                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">Where should we serve it?</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">Where should we serve it? <span className="text-red-400">*</span></p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {[
                       ['room','Room'], ['short_let','Short-let'], ['bar','Annex Bar'], ['outdoor_eatery','Outdoor Eatery'], ['vip_lounge','VIP Lounge'],
@@ -269,7 +278,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                 </div>
                 {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
-                <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
+                <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || !location || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
               </div>
             </div>
           )}
