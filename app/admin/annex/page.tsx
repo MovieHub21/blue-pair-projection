@@ -511,7 +511,7 @@ export default function AnnexManagement() {
       )}
 
       {tab === 'Menu' && (
-        <ContentList
+        <ContentList<MenuItem>
           title="Annex Grilling & Restaurant menu"
           items={menuItems}
           onEdit={(item) => setEditingMenu(item)}
@@ -519,7 +519,7 @@ export default function AnnexManagement() {
       )}
 
       {tab === 'Drinks' && (
-        <ContentList
+        <ContentList<Drink>
           title="Annex Bar drinks"
           items={drinks}
           onEdit={(item) => setEditingDrink(item)}
@@ -712,14 +712,14 @@ function Field({
   )
 }
 
-function ContentList({
+function ContentList<T extends MenuItem | Drink>({
   title,
   items,
   onEdit,
 }: {
   title: string
-  items: Array<MenuItem | Drink>
-  onEdit: (item: MenuItem | Drink) => void
+  items: T[]
+  onEdit: (item: T) => void
 }) {
   return (
     <div className="card divide-y divide-black/5">
