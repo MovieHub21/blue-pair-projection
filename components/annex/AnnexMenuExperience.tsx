@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowDown, ArrowRight, ChevronRight } from 'lucide-react'
 import { naira } from '../../lib/format'
 
 export type AnnexMenuItem = {
@@ -24,99 +24,189 @@ type Props = {
 
 export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode }: Props) {
   const [activeCategory, setActiveCategory] = useState('All')
-  const categories = useMemo(() => ['All', ...Array.from(new Set(items.map(x => x.category).filter(Boolean)))], [items])
-  const filtered = useMemo(() => activeCategory === 'All' ? items : items.filter(x => x.category === activeCategory), [activeCategory, items])
-  const featured = items.slice(0, 3)
   const isBar = mode === 'bar'
 
+  const categories = useMemo(
+    () => ['All', ...Array.from(new Set(items.map(x => x.category).filter(Boolean)))],
+    [items],
+  )
+
+  const filtered = useMemo(
+    () => activeCategory === 'All' ? items : items.filter(x => x.category === activeCategory),
+    [activeCategory, items],
+  )
+
+  const featured = items.filter(x => x.image).slice(0, 3)
+  const lead = featured[0] || items[0]
+  const supporting = featured.slice(1, 3)
+  const menuWithoutLead = lead ? filtered.filter(x => x.id !== lead.id) : filtered
+
   return (
-    <div className={isBar ? 'bg-[#070b13] text-white' : 'bg-[#f8f5ef] text-navy-950'}>
-      <section
-        className="relative min-h-[590px] overflow-hidden flex items-end"
-        style={{ backgroundImage: heroImage ? `url('${heroImage}')` : undefined, backgroundColor: isBar ? '#070b13' : '#e9e1d4', backgroundSize: 'cover', backgroundPosition: 'center' }}
-      >
-        <div className={isBar ? 'absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(199,154,62,.24),transparent_30%),linear-gradient(180deg,rgba(3,6,12,.2),#070b13_92%)]' : 'absolute inset-0 bg-[linear-gradient(180deg,rgba(7,21,54,.08),rgba(7,21,54,.88))]'} />
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-gold-400/20" />
-        <div className="absolute right-10 top-24 h-28 w-28 rounded-full border border-white/10" />
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-14 md:px-10 md:pb-16">
-          <div className="max-w-3xl motion-fade-up">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="eyebrow text-gold-300">{eyebrow}</span><span className="h-px w-12 bg-gold-400/70" />
-              <span className="text-[10px] uppercase tracking-[.22em] text-white/45">Blue Pair · The Annex</span>
+    <div className={isBar ? 'min-h-screen bg-[#05080e] text-white' : 'min-h-screen bg-[#f7f3ec] text-[#111b2f]'}>
+      <section className="relative min-h-[690px] overflow-hidden">
+        {heroImage ? (
+          <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : lead?.image ? (
+          <img src={lead.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : null}
+        <div className={isBar
+          ? 'absolute inset-0 bg-[linear-gradient(90deg,rgba(3,7,13,.96)_0%,rgba(3,7,13,.72)_42%,rgba(3,7,13,.25)_100%)]'
+          : 'absolute inset-0 bg-[linear-gradient(90deg,rgba(5,18,39,.92)_0%,rgba(5,18,39,.66)_45%,rgba(5,18,39,.2)_100%)]'} />
+        <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(3,7,13,.96),transparent_48%)]" />
+
+        <div className="relative z-10 mx-auto flex min-h-[690px] max-w-7xl items-end px-5 pb-16 md:px-10 md:pb-20">
+          <div className="grid w-full gap-12 lg:grid-cols-[1.05fr_.95fr] lg:items-end">
+            <div className="max-w-2xl">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[.28em] text-[#d7b66a]">{eyebrow}</span>
+                <span className="h-px w-12 bg-[#d7b66a]/70" />
+                <span className="hidden text-[10px] uppercase tracking-[.2em] text-white/45 sm:block">The Annex · Blue Pair</span>
+              </div>
+              <h1 className="font-display text-6xl font-semibold leading-[.86] tracking-[-.055em] text-white md:text-8xl">{title}</h1>
+              <p className="mt-7 max-w-xl text-sm leading-7 text-white/68 md:text-base">{description}</p>
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                <a href="#menu" className="inline-flex items-center gap-2 rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] transition hover:-translate-y-0.5 hover:bg-[#e5c87d]">
+                  Explore the menu <ArrowDown size={15} />
+                </a>
+                <span className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-xs text-white/65 backdrop-blur-md">
+                  {items.length} {isBar ? 'drinks' : 'dishes'}
+                </span>
+              </div>
             </div>
-            <h1 className="font-display text-5xl font-semibold leading-[.95] tracking-[-.04em] text-white md:text-7xl">{title}</h1>
-            <p className="mt-6 max-w-2xl text-sm leading-7 text-white/72 md:text-base">{description}</p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a href="#menu" className="btn-gold">Browse the menu <ArrowRight size={16} /></a>
-              <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 backdrop-blur-md">{items.length} {isBar ? 'drinks' : 'menu items'}</span>
-            </div>
+
+            {lead && (
+              <div className="hidden justify-end lg:flex">
+                <div className="w-full max-w-[390px] rotate-1 overflow-hidden border border-white/15 bg-black/30 p-3 shadow-2xl backdrop-blur-sm">
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    {lead.image ? <img src={lead.image} alt={lead.name} className="h-full w-full object-cover transition duration-700 hover:scale-105" /> : null}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent p-6 pt-20">
+                      <span className="text-[9px] uppercase tracking-[.2em] text-[#e0c57c]">{lead.category || 'Featured'}</span>
+                      <div className="mt-1 flex items-end justify-between gap-4">
+                        <h2 className="font-display text-3xl text-white">{lead.name}</h2>
+                        <span className="font-display text-sm text-white/80">{naira(lead.price)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {featured.length > 0 && (
-        <section className={isBar ? 'border-b border-white/10 bg-[#0b111d]' : 'border-b border-navy-900/10 bg-white'}>
-          <div className="mx-auto grid max-w-7xl md:grid-cols-3">
-            {featured.map((item, index) => {
-              return <div key={item.id} className="group relative min-h-[170px] overflow-hidden border-b border-inherit p-7 md:border-b-0 md:border-r last:border-r-0">
-                {item.image && <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 transition duration-700 group-hover:scale-105 group-hover:opacity-40" />}
-                <div className="relative z-10 flex h-full flex-col justify-end">
-                  <span className={isBar ? 'text-[10px] uppercase tracking-[.18em] text-gold-300/75' : 'text-[10px] uppercase tracking-[.18em] text-gold-600'}>{item.category || 'Featured'}</span>
-                  <h2 className={isBar ? 'mt-2 max-w-[75%] font-display text-2xl text-white' : 'mt-2 max-w-[75%] font-display text-2xl text-navy-950'}>{item.name}</h2>
-                  <span className={isBar ? 'mt-2 font-display text-sm text-white/65' : 'mt-2 font-display text-sm text-navy-500'}>{naira(item.price)}</span>
+      {supporting.length > 0 && (
+        <section className={isBar ? 'border-y border-white/10 bg-[#0a1019]' : 'border-y border-[#111b2f]/10 bg-white'}>
+          <div className="mx-auto grid max-w-7xl md:grid-cols-2">
+            {supporting.map((item, index) => (
+              <div key={item.id} className="group relative min-h-[230px] overflow-hidden border-b border-white/10 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+                {item.image && <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />}
+                <div className={isBar
+                  ? 'absolute inset-0 bg-gradient-to-r from-[#05080e] via-[#05080e]/55 to-transparent'
+                  : 'absolute inset-0 bg-gradient-to-r from-[#07152d]/90 via-[#07152d]/55 to-transparent'} />
+                <div className="relative z-10 flex min-h-[230px] max-w-md flex-col justify-end p-8">
+                  <span className="text-[9px] uppercase tracking-[.2em] text-[#d7b66a]">{item.category || 'Featured'}</span>
+                  <h2 className="mt-2 font-display text-3xl text-white">{item.name}</h2>
+                  <span className="mt-2 font-display text-sm text-white/65">{naira(item.price)}</span>
                 </div>
               </div>
-            })}
+            ))}
           </div>
         </section>
       )}
 
-      <section id="menu" className="mx-auto max-w-7xl px-5 py-16 md:px-10 md:py-24">
-        <div className="flex flex-col gap-7 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-xl">
-            <div className={isBar ? 'eyebrow text-gold-300' : 'eyebrow'}>{isBar ? 'Pour something good' : 'From the kitchen'}</div>
-            <h2 className={isBar ? 'mt-2 font-display text-4xl text-white md:text-5xl' : 'mt-2 font-display text-4xl md:text-5xl'}>{isBar ? 'What are you having?' : 'Choose your craving.'}</h2>
-            <p className={isBar ? 'mt-4 text-sm leading-6 text-white/55' : 'mt-4 text-sm leading-6 text-navy-500'}>Browse by category and find exactly what you came for.</p>
+      <section id="menu" className="mx-auto max-w-7xl px-5 py-20 md:px-10 md:py-28">
+        <div className="mb-12 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <span className={isBar ? 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#d7b66a]' : 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#9d7428]'}>{isBar ? 'The drink list' : 'The kitchen selection'}</span>
+            <h2 className="mt-3 font-display text-5xl leading-none tracking-[-.04em] md:text-6xl">{isBar ? 'What are you having tonight?' : 'Choose your craving.'}</h2>
+            <p className={isBar ? 'mt-5 max-w-xl text-sm leading-7 text-white/48' : 'mt-5 max-w-xl text-sm leading-7 text-[#5d6676]'}>A curated selection from the Annex. Take your time — there is something worth discovering.</p>
           </div>
+
           <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
-            {categories.map(category => <button key={category} type="button" onClick={() => setActiveCategory(category)}
-              className={activeCategory === category ? 'shrink-0 rounded-full bg-gold-500 px-4 py-2 text-xs font-bold text-navy-950 shadow-lg shadow-gold-500/15' : isBar ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/65 transition hover:bg-white/10 hover:text-white' : 'shrink-0 rounded-full border border-navy-900/10 bg-white px-4 py-2 text-xs font-semibold text-navy-600 transition hover:border-gold-400 hover:text-navy-950'}>
-              {category}
-            </button>)}
+            {categories.map(category => (
+              <button key={category} type="button" onClick={() => setActiveCategory(category)}
+                className={activeCategory === category
+                  ? 'shrink-0 rounded-full bg-[#d7b66a] px-5 py-2.5 text-[11px] font-bold text-[#08101d] shadow-lg shadow-[#d7b66a]/10'
+                  : isBar
+                    ? 'shrink-0 rounded-full border border-white/10 bg-white/[.04] px-5 py-2.5 text-[11px] font-semibold text-white/55 transition hover:border-white/20 hover:text-white'
+                    : 'shrink-0 rounded-full border border-[#111b2f]/10 bg-white px-5 py-2.5 text-[11px] font-semibold text-[#4c5668] transition hover:border-[#d7b66a] hover:text-[#111b2f]'}>
+                {category}
+              </button>
+            ))}
           </div>
         </div>
 
-        {filtered.length > 0 ? <div className={isBar ? 'mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'}>
-          {filtered.map((item, index) => <article key={item.id} style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-            className={isBar ? 'group relative overflow-hidden rounded-xl border border-white/10 bg-[#0e1624] p-5 transition duration-500 hover:-translate-y-1 hover:border-gold-400/30 hover:shadow-[0_24px_60px_rgba(0,0,0,.35)] motion-fade-up' : 'group overflow-hidden rounded-xl border border-navy-900/10 bg-white shadow-[0_14px_40px_rgba(7,21,54,.06)] transition duration-500 hover:-translate-y-1 hover:border-gold-400/40 hover:shadow-[0_24px_60px_rgba(7,21,54,.12)] motion-fade-up'}>
-            {item.image ? <div className="relative aspect-[4/3] overflow-hidden">
-              <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/65 to-transparent" />
-              <span className="absolute bottom-4 left-4 rounded-full bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-white backdrop-blur-md">{item.category}</span>
-            </div> : <div className="relative mb-5 flex h-32 items-center justify-center overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_35%,rgba(199,154,62,.2),transparent_34%),linear-gradient(145deg,#121d2e,#080d16)]">
-              <div className="absolute h-24 w-24 rounded-full border border-gold-400/15" /><div className="absolute h-16 w-16 rounded-full border border-gold-400/20" />
-              <span className="absolute bottom-3 left-4 text-[9px] uppercase tracking-[.18em] text-white/35">{item.category}</span>
-            </div>}
-            <div className="p-5 pt-1">
-              <div className="flex items-start justify-between gap-4">
-                <div><h3 className={isBar ? 'font-display text-xl text-white' : 'font-display text-xl text-navy-950'}>{item.name}</h3>
-                  <p className={isBar ? 'mt-1 text-[11px] uppercase tracking-[.12em] text-white/35' : 'mt-1 text-[11px] uppercase tracking-[.12em] text-navy-400'}>{item.category || 'House selection'}</p>
+        {filtered.length > 0 ? (
+          <div className="space-y-16">
+            {lead && activeCategory === 'All' && (
+              <article className={isBar ? 'grid overflow-hidden border border-white/10 bg-[#0a1019] lg:grid-cols-[1.2fr_.8fr]' : 'grid overflow-hidden border border-[#111b2f]/10 bg-white lg:grid-cols-[1.2fr_.8fr]'}>
+                <div className="relative min-h-[390px] overflow-hidden">
+                  {lead.image ? <img src={lead.image} alt={lead.name} className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105" /> : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
+                  <span className="absolute left-7 top-7 rounded-full border border-white/20 bg-black/30 px-4 py-2 text-[9px] uppercase tracking-[.2em] text-white backdrop-blur-md">Signature selection</span>
                 </div>
-                <span className={isBar ? 'font-display text-base text-gold-300' : 'font-display text-base text-gold-700'}>{naira(item.price)}</span>
-              </div>
-              <div className="mt-5 flex items-center justify-between">
-                <span className={item.available ? (isBar ? 'text-[11px] text-emerald-300/80' : 'text-[11px] text-emerald-700') : 'text-[11px] text-red-500'}>{item.available ? 'Available now' : 'Currently unavailable'}</span>
-                <span className={isBar ? 'text-[10px] text-white/30' : 'text-[10px] text-navy-400'}>{isBar ? 'Annex Bar' : 'Annex dining'}</span>
-              </div>
+                <div className="flex flex-col justify-center p-8 md:p-12">
+                  <span className="text-[9px] uppercase tracking-[.2em] text-[#d7b66a]">{lead.category || 'Featured'}</span>
+                  <h3 className="mt-3 font-display text-4xl leading-none md:text-5xl">{lead.name}</h3>
+                  <p className={isBar ? 'mt-5 text-sm leading-7 text-white/48' : 'mt-5 text-sm leading-7 text-[#697282]'}>{isBar ? 'A signature choice from the Annex selection.' : 'One of the selections that defines the Annex table.'}</p>
+                  <div className="mt-8 flex items-center justify-between border-t border-current/10 pt-5">
+                    <span className="font-display text-xl text-[#c39a45]">{naira(lead.price)}</span>
+                    <span className={lead.available ? 'text-[10px] uppercase tracking-[.16em] text-emerald-500' : 'text-[10px] uppercase tracking-[.16em] text-red-500'}>{lead.available ? 'Available now' : 'Unavailable'}</span>
+                  </div>
+                </div>
+              </article>
+            )}
+
+            <div className={isBar ? 'overflow-hidden border-y border-white/10' : 'overflow-hidden border-y border-[#111b2f]/10'}>
+              {menuWithoutLead.map((item, index) => (
+                <article key={item.id} className={isBar
+                  ? 'group grid grid-cols-[72px_1fr_auto] items-center gap-5 border-b border-white/10 py-5 last:border-b-0 md:grid-cols-[110px_1fr_auto_30px] md:gap-7'
+                  : 'group grid grid-cols-[82px_1fr_auto] items-center gap-5 border-b border-[#111b2f]/10 py-5 last:border-b-0 md:grid-cols-[130px_1fr_auto_30px] md:gap-8'}>
+                  <div className="relative aspect-square overflow-hidden bg-black/10">
+                    {item.image ? <img src={item.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" /> : <div className={isBar ? 'h-full w-full bg-[#111a28]' : 'h-full w-full bg-[#ece5da]'} />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="font-display text-xl md:text-2xl">{item.name}</h3>
+                      {!item.available && <span className="text-[9px] uppercase tracking-[.15em] text-red-500">Unavailable</span>}
+                    </div>
+                    <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
+                  </div>
+                  <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
+                  <ChevronRight className={isBar ? 'hidden text-white/25 transition group-hover:translate-x-1 group-hover:text-[#d7b66a] md:block' : 'hidden text-[#9a7b3b] transition group-hover:translate-x-1 md:block'} size={17} />
+                </article>
+              ))}
             </div>
-          </article>)}
-        </div> : <div className={isBar ? 'mt-12 rounded-xl border border-white/10 bg-white/5 p-10 text-center text-sm text-white/45' : 'mt-12 rounded-xl border border-navy-900/10 bg-white p-10 text-center text-sm text-navy-400'}>Nothing in this category yet. Check another category.</div>}
+
+            {supporting.length > 0 && (
+              <div className="grid gap-5 md:grid-cols-2">
+                {supporting.map(item => (
+                  <div key={item.id} className="group relative min-h-[300px] overflow-hidden">
+                    {item.image && <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-7">
+                      <span className="text-[9px] uppercase tracking-[.2em] text-[#d7b66a]">{item.category || 'Featured'}</span>
+                      <div className="mt-2 flex items-end justify-between gap-4">
+                        <h3 className="font-display text-3xl text-white">{item.name}</h3>
+                        <span className="font-display text-sm text-white/75">{naira(item.price)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={isBar ? 'border-y border-white/10 py-20 text-center text-sm text-white/40' : 'border-y border-[#111b2f]/10 py-20 text-center text-sm text-[#70798a]'}>Nothing in this category yet. Check another category.</div>
+        )}
       </section>
 
-      <section className={isBar ? 'border-t border-white/10 bg-[#05080e] px-5 py-16 text-center md:px-10' : 'border-t border-navy-900/10 bg-[#eee7dc] px-5 py-16 text-center md:px-10'}>
-        <p className={isBar ? 'text-[10px] uppercase tracking-[.25em] text-white/35' : 'text-[10px] uppercase tracking-[.25em] text-navy-400'}>The Annex · Blue Pair Hotel</p>
-        <h2 className={isBar ? 'mt-3 font-display text-3xl text-white' : 'mt-3 font-display text-3xl text-navy-950'}>Stay a little longer.</h2>
-        <p className={isBar ? 'mx-auto mt-3 max-w-lg text-sm text-white/45' : 'mx-auto mt-3 max-w-lg text-sm text-navy-500'}>Good food, good drinks and a space worth settling into.</p>
+      <section className={isBar ? 'relative overflow-hidden border-t border-white/10 bg-[#03060a] px-5 py-24 text-center' : 'relative overflow-hidden border-t border-[#111b2f]/10 bg-[#ece4d8] px-5 py-24 text-center'}>
+        <div className="absolute left-1/2 top-0 h-px w-24 -translate-x-1/2 bg-[#d7b66a]" />
+        <p className={isBar ? 'text-[9px] uppercase tracking-[.3em] text-white/35' : 'text-[9px] uppercase tracking-[.3em] text-[#7b8492]'}>Blue Pair Hotel · The Annex</p>
+        <h2 className="mt-4 font-display text-4xl tracking-[-.03em] md:text-5xl">Stay a little longer.</h2>
+        <p className={isBar ? 'mx-auto mt-4 max-w-lg text-sm leading-7 text-white/40' : 'mx-auto mt-4 max-w-lg text-sm leading-7 text-[#687181]'}>Good food, good drinks and a space worth settling into.</p>
+        <a href="#menu" className="mt-7 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#b98d37] transition hover:gap-3">Back to menu <ArrowRight size={14} /></a>
       </section>
     </div>
   )
