@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, Beer, Flame, GlassWater, Martini, Sparkles, Utensils, Wine } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { naira } from '../../lib/format'
 
 export type AnnexMenuItem = {
@@ -21,8 +21,6 @@ type Props = {
   items: AnnexMenuItem[]
   mode: 'bar' | 'food'
 }
-
-const barIcons = [Martini, Wine, Beer, GlassWater]
 
 export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode }: Props) {
   const [activeCategory, setActiveCategory] = useState('All')
@@ -60,10 +58,8 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         <section className={isBar ? 'border-b border-white/10 bg-[#0b111d]' : 'border-b border-navy-900/10 bg-white'}>
           <div className="mx-auto grid max-w-7xl md:grid-cols-3">
             {featured.map((item, index) => {
-              const Icon = barIcons[index % barIcons.length]
               return <div key={item.id} className="group relative min-h-[170px] overflow-hidden border-b border-inherit p-7 md:border-b-0 md:border-r last:border-r-0">
                 {item.image && <img src={item.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 transition duration-700 group-hover:scale-105 group-hover:opacity-40" />}
-                {isBar && <div className="absolute right-7 top-7 flex h-12 w-12 items-center justify-center rounded-full border border-gold-400/25 bg-gold-400/10 text-gold-300"><Icon size={21} /></div>}
                 <div className="relative z-10 flex h-full flex-col justify-end">
                   <span className={isBar ? 'text-[10px] uppercase tracking-[.18em] text-gold-300/75' : 'text-[10px] uppercase tracking-[.18em] text-gold-600'}>{item.category || 'Featured'}</span>
                   <h2 className={isBar ? 'mt-2 max-w-[75%] font-display text-2xl text-white' : 'mt-2 max-w-[75%] font-display text-2xl text-navy-950'}>{item.name}</h2>
@@ -99,7 +95,6 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
               <span className="absolute bottom-4 left-4 rounded-full bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.14em] text-white backdrop-blur-md">{item.category}</span>
             </div> : <div className="relative mb-5 flex h-32 items-center justify-center overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_35%,rgba(199,154,62,.2),transparent_34%),linear-gradient(145deg,#121d2e,#080d16)]">
               <div className="absolute h-24 w-24 rounded-full border border-gold-400/15" /><div className="absolute h-16 w-16 rounded-full border border-gold-400/20" />
-              <Martini className="relative text-gold-300/80" size={30} strokeWidth={1.25} />
               <span className="absolute bottom-3 left-4 text-[9px] uppercase tracking-[.18em] text-white/35">{item.category}</span>
             </div>}
             <div className="p-5 pt-1">
@@ -111,7 +106,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
               </div>
               <div className="mt-5 flex items-center justify-between">
                 <span className={item.available ? (isBar ? 'text-[11px] text-emerald-300/80' : 'text-[11px] text-emerald-700') : 'text-[11px] text-red-500'}>{item.available ? 'Available now' : 'Currently unavailable'}</span>
-                <span className={isBar ? 'flex items-center gap-1 text-[10px] text-white/30' : 'flex items-center gap-1 text-[10px] text-navy-400'}>{isBar ? <Sparkles size={12} /> : <Utensils size={12} />}{isBar ? 'Annex Bar' : 'Annex dining'}</span>
+                <span className={isBar ? 'text-[10px] text-white/30' : 'text-[10px] text-navy-400'}>{isBar ? 'Annex Bar' : 'Annex dining'}</span>
               </div>
             </div>
           </article>)}
@@ -119,7 +114,6 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
       </section>
 
       <section className={isBar ? 'border-t border-white/10 bg-[#05080e] px-5 py-16 text-center md:px-10' : 'border-t border-navy-900/10 bg-[#eee7dc] px-5 py-16 text-center md:px-10'}>
-        <Flame className="mx-auto mb-4 text-gold-500" size={20} />
         <p className={isBar ? 'text-[10px] uppercase tracking-[.25em] text-white/35' : 'text-[10px] uppercase tracking-[.25em] text-navy-400'}>The Annex · Blue Pair Hotel</p>
         <h2 className={isBar ? 'mt-3 font-display text-3xl text-white' : 'mt-3 font-display text-3xl text-navy-950'}>Stay a little longer.</h2>
         <p className={isBar ? 'mx-auto mt-3 max-w-lg text-sm text-white/45' : 'mx-auto mt-3 max-w-lg text-sm text-navy-500'}>Good food, good drinks and a space worth settling into.</p>
