@@ -31,7 +31,7 @@ begin
     'email_logs','activity_logs','blog_posts','event_reservations',
     'contact_conversations','contact_messages','guest_reviews','guest_notifications',
     'financial_transactions','financial_expenses','site_settings','room_service_orders',
-    'payment_holds','room_daily_statuses'
+    'payment_holds','room_daily_statuses','bar_orders','bar_order_items'
   ]
   loop
     execute format('drop trigger if exists bluepair_realtime_change on public.%I', table_name);
