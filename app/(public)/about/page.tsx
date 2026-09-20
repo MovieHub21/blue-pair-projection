@@ -8,9 +8,6 @@ import { getPublishedBlogPosts } from '../../../lib/blog'
 import { ArrowRight, CalendarDays, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 export const metadata = buildMetadata({
   title: `About ${SITE_NAME} | Uromi's Premier Luxury Hotel`,
   description: `Discover ${SITE_NAME}, a premium hospitality destination in Uromi, Edo State, offering rooms and suites, dining, leisure facilities, events and guest experiences rooted in Esan hospitality.`,
