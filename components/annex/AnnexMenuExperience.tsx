@@ -31,6 +31,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([])
   const [showOrder, setShowOrder] = useState(false)
   const [location, setLocation] = useState<'room' | 'short_let' | 'bar' | 'outdoor_eatery' | 'vip_lounge' | ''>('')
+  const [takeout, setTakeout] = useState(false)
   const [bookingId, setBookingId] = useState('')
   const [notes, setNotes] = useState('')
   const [contactEmail, setContactEmail] = useState('')
@@ -92,7 +93,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
       const response = await fetch('/api/bar/orders/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes, contactEmail, contactPhone, deliveryAddress }),
+        body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, takeout, notes, contactEmail, contactPhone, deliveryAddress }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result?.error || 'Unable to start payment.')
@@ -316,19 +317,26 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                           ['room','Room'], ['short_let','Short-let'], ['bar','Annex Bar'], ['outdoor_eatery','Outdoor Eatery'], ['vip_lounge','VIP Lounge'],
                         ].map(([value,label]) => <button key={value} type="button" onClick={() => { setLocation(value as any); if (value !== 'room' && value !== 'short_let') setBookingId('') }} className={location === value ? 'rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'rounded-xl border border-white/10 bg-white/[.03] p-4 text-left'}><span className="block text-sm font-semibold">{label}</span>{(value === 'room' || value === 'short_let') ? <span className="mt-1 block text-xs text-white/35">{activeBookings.filter(b => b.type === value).length ? 'Choose your active booking below' : 'No active booking'}</span> : <span className="mt-1 block text-xs text-white/35">{activeBookings.length ? 'Available during your stay' : 'Venue service'}</span>}</button>)}
                       </div>
-                      {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
+                      <label className={takeout ? 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4' : 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4'}>
+                    <input type="checkbox" checked={takeout} onChange={e => { const checked = e.target.checked; setTakeout(checked); if (checked) { setLocation('bar'); setBookingId('') } }} className="h-4 w-4 accent-[#d7b66a]" />
+                    <span><span className="block text-sm font-semibold">Order as takeaway</span><span className="mt-1 block text-xs text-white/35">Pick up your order from the Annex Bar. Contact details are required.</span></span>
+                  </label>
+                  {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
                       <div className="mt-7"> 
                         <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]"> Order Takeout? </p>
                       </div>
+                      {takeout && (
+                    <>
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
-                        <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                        <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                        <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                       </div>
-                      <input value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Delivery location / address" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                       <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                    </>
+                  )}
                     </div>
                     {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
-                    <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || !location || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
+                    <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || !location || (takeout && (!contactEmail.trim() || !contactPhone.trim())) || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
                   </div>
                 </div>
               )}
