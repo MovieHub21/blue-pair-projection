@@ -111,7 +111,6 @@ export default function BookingManagement() {
   const custOf = (id: string) => customers.find(c => c.id === id)
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
   const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
-  const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
   const physicalRoomOf = (id?: string) => id ? rooms.find(r => r.id === id) : undefined
   const filtered = bookings.filter(b => {
     if (paymentFilter !== 'all' && b.paymentStatus !== paymentFilter) return false
