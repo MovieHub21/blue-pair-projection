@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { fetchPaymentTotals } from '../../../lib/adminQueries'
 import { mapPayment } from '../../../lib/mappers'
 import type { Payment } from '../../../data/mock'
 import { naira, formatDate } from '../../../lib/format'
@@ -8,26 +9,40 @@ import StatusBadge from '../../../components/ui/StatusBadge'
 import StatCard from '../../../components/ui/StatCard'
 import { Wallet, RefreshCcw, Clock } from 'lucide-react'
 
+const PAGE_SIZE = 50
+
 export default function PaymentManagement() {
   const [payments, setPayments] = useState<Payment[]>([])
+  const [totals, setTotals] = useState({ total: 0, refunded: 0, pending: 0 })
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [hasMore, setHasMore] = useState(false)
 
+  // The table shows the newest payments a page at a time; the three totals are still for all payments
+  // but are read from the database without downloading whole payment rows.
   const loadPayments = useCallback(async () => {
-    const { data, error } = await supabase.from('payments').select('*').order('date', { ascending: false })
-    if (!error && data) setPayments(data.map(mapPayment))
+    const { data, error } = await supabase.from('payments').select('*').order('date', { ascending: false }).order('id').limit(visibleCount + 1)
+    if (error || !data) return
+    setHasMore(data.length > visibleCount)
+    setPayments(data.slice(0, visibleCount).map(mapPayment))
+  }, [visibleCount])
+
+  const loadTotals = useCallback(async () => {
+    const result = await fetchPaymentTotals(supabase)
+    if (result) setTotals(result)
   }, [])
 
+  useEffect(() => { void loadPayments() }, [loadPayments])
+  useEffect(() => { void loadTotals() }, [loadTotals])
+
   useEffect(() => {
-    loadPayments()
     const handleDbChange = (e: CustomEvent<{ table?: string }>) => {
-      if (!e.detail?.table || e.detail.table === 'payments') loadPayments()
+      if (!e.detail?.table || e.detail.table === 'payments') { void loadPayments(); void loadTotals() }
     }
     window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
     return () => window.removeEventListener('bluepair:database-change', handleDbChange as EventListener)
-  }, [loadPayments])
+  }, [loadPayments, loadTotals])
 
-  const total = payments.filter(p=>p.status==='success').reduce((s,p)=>s+p.amount,0)
-  const refunded = payments.filter(p=>p.status==='refunded').reduce((s,p)=>s+p.amount,0)
-  const pending = payments.filter(p=>p.status==='pending').length
+  const { total, refunded, pending } = totals
 
   return (
     <div>
@@ -56,6 +71,7 @@ export default function PaymentManagement() {
             ))}
           </tbody>
         </table>
+        {hasMore && <div className="p-4 text-center border-t border-black/5"><button onClick={() => setVisibleCount(count => count + PAGE_SIZE)} className="text-sm font-semibold text-navy-900 underline underline-offset-4">Show more payments</button></div>}
       </div>
     </div>
   )

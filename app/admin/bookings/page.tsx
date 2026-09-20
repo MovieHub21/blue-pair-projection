@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { pushToast } from '../../../components/ui/Toast'
 import { naira, formatDate, nightsBetween, todayISO, addDaysISO } from '../../../lib/format'
@@ -10,6 +10,7 @@ import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Plus, Check, Chev
 import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatcher'
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
+import { fetchBookingsPage } from '../../../lib/adminQueries'
 import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '../../../lib/mappers'
 import type { Booking, Customer, Room, RoomType, ShortLet } from '../../../data/mock'
 
@@ -23,6 +24,8 @@ const EXTRA_SERVICES: ExtraService[] = [
   { id: 'gym', name: 'Gym House', price: 1500 },
   { id: 'game', name: 'Game House', price: 5000 },
 ]
+
+const BOOKINGS_PAGE_SIZE = 50
 
 const emptyWalkIn = { name: '', email: '', phone: '', roomTypeId: '', roomId: '', checkIn: todayISO(), checkOut: addDaysISO(1), adults: 1, children: 0, specialRequests: '', extraServices: [] as ExtraService[] }
 
@@ -38,6 +41,11 @@ export default function BookingManagement() {
   const [active, setActive] = useState<Booking | null>(null)
   const [q, setQ] = useState('')
   const [paymentFilter, setPaymentFilter] = useState<'paid' | 'pending' | 'refunded' | 'all'>('paid')
+  // Bookings are loaded one page at a time and the search runs in the database, so this page no
+  // longer downloads every booking and customer ever recorded.
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [visibleCount, setVisibleCount] = useState(BOOKINGS_PAGE_SIZE)
+  const [hasMore, setHasMore] = useState(false)
   const [showWalkIn, setShowWalkIn] = useState(false)
   const [walkIn, setWalkIn] = useState({ ...emptyWalkIn, roomTypeId: '' })
   const [expandedWalkInType, setExpandedWalkInType] = useState<string | null>(null)
@@ -49,28 +57,58 @@ export default function BookingManagement() {
   const [savingPayment, setSavingPayment] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const filtersRef = useRef({ paymentFilter, search: debouncedQ, limit: visibleCount })
+  filtersRef.current = { paymentFilter, search: debouncedQ, limit: visibleCount }
+  const loadSeq = useRef(0)
+
   const loadData = useCallback(async () => {
-    const [bk, rt, cu, rm, sl] = await Promise.all([
-      supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+    const seq = ++loadSeq.current
+    const [page, rt, rm, sl] = await Promise.all([
+      fetchBookingsPage(supabase, filtersRef.current),
       supabase.from('room_types').select('*').order('price'),
-      supabase.from('customers').select('*').order('name'),
       supabase.from('rooms').select('*').order('room_number'),
       supabase.from('short_lets').select('*').order('price'),
     ])
-    if (bk.data) setBookings(bk.data.map(mapBooking))
+    if (seq !== loadSeq.current) return // a newer request has already replaced this one
+    if (page.bookings) {
+      setBookings(page.bookings.map(mapBooking))
+      setHasMore(page.hasMore)
+    }
+    if (page.customers) {
+      const incoming = page.customers.map(mapCustomer)
+      // Merge instead of replace so a booking that is open in the details dialog keeps its customer.
+      setCustomers(current => {
+        const byId = new Map(current.map(c => [c.id, c]))
+        for (const customer of incoming) byId.set(customer.id, customer)
+        return Array.from(byId.values())
+      })
+    }
     if (rt.data) {
       const types = rt.data.map(mapRoomType)
       setRoomTypes(types)
       setWalkIn(current => current.roomTypeId ? current : { ...current, roomTypeId: types[0]?.id ?? '' })
     }
-    if (cu.data) setCustomers(cu.data.map(mapCustomer))
     if (rm.data) setRooms(rm.data.map(mapRoom))
     if (sl.data) setShortLets(sl.data.map((row:any) => ({ id:row.id,name:row.name,type:row.type,price:Number(row.price),bedrooms:row.bedrooms,amenities:row.amenities??[],image:row.image,available:row.available,description:row.description })))
   }, [])
 
+  // Wait for a short pause in typing before searching, and go back to the first page for a new search.
+  const lastSearch = useRef('')
   useEffect(() => {
-    void loadData()
+    const timer = window.setTimeout(() => {
+      const next = q.trim()
+      if (lastSearch.current === next) return
+      lastSearch.current = next
+      setVisibleCount(BOOKINGS_PAGE_SIZE)
+      setDebouncedQ(next)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [q])
 
+  // Initial load, and a reload whenever the payment filter, the search or the page size changes.
+  useEffect(() => { void loadData() }, [paymentFilter, debouncedQ, visibleCount, loadData])
+
+  useEffect(() => {
     const RELEVANT_TABLES = new Set(['bookings', 'rooms', 'customers', 'room_types', 'short_lets'])
     const refresh = (e: Event) => {
       const detail = (e as CustomEvent).detail
@@ -112,12 +150,9 @@ export default function BookingManagement() {
   const roomOf = (id: string) => roomTypes.find(r => r.id === id)
   const shortLetOf = (id?: string) => id ? shortLets.find(s => s.id === id) : undefined
   const physicalRoomOf = (id?: string) => id ? rooms.find(r => r.id === id) : undefined
-  const filtered = bookings.filter(b => {
-    if (paymentFilter !== 'all' && b.paymentStatus !== paymentFilter) return false
-    const customer = custOf(b.customerId)
-    const query = q.toLowerCase()
-    return !query || [customer?.name, customer?.email, customer?.phone, b.reference].some(v => String(v ?? '').toLowerCase().includes(query))
-  })
+  // The database already applied the search and the payment filter; the payment check here only keeps
+  // the list correct for the instant between choosing a filter and the new results arriving.
+  const filtered = bookings.filter(b => paymentFilter === 'all' || b.paymentStatus === paymentFilter)
   const freeRoom = (roomTypeId: string) => rooms.find(r => r.roomTypeId === roomTypeId && r.status === 'available')
   const walkInRoom = roomTypes.find(r => r.id === walkIn.roomTypeId)
   const walkInNights = walkInRoom ? nightsBetween(walkIn.checkIn, walkIn.checkOut) : 0
@@ -218,7 +253,7 @@ export default function BookingManagement() {
             <Search size={14} className="text-navy-400" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search guest, email or booking…" className="text-sm outline-none flex-1" />
           </div>
-          <select value={paymentFilter} onChange={e => setPaymentFilter(e.target.value as typeof paymentFilter)} aria-label="Filter bookings by payment status" className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm outline-none">
+          <select value={paymentFilter} onChange={e => { setPaymentFilter(e.target.value as typeof paymentFilter); setVisibleCount(BOOKINGS_PAGE_SIZE) }} aria-label="Filter bookings by payment status" className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm outline-none">
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="refunded">Refunded</option>
@@ -269,6 +304,7 @@ export default function BookingManagement() {
           </tbody>
         </table>
         {filtered.length === 0 && <div className="py-14 text-center text-sm text-navy-400">No bookings match your search or payment filter.</div>}
+        {hasMore && <div className="p-4 text-center border-t border-black/5"><button onClick={() => setVisibleCount(count => count + BOOKINGS_PAGE_SIZE)} className="text-sm font-semibold text-navy-900 underline underline-offset-4">Show more bookings</button></div>}
       </div>
 
       <Modal open={!!active} onClose={() => setActive(null)} title="Booking details" subtitle={active?.reference}>

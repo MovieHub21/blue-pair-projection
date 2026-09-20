@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase/client'
-import { mapRoom, mapBooking, mapCustomer, mapPayment, mapMaintenanceTicket, mapGuestRequest, type GuestRequest } from '../../../lib/mappers'
-import type { Room, Booking, Customer, Payment, MaintenanceTicket } from '../../../data/mock'
+import { mapRoom, mapBooking, mapPayment, mapMaintenanceTicket, mapGuestRequest, type GuestRequest } from '../../../lib/mappers'
+import { fetchDashboardRows } from '../../../lib/adminQueries'
+import type { Room, Booking, Payment, MaintenanceTicket } from '../../../data/mock'
 import { naira, todayISO } from '../../../lib/format'
 import StatCard from '../../../components/ui/StatCard'
 import RecentActivity from '../../../components/admin/RecentActivity'
@@ -34,7 +35,7 @@ function revenueSourceLabel(outlet: string | null | undefined) {
 export default function AdminDashboardPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [customerCount, setCustomerCount] = useState(0)
   const [payments, setPayments] = useState<Payment[]>([])
   const [maintenanceTickets, setMaintenanceTickets] = useState<MaintenanceTicket[]>([])
   const [guestRequests, setGuestRequests] = useState<GuestRequest[]>([])
@@ -48,18 +49,12 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true
     async function loadAll() {
-      const [rm, bk, cu, pay, mt, gr] = await Promise.all([
-        supabase.from('rooms').select('*').order('room_number'),
-        supabase.from('bookings').select('*').order('created_at', { ascending: false }),
-        supabase.from('customers').select('*').order('name'),
-        supabase.from('payments').select('*').order('date', { ascending: false }),
-        supabase.from('maintenance_tickets').select('*').order('date_reported', { ascending: false }),
-        supabase.from('guest_requests').select('*').order('created_at', { ascending: false }),
-      ])
+      // Only the rows this period's numbers need (see lib/adminQueries.ts), not whole tables.
+      const { rm, bk, cu, pay, mt, gr } = await fetchDashboardRows(supabase, rangeStart, today)
       if (!active) return
       if (rm.data) setRooms(rm.data.map(mapRoom))
       if (bk.data) setBookings(bk.data.map(mapBooking))
-      if (cu.data) setCustomers(cu.data.map(mapCustomer))
+      if (typeof cu.count === 'number') setCustomerCount(cu.count)
       if (pay.data) setPayments(pay.data.map(mapPayment))
       if (mt.data) setMaintenanceTickets(mt.data.map(mapMaintenanceTicket))
       if (gr.data) setGuestRequests(gr.data.map(mapGuestRequest))
@@ -72,7 +67,7 @@ export default function AdminDashboardPage() {
     }
     window.addEventListener('bluepair:database-change', handleDbChange as EventListener)
     return () => { active = false; window.removeEventListener('bluepair:database-change', handleDbChange as EventListener) }
-  }, [])
+  }, [rangeStart, today])
 
   useEffect(() => {
     let active = true
@@ -132,7 +127,7 @@ export default function AdminDashboardPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"><StatCard label={`Revenue · this ${range}`} value={naira(stats.revenue)} icon={<Wallet size={17} />} tint="green" /><StatCard label="Current occupancy" value={`${occupancy}%`} icon={<BedDouble size={17} />} delta={`${stats.available} rooms available`} tint="navy" /><StatCard label={`Check-ins · this ${range}`} value={String(stats.checkIns)} icon={<LogIn size={17} />} /><StatCard label={`Check-outs · this ${range}`} value={String(stats.checkOuts)} icon={<LogOut size={17} />} tint="navy" /></div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"><StatCard label="Guests currently staying" value={String(stats.activeGuests)} icon={<Users size={17} />} /><StatCard label="Pending bookings" value={String(stats.pending)} icon={<ClipboardList size={17} />} /><StatCard label="Open guest requests" value={String(stats.openRequests)} /><StatCard label="Open maintenance" value={String(stats.openMaintenance)} icon={<Wrench size={17} />} deltaTone={stats.openMaintenance ? 'down' : undefined} /></div>
         <div className="grid lg:grid-cols-[1.6fr,1fr] gap-6 mb-6"><div className="card p-6"><div className="flex justify-between items-center mb-2"><div><h3 className="font-semibold">Collected revenue</h3><p className="text-xs text-navy-400 mt-1">Successful income recorded during this period.</p></div><span className="pill-gold">{naira(stats.revenue)}</span></div>{revenueByDay.length ? <ResponsiveContainer width="100%" height={220}><BarChart data={revenueByDay}><XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} /><Tooltip formatter={(v: number) => naira(v)} /><Bar dataKey="value" fill="#C79A3E" radius={[6,6,2,2]} /></BarChart></ResponsiveContainer> : <div className="h-[220px] flex items-center justify-center text-sm text-navy-400">No income in this period.</div>}</div><div className="card p-6"><h3 className="font-semibold">Income source</h3><p className="text-xs text-navy-400 mt-1 mb-4">Where this period’s income came from.</p>{sourceData.length ? <div className="flex items-center gap-5"><ResponsiveContainer width={140} height={140}><PieChart><Pie data={sourceData} dataKey="value" innerRadius={40} outerRadius={64} paddingAngle={2}>{sourceData.map((_, i) => <Cell key={i} fill={i ? '#22346E' : '#C79A3E'} />)}</Pie></PieChart></ResponsiveContainer><div className="space-y-2 text-xs">{sourceData.map((d, i) => <span key={d.name} className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-sm" style={{ background: i ? '#22346E' : '#C79A3E' }} />{d.name} — {naira(d.value)}</span>)}</div></div> : <div className="h-[140px] flex items-center text-sm text-navy-400">No income in this period.</div>}</div></div>
-        <div className="card p-6"><div className="flex justify-between items-center mb-5"><div><h3 className="font-semibold">Front-desk health</h3><p className="text-xs text-navy-400 mt-1">Things the owner may want to act on.</p></div><CreditCard size={18} className="text-gold-600" /></div><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Rooms needing cleaning</span><b className="block text-xl mt-1">{stats.cleaning}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Customers in database</span><b className="block text-xl mt-1">{customers.length}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Bookings in period</span><b className="block text-xl mt-1">{stats.periodBookings.length}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Rooms in inventory</span><b className="block text-xl mt-1">{rooms.length}</b></div></div></div>
+        <div className="card p-6"><div className="flex justify-between items-center mb-5"><div><h3 className="font-semibold">Front-desk health</h3><p className="text-xs text-navy-400 mt-1">Things the owner may want to act on.</p></div><CreditCard size={18} className="text-gold-600" /></div><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4"><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Rooms needing cleaning</span><b className="block text-xl mt-1">{stats.cleaning}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Customers in database</span><b className="block text-xl mt-1">{customerCount}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Bookings in period</span><b className="block text-xl mt-1">{stats.periodBookings.length}</b></div><div className="rounded-xl bg-navy-50 p-4"><span className="text-xs text-navy-400">Rooms in inventory</span><b className="block text-xl mt-1">{rooms.length}</b></div></div></div>
         <RecentActivity />
       </>}
     </div>

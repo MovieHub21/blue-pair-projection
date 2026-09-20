@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase/client'
 import LiveDateTime from '../ui/LiveDateTime'
 import NotificationBell from '../account/NotificationBell'
 import BackButton from '../ui/BackButton'
+import { getPortalBackTarget, labelForPath, normalizePath } from '../../lib/backNavigation'
 
 export interface PortalNavItem { href: string; label: string; icon: ReactNode; end?: boolean }
 export interface PortalNavGroup { label?: string; items: PortalNavItem[] }
@@ -16,6 +17,9 @@ export default function PortalShell({ portalName, portalTag, groups, userName, u
   const isActive = (href: string, end?: boolean) => end ? pathname === href : pathname.startsWith(href)
   const allItems = groups.flatMap(g => g.items)
   const portalHome = groups[0]?.items[0]?.href || '/'
+  // Sidebar pages get no back button; any other page goes back to its closest sidebar parent (or the portal home).
+  const backTarget = getPortalBackTarget(pathname, allItems.map(item => item.href), portalHome)
+  const backLabel = backTarget ? (allItems.find(item => normalizePath(item.href) === normalizePath(backTarget))?.label || labelForPath(backTarget)) : ''
   async function signOut() { setMenuOpen(false); await supabase.auth.signOut(); router.push('/'); router.refresh() }
   return <div className="portal-shell min-h-screen flex">
     <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-navy-950/95 text-white backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-3.5 py-2.5">
@@ -39,7 +43,7 @@ export default function PortalShell({ portalName, portalTag, groups, userName, u
     <div className="flex-1 min-w-0 pt-14 lg:pt-0">
       <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/90 backdrop-blur-md border-b border-navy-900/5 sticky top-0 z-30"><div className="flex items-center gap-5 min-w-0"><div className="flex items-center gap-2 text-navy-400 text-sm w-64 bg-cream-100 rounded-full px-4 py-2"><Search size={15} /><span className="text-xs">Search {portalName.toLowerCase()}…</span></div><div className="text-navy-500 truncate"><LiveDateTime /></div></div><div className="flex items-center gap-5"><NotificationBell /><div className="relative" onMouseEnter={() => setMenuOpen(true)} onMouseLeave={() => setMenuOpen(false)}><button className="flex items-center gap-2.5 pl-4 border-l border-black/10"><div className="w-9 h-9 rounded-full bg-navy-900 text-gold-400 text-xs font-bold flex items-center justify-center">{userName.split(' ').map(n => n[0]).join('')}</div><div className="text-xs text-left"><div className="font-semibold text-navy-900">{userName}</div><div className="text-navy-400">{userRole}</div></div><ChevronDown size={14} className="text-navy-400" /></button>{menuOpen && <div className="absolute top-full right-0 pt-2 w-56 z-40"><div className="bg-white rounded-xl2 shadow-pop border border-black/5 p-2"><div className="max-h-72 overflow-y-auto flex flex-col gap-0.5">{allItems.map(item => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium ' + (isActive(item.href, item.end) ? 'bg-cream-100 text-navy-900' : 'text-navy-600 hover:bg-cream-100')}>{item.icon}{item.label}</Link>)}</div><div className="border-t border-black/5 mt-1.5 pt-1.5"><button onClick={signOut} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 text-left"><LogOut size={14} />Sign out</button></div></div></div>}</div></div></div>
       <main className="p-4 md:p-8 lg:p-9 max-w-[1600px]">
-        {pathname !== portalHome && pathname !== '/admin/dashboard' && pathname !== '/dashboard' && <div className="mb-5"><BackButton fallback={portalHome} /></div>}
+        {backTarget && <div className="mb-5"><BackButton href={backTarget} label={backLabel} /></div>}
         {children}
       </main>
     </div>

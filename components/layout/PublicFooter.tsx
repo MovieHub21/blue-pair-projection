@@ -35,7 +35,9 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
           </div>
         </div>
         <div className="mt-16 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-3 text-xs text-white/40">
-          <span>© 2026 Blue Pair Signature Crown Hotel &amp; Suites. All rights reserved.</span>
+          <span>
+  © {new Date().getFullYear()} Blue Pair Signature Crown Hotel &amp; Suites. All rights reserved.
+</span>
           <div className="flex items-center gap-4"><Link href="/privacy" className="hover:text-white/80 transition-colors">Privacy Policy</Link><span aria-hidden="true">·</span><Link href="/terms" className="hover:text-white/80 transition-colors">Terms &amp; Conditions</Link></div>
         </div>
       </div>

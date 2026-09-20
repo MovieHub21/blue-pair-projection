@@ -28,7 +28,7 @@ export default async function PublicRouteLayout({ children }: { children: React.
       <div className="pointer-events-none fixed inset-x-0 top-[76px] z-30">
         <div className="container-w px-4 md:px-10">
           <div className="pointer-events-auto w-fit">
-            <BackButton fallback="/" />
+            <BackButton />
           </div>
         </div>
       </div>

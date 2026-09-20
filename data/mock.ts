@@ -91,7 +91,7 @@ export interface Drink {
   name: string
   price: number
   available: boolean
-  image: string
+  image?: string
 }
 
 export interface ShortLet {
