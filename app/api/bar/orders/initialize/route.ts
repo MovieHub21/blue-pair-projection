@@ -14,7 +14,6 @@ export async function POST(request: Request) {
     const notes = String(body.notes || '').trim().slice(0,1000); const contactEmail = String(body.contactEmail || '').trim().slice(0,160); const contactPhone = String(body.contactPhone || '').trim().slice(0,40); const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0,500)
     if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one drink.' }, { status: 400 })
     if (!LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
-    if (!contactEmail) return NextResponse.json({ error: 'An email address is required for payment.' }, { status: 400 })
     const admin = createSupabaseAdminClient(); const { data: customer } = await admin.from('customers').select('id,name,email,user_id').eq('user_id', user.id).maybeSingle()
     if (!customer) return NextResponse.json({ error: 'Guest profile not found.' }, { status: 404 })
     const ids = requestedItems.map((item:any)=>String(item.id||'')).filter(Boolean)
