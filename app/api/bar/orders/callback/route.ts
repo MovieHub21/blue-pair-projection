@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { SITE_URL } from '../../../../lib/siteConfig'
+import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
+import { SITE_URL } from '../../../../../lib/siteConfig'
 export async function GET(request:Request){
  const url=new URL(request.url); const reference=String(url.searchParams.get('reference')||url.searchParams.get('trxref')||'').trim(); const base=process.env.NEXT_PUBLIC_SITE_URL||SITE_URL
  const errorUrl=(reason:string)=>NextResponse.redirect(base+'/annex/bar/order/error?reason='+encodeURIComponent(reason)); if(!reference)return errorUrl('missing_reference')
