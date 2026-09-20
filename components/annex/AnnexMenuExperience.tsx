@@ -22,7 +22,7 @@ type Props = {
   mode: 'bar' | 'food'
 }
 
-export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode }: Props) {
+export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex' }: Props) {
   const [activeCategory, setActiveCategory] = useState('All')
   const isBar = mode === 'bar'
 
@@ -203,10 +203,10 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
 
       <section className={isBar ? 'relative overflow-hidden border-t border-white/10 bg-[#03060a] px-5 py-24 text-center' : 'relative overflow-hidden border-t border-[#111b2f]/10 bg-[#ece4d8] px-5 py-24 text-center'}>
         <div className="absolute left-1/2 top-0 h-px w-24 -translate-x-1/2 bg-[#d7b66a]" />
-        <p className={isBar ? 'text-[9px] uppercase tracking-[.3em] text-white/35' : 'text-[9px] uppercase tracking-[.3em] text-[#7b8492]'}>Blue Pair Hotel · The Annex</p>
+        <p className={isBar ? 'text-[9px] uppercase tracking-[.3em] text-white/35' : 'text-[9px] uppercase tracking-[.3em] text-[#7b8492]'}>{footerLabel}</p>
         <h2 className="mt-4 font-display text-4xl tracking-[-.03em] md:text-5xl">Stay a little longer.</h2>
         <p className={isBar ? 'mx-auto mt-4 max-w-lg text-sm leading-7 text-white/40' : 'mx-auto mt-4 max-w-lg text-sm leading-7 text-[#687181]'}>Good food, good drinks and a space worth settling into.</p>
-        <a href="#menu" className="mt-7 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#b98d37] transition hover:gap-3">Back to menu <ArrowRight size={14} /></a>
+        {showAnnexNavigation && (\n          <nav aria-label="Annex dining links" className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[.16em] text-[#b98d37]">\n            <a href="/annex/restaurant">Annex Restaurant</a>\n            <a href="/annex/grilling">Grilling</a>\n            <a href="/annex/outdoor-eatery">Outdoor Eatery</a>\n            <a href="/annex/bar">Annex Bar</a>\n            <a href="/annex/shortlets">Short-lets</a>\n          </nav>\n        )}\n        <a href="#menu" className="mt-7 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#b98d37] transition hover:gap-3">Back to menu <ArrowRight size={14} /></a>
       </section>
     </div>
   )
