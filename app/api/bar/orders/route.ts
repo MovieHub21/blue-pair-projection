@@ -41,103 +41,12 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const { user } = await getAuth()
-    if (!user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 })
-
-    const body = await request.json()
-    const requestedItems = Array.isArray(body.items) ? body.items : []
-    const location = String(body.location || '')
-    const bookingId = body.bookingId ? String(body.bookingId) : null
-    const notes = String(body.notes || '').trim().slice(0, 1000)
-    const contactEmail = String(body.contactEmail || '').trim().slice(0, 160)
-    const contactPhone = String(body.contactPhone || '').trim().slice(0, 40)
-    const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0, 500)
-
-    if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one drink.' }, { status: 400 })
-    if (!LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
-
-    const { admin, customer } = await getCustomer(user.id)
-    if (!customer) return NextResponse.json({ error: 'Guest profile not found.' }, { status: 404 })
-
-    const ids = requestedItems.map((item: any) => String(item.id || '')).filter(Boolean)
-    if (!ids.length) return NextResponse.json({ error: 'Choose valid drinks.' }, { status: 400 })
-
-    const { data: drinks, error: drinksError } = await admin.from('drinks')
-      .select('id,name,price,available,bar')
-      .in('id', ids)
-      .eq('bar', 'Annex Bar')
-    if (drinksError) throw drinksError
-
-    const drinkMap = new Map((drinks ?? []).map((drink: any) => [drink.id, drink]))
-    const normalized: any[] = []
-    let subtotal = 0
-
-    for (const requested of requestedItems) {
-      const drink = drinkMap.get(String(requested.id || ''))
-      if (!drink || drink.available === false) return NextResponse.json({ error: `${String(requested.name || 'This drink')} is no longer available.` }, { status: 400 })
-      const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
-      const unitPrice = Number(drink.price)
-      const lineTotal = unitPrice * quantity
-      normalized.push({ drinkId: drink.id, drinkName: drink.name, unitPrice, quantity, lineTotal })
-      subtotal += lineTotal
-    }
-
-    let resolvedBookingId: string | null = null
-    let deliveryLabel = location === 'bar' ? 'Annex Bar' : location === 'outdoor_eatery' ? 'Outdoor Eatery' : location === 'vip_lounge' ? 'VIP Lounge' : ''
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
-
-    if (location === 'room' || location === 'short_let') {
-      if (!bookingId) return NextResponse.json({ error: 'Select your current booking for this delivery location.' }, { status: 400 })
-      const { data: booking, error: bookingError } = await admin.from('bookings')
-        .select('id,reference,check_in,check_out,status,payment_status,room_id,short_let_id,customer_id')
-        .eq('id', bookingId)
-        .eq('customer_id', customer.id)
-        .maybeSingle()
-      if (bookingError) throw bookingError
-      if (!booking || !isActiveBooking(booking, today)) return NextResponse.json({ error: 'That booking is not currently available for delivery.' }, { status: 409 })
-      resolvedBookingId = booking.id
-
-      if (location === 'room') {
-        if (!booking.room_id) return NextResponse.json({ error: 'That booking has no room assigned.' }, { status: 400 })
-        const { data: room } = await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()
-        if (!room?.room_number) return NextResponse.json({ error: 'Your room could not be found.' }, { status: 400 })
-        deliveryLabel = `Room ${room.room_number}`
-      } else {
-        if (!booking.short_let_id) return NextResponse.json({ error: 'Select your active short-let booking.' }, { status: 400 })
-        const { data: property } = await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle()
-        if (!property?.name) return NextResponse.json({ error: 'Your short-let property could not be found.' }, { status: 400 })
-        deliveryLabel = property.name
-      }
-    }
-
-    const reference = `BAR-${Date.now()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`
-    const orderId = `bar_${Date.now()}_${Math.random().toString(36).slice(2,7)}`
-    const { error: orderError } = await admin.from('bar_orders').insert({
-      id: orderId, reference, customer_id: customer.id, booking_id: resolvedBookingId,
-      delivery_location: location, delivery_label: deliveryLabel, notes: [notes, contactEmail ? `Email: ${contactEmail}` : '', contactPhone ? `Phone: ${contactPhone}` : '', deliveryAddress ? `Address: ${deliveryAddress}` : ''].filter(Boolean).join(' · '),
-      subtotal, total: subtotal, status: 'pending',
-    })
-    if (orderError) throw orderError
-
-    const { error: itemError } = await admin.from('bar_order_items').insert(normalized.map(item => ({
-      id: `boi_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-      order_id: orderId, drink_id: item.drinkId, drink_name: item.drinkName,
-      unit_price: item.unitPrice, quantity: item.quantity, line_total: item.lineTotal,
-    })))
-    if (itemError) {
-      await admin.from('bar_orders').delete().eq('id', orderId)
-      throw itemError
-    }
-
-    return NextResponse.json({ reference, orderId, deliveryLabel, total: subtotal })
-  } catch (error: any) {
-    console.error('[bar-order]', error)
-    return NextResponse.json({ error: error?.message || 'Unable to place your bar order.' }, { status: 500 })
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Bar orders must be paid through Paystack before they can be placed.' },
+    { status: 409 },
+  )
 }
-
 export async function PATCH(request: Request) {
   try {
     const { server, user } = await getAuth()
