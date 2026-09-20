@@ -22,10 +22,18 @@ type Props = {
   mode: 'bar' | 'food'
   showAnnexNavigation?: boolean
   footerLabel?: string
+  activeBookings?: { id: string; type: 'room' | 'short_let'; label: string; reference: string }[]
 }
 
-export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex' }: Props) {
+export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex', activeBookings = [] }: Props) {
   const [activeCategory, setActiveCategory] = useState('All')
+  const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([])
+  const [showOrder, setShowOrder] = useState(false)
+  const [location, setLocation] = useState<'room' | 'short_let' | 'bar' | 'outdoor_eatery' | 'vip_lounge' | ''>('')
+  const [bookingId, setBookingId] = useState('')
+  const [notes, setNotes] = useState('')
+  const [placing, setPlacing] = useState(false)
+  const [orderMessage, setOrderMessage] = useState('')
   const isBar = mode === 'bar'
 
   const categories = useMemo(
@@ -42,6 +50,31 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const lead = featured[0] || items[0]
   const supporting = featured.slice(1, 3)
   const menuWithoutLead = lead ? filtered.filter(x => x.id !== lead.id) : filtered
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const addToOrder = (item: AnnexMenuItem) => {
+    if (!item.available) return
+    setCart(current => {
+      const existing = current.find(x => x.id === item.id)
+      return existing ? current.map(x => x.id === item.id ? { ...x, quantity: Math.min(50, x.quantity + 1) } : x) : [...current, { id: item.id, name: item.name, price: item.price, quantity: 1 }]
+    })
+    setOrderMessage('')
+  }
+  const updateQuantity = (id: string, delta: number) => setCart(current => current.map(x => x.id === id ? { ...x, quantity: Math.max(0, Math.min(50, x.quantity + delta)) } : x).filter(x => x.quantity > 0))
+  const submitOrder = async () => {
+    if (!cart.length) return
+    if (!location) return setOrderMessage('Choose where you want your order served.')
+    if ((location === 'room' || location === 'short_let') && !bookingId) return setOrderMessage('Select the current booking for that delivery location.')
+    setPlacing(true); setOrderMessage('')
+    try {
+      const response = await fetch('/api/bar/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, notes }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result?.error || 'Unable to place your order.')
+      setCart([]); setNotes(''); setBookingId(''); setLocation(''); setOrderMessage(`Order ${result.reference} received. ${result.deliveryLabel} will receive it.`)
+    } catch (error: any) {
+      setOrderMessage(error?.message || 'Unable to place your order.')
+    } finally { setPlacing(false) }
+  }
 
   return (
     <div className={isBar ? 'min-h-screen bg-[#05080e] text-white' : 'min-h-screen bg-[#f7f3ec] text-[#111b2f]'}>
@@ -153,7 +186,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   <p className={isBar ? 'mt-5 text-sm leading-7 text-white/48' : 'mt-5 text-sm leading-7 text-[#697282]'}>{isBar ? 'A signature choice from the Annex selection.' : 'One of the selections that defines the Annex table.'}</p>
                   <div className="mt-8 flex items-center justify-between border-t border-current/10 pt-5">
                     <span className="font-display text-xl text-[#c39a45]">{naira(lead.price)}</span>
-                    <span className={lead.available ? 'text-[10px] uppercase tracking-[.16em] text-emerald-500' : 'text-[10px] uppercase tracking-[.16em] text-red-500'}>{lead.available ? 'Available now' : 'Unavailable'}</span>
+                    {lead.available ? <button type="button" onClick={() => addToOrder(lead)} className="rounded-full bg-[#d7b66a] px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add to order</button> : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
                   </div>
                 </div>
               </article>
@@ -175,7 +208,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
-                  <ChevronRight className={isBar ? 'hidden text-white/25 transition group-hover:translate-x-1 group-hover:text-[#d7b66a] md:block' : 'hidden text-[#9a7b3b] transition group-hover:translate-x-1 md:block'} size={17} />
+                  <div className="flex justify-end"><button type="button" disabled={!item.available} onClick={() => addToOrder(item)} className={item.available ? 'rounded-full bg-[#d7b66a] px-3 py-2 text-[9px] font-bold uppercase tracking-[.1em] text-[#08101d]' : 'rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25'}>{item.available ? 'Add' : 'Unavailable'}</button></div>
                 </article>
               ))}
             </div>
@@ -201,6 +234,40 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         ) : (
           <div className={isBar ? 'border-y border-white/10 py-20 text-center text-sm text-white/40' : 'border-y border-[#111b2f]/10 py-20 text-center text-sm text-[#70798a]'}>Nothing in this category yet. Check another category.</div>
         )}
+      {isBar && (
+        <>
+          <button type="button" onClick={() => setShowOrder(true)} className="fixed bottom-5 right-5 z-40 rounded-full bg-[#d7b66a] px-5 py-3 text-xs font-bold text-[#08101d] shadow-2xl shadow-black/40">
+            Your order · {cartCount} {cartCount === 1 ? 'item' : 'items'} · {naira(cartTotal)}
+          </button>
+          {showOrder && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
+              <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto bg-[#0a1019] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
+                <div className="flex items-start justify-between gap-5">
+                  <div><span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">Annex Bar</span><h2 className="mt-2 font-display text-4xl">Your order</h2></div>
+                  <button type="button" onClick={() => setShowOrder(false)} className="text-sm text-white/50">Close</button>
+                </div>
+                <div className="mt-7 divide-y divide-white/10 border-y border-white/10">
+                  {cart.map(item => <div key={item.id} className="flex items-center justify-between gap-4 py-4"><div><p className="font-display text-xl">{item.name}</p><p className="mt-1 text-xs text-white/40">{naira(item.price)} each</p></div><div className="flex items-center gap-3"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="h-8 w-8 rounded-full border border-white/15">−</button><span className="w-5 text-center text-sm">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.id, 1)} className="h-8 w-8 rounded-full border border-white/15">+</button></div></div>)}
+                  {!cart.length && <p className="py-8 text-sm text-white/40">Your order is empty.</p>}
+                </div>
+                <div className="mt-7">
+                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">Where should we serve it?</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {[
+                      ['room','Room'], ['short_let','Short-let'], ['bar','Annex Bar'], ['outdoor_eatery','Outdoor Eatery'], ['vip_lounge','VIP Lounge'],
+                    ].map(([value,label]) => <button key={value} type="button" onClick={() => { setLocation(value as any); if (value !== 'room' && value !== 'short_let') setBookingId('') }} className={location === value ? 'rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'rounded-xl border border-white/10 bg-white/[.03] p-4 text-left'}><span className="block text-sm font-semibold">{label}</span>{(value === 'room' || value === 'short_let') ? <span className="mt-1 block text-xs text-white/35">{activeBookings.filter(b => b.type === value).length ? 'Choose your active booking below' : 'No active booking'}</span> : <span className="mt-1 block text-xs text-white/35">{activeBookings.length ? 'Available during your stay' : 'Venue service'}</span>}</button>)}
+                  </div>
+                  {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
+                  <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-4 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
+                </div>
+                {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
+                <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       </section>
 
       <section className={isBar ? 'relative overflow-hidden border-t border-white/10 bg-[#03060a] px-5 py-24 text-center' : 'relative overflow-hidden border-t border-[#111b2f]/10 bg-[#ece4d8] px-5 py-24 text-center'}>
