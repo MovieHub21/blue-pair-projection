@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation'
 import { getPublishedBlogPost, getPublishedBlogPosts } from '../../../../lib/blog'
 import { SITE_URL } from '../../../../lib/siteConfig'
 
+export const dynamic = 'force-dynamic'
+
 type Props = { params: { slug: string } }
 
 export async function generateStaticParams() {
