@@ -35,7 +35,7 @@ function blankAmenity(key: string, name: string): Amenity {
 }
 
 export default function AnnexManagement() {
-  const [tab, setTab] = useState<typeof TABS[number]>('Content')
+  const [tab, setTab] = useState<'Content' | 'Menu' | 'Drinks' | 'Short-lets' | 'Bookings'>('Content')
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [drinks, setDrinks] = useState<Drink[]>([])
