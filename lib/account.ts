@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { createSupabaseServerClient } from './supabase/server'
 import { createSupabaseAdminClient } from './supabase/admin'
-import { mapBooking, mapPayment, mapGuestRequest, mapRoomType } from './mappers'
+import { mapBooking, mapShortLet, mapPayment, mapGuestRequest, mapRoomType } from './mappers'
 
 /**
  * Signed-in user + their profile row, or null if not authenticated.
@@ -153,6 +153,7 @@ export async function getMyBookings() {
   }
 
   const roomIds = Array.from(new Set((data ?? []).map((booking: any) => booking.room_id).filter(Boolean)))
+  const shortLetIds = Array.from(new Set((data ?? []).map((booking: any) => booking.short_let_id).filter(Boolean)))
   const { data: rooms, error: roomsError } = roomIds.length
     ? await admin.from('rooms').select('id,room_number,images,image_url').in('id', roomIds)
     : { data: [], error: null }
@@ -162,6 +163,9 @@ export async function getMyBookings() {
   }
 
   const roomsById = new Map((rooms ?? []).map((room: any) => [room.id, room]))
+  const { data: shortLets, error: shortLetsError } = shortLetIds.length ? await admin.from('short_lets').select('*').in('id', shortLetIds) : { data: [], error: null }
+  if (shortLetsError) console.error('[account] getMyBookings short-let lookup failed', shortLetsError.message)
+  const shortLetsById = new Map((shortLets ?? []).map((sl: any) => [sl.id, sl]))
 
   console.log('[account] getMyBookings result', {
     userId: user.id,
@@ -174,6 +178,7 @@ export async function getMyBookings() {
     return {
       ...mapBooking(r),
       room: r.room_types ? mapRoomType(r.room_types) : null,
+      shortLet: r.short_let_id ? (shortLetsById.get(r.short_let_id) ? mapShortLet(shortLetsById.get(r.short_let_id)) : null) : null,
       roomNumber: roomRecord?.room_number ?? null,
       roomImages: Array.from(new Set([...(roomRecord?.images ?? []), roomRecord?.image_url].filter(Boolean))),
     }
