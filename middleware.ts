@@ -128,16 +128,7 @@ export async function middleware(request: NextRequest) {
   if (isAdminSubdomain) {
     const isStaffLogin = pathname === '/staff/login' || pathname.startsWith('/staff/login/')
     const isAccountPath = pathname === '/account' || pathname.startsWith('/account/')
-    const isAnnexPath = pathname === '/annex' || pathname.startsWith('/annex/')
     const isMaintenancePath = pathname === MAINTENANCE_PATH
-
-    // Annex is part of the public site, not the staff portal. Keep its public /annex/*
-    // route tree on the main domain even when someone enters it from the admin subdomain.
-    if (isAnnexPath) {
-      const url = request.nextUrl.clone()
-      url.hostname = MAIN_HOSTS.has('www.' + hostname) ? 'www.bluepairsignature.com' : 'bluepairsignature.com'
-      return NextResponse.redirect(url)
-    }
 
     if (!isStaffLogin && !isAccountPath && !isMaintenancePath && pathname !== '/admin' && !pathname.startsWith('/admin/')) {
       pathname = pathname === '/' ? '/admin/dashboard' : `/admin${pathname}`
