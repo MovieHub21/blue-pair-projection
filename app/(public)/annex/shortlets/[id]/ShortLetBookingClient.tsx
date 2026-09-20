@@ -79,7 +79,7 @@ export default function ShortLetBookingClient({ shortLet }: { shortLet: { id:str
     </div>
     <div className="mt-5 space-y-1 text-sm"><div className="flex justify-between"><span>{naira(shortLet.price)} × {nights} nights</span><b>{naira(subtotal)}</b></div><div className="flex justify-between"><span>Taxes & VAT</span><b>{naira(tax)}</b></div><div className="flex justify-between border-t border-black/10 pt-3 mt-2 font-semibold"><span>Total</span><b className="font-display">{naira(total)}</b></div></div>
     {error && <div className="mt-4 rounded-lg bg-red-50 text-red-700 text-xs px-3 py-2.5">{error}</div>}
-    <button onClick={()=>void book()} disabled={submitting} className="btn-gold w-full justify-center mt-5">{submitting?<><Loader2 size={15} className="animate-spin"/>Opening Paystack…</>:\`Book this property — \${naira(total)}\`}</button>
+    <button onClick={()=>void book()} disabled={submitting} className="btn-gold w-full justify-center mt-5">{submitting ? <><Loader2 size={15} className="animate-spin"/>Opening Paystack…</> : `Book this property — ${naira(total)}`}</button>
     <p className="text-[11px] text-navy-400 mt-3 text-center">Your reservation is held for the payment window. Paystack confirms the booking after successful payment.</p>
     <p className="text-[11px] text-navy-400 mt-1 text-center">{formatDate(checkIn)} → {formatDate(checkOut)}</p>
   </div>
