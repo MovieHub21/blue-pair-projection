@@ -1,0 +1,1 @@
+alter table public.drinks add column if not exists image text not null default '';\n
