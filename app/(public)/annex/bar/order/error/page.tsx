@@ -1,0 +1,14 @@
+import Link from 'next/link'
+const messages:Record<string,{title:string;description:string}>={
+payment_failed:{title:'Payment was not completed',description:'Your payment was not completed, so your bar order was not placed.'},
+payment_abandoned:{title:'Payment was cancelled',description:'The Paystack payment was cancelled or abandoned, so your bar order was not placed.'},
+payment_failed:{title:'Payment failed',description:'Paystack did not complete the payment, so your bar order was not placed.'},
+payment_pending:{title:'Payment is still pending',description:'Paystack has not confirmed this payment yet. Your bar order has not been placed.'},
+payment_ongoing:{title:'Payment is still in progress',description:'Paystack has not confirmed this payment yet. Your bar order has not been placed.'},
+payment_verification_failed:{title:'Payment could not be verified',description:'We could not verify the payment with Paystack, so your bar order was not placed.'},
+amount_mismatch:{title:'Payment amount could not be verified',description:'The amount returned by Paystack did not match your order, so the order was not placed.'},
+checkout_not_found:{title:'Checkout not found',description:'This payment session could not be found. Your bar order was not placed.'},
+order_creation_failed:{title:'Order could not be placed',description:'Your payment was verified, but we could not create the bar order. Please contact the hotel with your Paystack reference.'},
+payment_not_configured:{title:'Payment is temporarily unavailable',description:'Paystack is not configured for this checkout yet.'},
+}
+export default async function Page({searchParams}:{searchParams:Promise<{reason?:string}>}){const p=await searchParams;const m=messages[p.reason||'payment_failed']||messages.payment_failed;return <main className="flex min-h-screen items-center justify-center bg-[#05080e] px-5 text-white"><div className="w-full max-w-lg rounded-3xl border border-white/10 bg-white/[.04] p-8 text-center shadow-2xl backdrop-blur-xl md:p-12"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-red-400/20 bg-red-400/10 text-red-300 text-2xl">!</div><p className="mt-6 text-[10px] font-bold uppercase tracking-[.28em] text-[#d7b66a]">Annex Bar</p><h1 className="mt-3 font-display text-4xl leading-none">{m.title}</h1><p className="mx-auto mt-5 max-w-md text-sm leading-7 text-white/60">{m.description}</p><div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center"><Link href="/annex/bar" className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d]">Return to Bar</Link><Link href="/account/bookings" className="rounded-full border border-white/10 px-6 py-3 text-xs font-semibold text-white/70">My Account</Link></div></div></main>}
