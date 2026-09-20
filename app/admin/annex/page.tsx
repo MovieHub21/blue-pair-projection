@@ -47,7 +47,7 @@ const OUTLETS = [
   { key: 'annex-restaurant', label: 'Restaurant' },
 ] as const
 
-type Tab = 'Content' | 'Menu' | 'Drinks' | 'Short-lets' | 'Bookings'
+type Tab = 'Content' | 'Menu' | 'Drinks' | 'Orders' | 'Short-lets' | 'Bookings'
 
 function blankAmenity(key: string, name: string): Amenity {
   return { key, name, eyebrow: '', description: '', heroImage: '', gallery: [], hours: '', facilities: [], pricingNote: '', ctaLabel: 'Reserve now', published: false }
@@ -81,7 +81,7 @@ const MENU_OUTLETS: { outlet: MenuOutlet; label: string }[] = [
   { outlet: 'Annex Restaurant', label: 'Annex Restaurant' },
 ]
 
-const TABS: Tab[] = ['Content', 'Menu', 'Drinks', 'Short-lets', 'Bookings']
+const TABS: Tab[] = ['Content', 'Menu', 'Drinks', 'Orders', 'Short-lets', 'Bookings']
 
 const emptyMenu = (outlet: MenuOutlet): MenuDraft => ({
   outlet, category: '', name: '', price: '', image: '', available: true,
@@ -104,6 +104,7 @@ export default function AnnexManagement() {
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [shortLets, setShortLets] = useState<ShortLet[]>([])
   const [bookings, setBookings] = useState<BookingRow[]>([])
+  const [barOrders, setBarOrders] = useState<any[]>([])
   const [editingMenu, setEditingMenu] = useState<MenuDraft | null>(null)
   const [editingDrink, setEditingDrink] = useState<DrinkDraft | null>(null)
   const [deleteMenu, setDeleteMenu] = useState<MenuItem | null>(null)
@@ -122,12 +123,14 @@ export default function AnnexManagement() {
       supabase.from('drinks').select('*').eq('bar', 'Annex Bar').order('name'),
       supabase.from('short_lets').select('*').order('price'),
       supabase.from('bookings').select('id,reference,customer_id,short_let_id,check_in,check_out,amount,payment_status,status,customers(name,email)').not('short_let_id', 'is', null).order('created_at', { ascending: false }),
+      supabase.from('bar_orders').select('*, bar_order_items(*)').order('created_at', { ascending: false }),
     ])
     if (a.data) setAmenities(a.data.map(mapAmenity))
     if (m.data) setMenuItems(m.data.map(mapMenuItem))
     if (d.data) setDrinks(d.data.map(mapDrink))
     if (s.data) setShortLets(s.data.map(mapShortLet))
     if (b.data) setBookings(b.data as BookingRow[])
+    if (o.data) setBarOrders(o.data as any[])
   }, [])
 
   useEffect(() => {
