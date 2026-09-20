@@ -20,6 +20,8 @@ type Props = {
   heroImage: string
   items: AnnexMenuItem[]
   mode: 'bar' | 'food'
+  showAnnexNavigation?: boolean
+  footerLabel?: string
 }
 
 export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex' }: Props) {
