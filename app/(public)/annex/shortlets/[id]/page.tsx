@@ -6,6 +6,7 @@ import { SITE_URL } from '../../../../../lib/siteConfig'
 import { getShortLets } from '../../../../../lib/data'
 import { naira } from '../../../../../lib/format'
 import { CheckCircle2, BedDouble } from 'lucide-react'
+import ShortLetBookingClient from './ShortLetBookingClient'
 
 export async function generateStaticParams() {
   const shortLets = await getShortLets()
@@ -57,9 +58,7 @@ export default async function ShortLetDetailsPage({ params }: { params: { id: st
         <aside className="card p-6">
           <div className="font-display text-2xl">{naira(sl.price)}<span className="text-xs font-body text-navy-400"> /night</span></div>
           <span className={'inline-block mt-3 ' + (sl.available ? 'pill-green' : 'pill-red')}>{sl.available ? 'Available' : 'Currently booked'}</span>
-          <button disabled={!sl.available} className={'w-full justify-center mt-6 ' + (sl.available ? 'btn-primary' : 'btn-outline opacity-50 cursor-not-allowed')}>
-            {sl.available ? 'Book this property' : 'Notify when available'}
-          </button>
+          <ShortLetBookingClient shortLet={{ id: sl.id, name: sl.name, price: sl.price, bedrooms: sl.bedrooms, available: sl.available }} />
         </aside>
       </section>
     </div>

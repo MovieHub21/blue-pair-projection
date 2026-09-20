@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     const admin = createSupabaseAdminClient()
     const { data: booking, error: bookingError } = await admin.from('bookings')
-      .select('id,reference,customer_id,room_id,room_type_id,check_in,check_out,amount,payment_status,status')
+      .select('id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,payment_status,status,reservation_expires_at')
       .eq('id', String(bookingId)).maybeSingle()
     if (bookingError) { log('BOOKING_QUERY_FAILED', { message: bookingError.message, code: bookingError.code, details: bookingError.details }); throw bookingError }
     if (!booking) { log('BOOKING_NOT_FOUND', { bookingId }); return NextResponse.json({ error: 'Booking could not be found. Please try again.' }, { status: 404 }) }
@@ -33,19 +33,21 @@ export async function POST(request: Request) {
     if (customerError) { log('CUSTOMER_QUERY_FAILED', { message: customerError.message, code: customerError.code, details: customerError.details }); throw customerError }
     if (!customer || customer.user_id !== user.id) { log('CUSTOMER_AUTH_MISMATCH', { customerId: customer?.id || null }); return NextResponse.json({ error: 'You are not allowed to pay for this booking.' }, { status: 403 }) }
     if (!customer.email) { log('CUSTOMER_EMAIL_MISSING', { customerId: customer.id }); return NextResponse.json({ error: 'A customer email is required for Paystack.' }, { status: 400 }) }
-    if (!booking.room_id) { log('ROOM_ID_MISSING', { bookingId: booking.id }); return NextResponse.json({ error: 'This booking does not have a physical room assigned yet.' }, { status: 409 }) }
+    if (!booking.room_id && !booking.short_let_id) { log('BOOKING_RESOURCE_MISSING', { bookingId: booking.id }); return NextResponse.json({ error: 'This booking has no property assigned.' }, { status: 409 }) }
+    if (booking.reservation_expires_at && new Date(booking.reservation_expires_at).getTime() <= Date.now()) return NextResponse.json({ error: 'This reservation has expired. Please start the booking again.' }, { status: 409 })
     log('CUSTOMER_OK', { customerId: customer.id, email: customer.email })
 
-    log('ACQUIRING_PAYMENT_LOCK', { bookingId: booking.id, roomId: booking.room_id, checkIn: booking.check_in, checkOut: booking.check_out })
-    const { data: lock, error: lockError } = await admin.rpc('acquire_payment_lock', { p_booking_id: booking.id, p_user_id: user.id })
-    if (lockError) { log('PAYMENT_LOCK_RPC_FAILED', { message: lockError.message, code: lockError.code, details: lockError.details, hint: lockError.hint }); throw lockError }
-    const lockResult = Array.isArray(lock) ? lock[0] : lock
-    log('PAYMENT_LOCK_RESULT', { acquired: lockResult?.acquired, reason: lockResult?.reason, expiresAt: lockResult?.expires_at })
-    if (!lockResult?.acquired) {
-      if (lockResult?.reason === 'payment_in_progress') return NextResponse.json({ error: 'This room is currently being secured by another guest. Please wait until their payment window ends and try again.', code: 'PAYMENT_IN_PROGRESS', expiresAt: lockResult.expires_at ? new Date(lockResult.expires_at).toISOString() : null }, { status: 409 })
-      if (lockResult?.reason === 'room_already_sold') return NextResponse.json({ error: 'This room has just been secured by another guest. Please choose another available room.', code: 'ROOM_SOLD' }, { status: 409 })
-      if (lockResult?.reason === 'room_not_available') return NextResponse.json({ error: 'This room is no longer available for payment. Please refresh and choose another room.', code: 'ROOM_NOT_AVAILABLE' }, { status: 409 })
-      return NextResponse.json({ error: 'This booking is not currently eligible for payment.' }, { status: 409 })
+    let lockResult: any = null
+    if (booking.room_id) {
+      log('ACQUIRING_PAYMENT_LOCK', { bookingId: booking.id, roomId: booking.room_id, checkIn: booking.check_in, checkOut: booking.check_out })
+      const { data: lock, error: lockError } = await admin.rpc('acquire_payment_lock', { p_booking_id: booking.id, p_user_id: user.id })
+      if (lockError) throw lockError
+      lockResult = Array.isArray(lock) ? lock[0] : lock
+      if (!lockResult?.acquired) {
+        if (lockResult?.reason === 'payment_in_progress') return NextResponse.json({ error: 'This room is currently being secured by another guest. Please wait until their payment window ends and try again.', code: 'PAYMENT_IN_PROGRESS', expiresAt: lockResult.expires_at ? new Date(lockResult.expires_at).toISOString() : null }, { status: 409 })
+        if (lockResult?.reason === 'room_already_sold') return NextResponse.json({ error: 'This room has just been secured by another guest. Please choose another available room.', code: 'ROOM_SOLD' }, { status: 409 })
+        return NextResponse.json({ error: 'This booking is not currently eligible for payment.' }, { status: 409 })
+      }
     }
 
     const reference = `BPH-${booking.reference.replace(/^BPH-/,'')}-PS-${Date.now()}`
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ authorizationUrl: result.data.authorization_url, reference, lockExpiresAt: lockResult.expires_at })
     } catch (error: any) {
       log('PAYSTACK_INITIALIZATION_FAILED', { message: error?.message, code: error?.code, stack: error?.stack })
-      const { error: releaseError } = await admin.rpc('release_payment_lock', { p_booking_id: booking.id })
+      const { error: releaseError } = booking.room_id ? await admin.rpc('release_payment_lock', { p_booking_id: booking.id }) : { error: null }
       if (releaseError) log('PAYMENT_LOCK_RELEASE_FAILED', { message: releaseError.message, code: releaseError.code })
       else log('PAYMENT_LOCK_RELEASED_AFTER_FAILURE', { bookingId: booking.id })
       throw error

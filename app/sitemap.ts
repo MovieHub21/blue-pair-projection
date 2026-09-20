@@ -1,4 +1,7 @@
 import type { MetadataRoute } from 'next'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import { SITE_URL } from '../lib/siteConfig'
 import { roomTypes, shortLets } from '../data/mock'
 import { getPublishedBlogPosts } from '../lib/blog'

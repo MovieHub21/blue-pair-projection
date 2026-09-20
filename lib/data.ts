@@ -41,4 +41,11 @@ export async function getParkingZones() { const db=createSupabasePublicClient();
 export async function getOffers(activeOnly=false) { const db=createSupabasePublicClient(); let q=db.from('offers').select('*').order('title'); if(activeOnly) q=q.eq('active',true); const {data}=await q; return (data??[]).map(mapOffer) }
 export async function getGalleryImages() { const db=createSupabasePublicClient(); const {data}=await db.from('gallery_images').select('*').order('sort_order'); return (data??[]).map(mapGalleryImage) }
 export async function getAmenity(key:string) { const db=createSupabasePublicClient(); const {data}=await db.from('amenities').select('*').eq('key',key).maybeSingle(); return data?mapAmenity(data):null }
+export async function getPublishedAmenities(prefix?: string) {
+  const db = createSupabasePublicClient()
+  let q = db.from('amenities').select('*').eq('published', true).order('name')
+  if (prefix) q = q.like('key', `${prefix}%`)
+  const { data } = await q
+  return (data ?? []).map(mapAmenity)
+}
 export async function getSiteContent() { const db=createSupabasePublicClient(); const {data}=await db.from('site_content').select('key,value'); const map:Record<string,string>={}; for(const row of data??[]) map[(row as any).key]=(row as any).value; return map }

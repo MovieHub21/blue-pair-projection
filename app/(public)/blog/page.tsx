@@ -4,6 +4,9 @@ import { ArrowRight, CalendarDays, BookOpen } from 'lucide-react'
 import { getPublishedBlogPosts } from '../../../lib/blog'
 import { SITE_URL, SITE_NAME } from '../../../lib/siteConfig'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: `Hotel News & Stories | ${SITE_NAME} Uromi`,
   description: `Read the latest stories, hotel news, travel ideas, dining highlights and experiences from ${SITE_NAME} in Uromi, Edo State.`,

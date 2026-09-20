@@ -5,12 +5,10 @@ import { notFound } from 'next/navigation'
 import { getPublishedBlogPost, getPublishedBlogPosts } from '../../../../lib/blog'
 import { SITE_URL } from '../../../../lib/siteConfig'
 
-type Props = { params: { slug: string } }
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export async function generateStaticParams() {
-  const posts = await getPublishedBlogPosts()
-  return posts.map(post => ({ slug: post.slug }))
-}
+type Props = { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPublishedBlogPost(params.slug)
