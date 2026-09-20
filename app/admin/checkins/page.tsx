@@ -82,7 +82,7 @@ export default function CheckInManagement() {
           const isProcessing = processingId === b.id
           return (
             <div key={b.id} className="card p-5 flex flex-col sm:flex-row sm:items-center gap-4">
-              <img src={roomOf(b.roomTypeId)?.images[0]} className="w-16 h-16 rounded-xl object-cover" alt="" />
+              <img loading="lazy" decoding="async" src={roomOf(b.roomTypeId)?.images[0]} className="w-16 h-16 rounded-xl object-cover" alt="" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <b>{custOf(b.customerId)?.name}</b>

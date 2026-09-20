@@ -139,7 +139,7 @@ export default function EventsManagement() {
       <div className="grid md:grid-cols-3 gap-5">
         {events.map(e => (
           <div key={e.id} className="card overflow-hidden">
-            <div className="h-36"><img src={e.image} className="w-full h-full object-cover" alt={e.title} /></div>
+            <div className="h-36"><img loading="lazy" decoding="async" src={e.image} className="w-full h-full object-cover" alt={e.title} /></div>
             <div className="p-5">
               <div className="flex justify-between items-start gap-2">
                 <b>{e.title}</b>
@@ -190,7 +190,7 @@ export default function EventsManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={draft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={draft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder="events/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
             </div>
@@ -227,7 +227,7 @@ export default function EventsManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={editDraft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={editDraft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder={`events/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
             </div>

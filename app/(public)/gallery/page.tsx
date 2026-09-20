@@ -25,7 +25,7 @@ export default async function GalleryPage() {
         <div className="container-w columns-2 md:columns-3 gap-3 [column-fill:_balance]">
           {tiles.map((g, i) => (
             <div key={`${g.id}-${i}`} className="mb-3 overflow-hidden break-inside-avoid rounded-md">
-              <img src={g.url} alt={g.caption || 'Blue Pair Hotel, Uromi, Edo State'} className="w-full object-cover rounded-md" style={{ height: i % 3 === 0 ? '320px' : '220px' }} />
+              <img loading="lazy" decoding="async" src={g.url} alt={g.caption || 'Blue Pair Hotel, Uromi, Edo State'} className="w-full object-cover rounded-md" style={{ height: i % 3 === 0 ? '320px' : '220px' }} />
             </div>
           ))}
           {tiles.length === 0 && <p className="text-sm text-navy-400 col-span-full">No gallery images yet.</p>}

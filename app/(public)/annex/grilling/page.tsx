@@ -30,7 +30,7 @@ export default async function GrillingPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             {items.map(item => (
               <div key={item.id} className="card p-4 flex gap-4 items-center">
-                <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+                <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
                 <div className="flex-1">
                   <div className="flex justify-between items-start gap-2"><b className="text-sm">{item.name}</b><span className="font-display text-sm">{naira(item.price)}</span></div>
                   <span className={'mt-1.5 inline-block ' + (item.available ? 'pill-green' : 'pill-red')}>{item.available ? 'Available' : 'Sold out'}</span>

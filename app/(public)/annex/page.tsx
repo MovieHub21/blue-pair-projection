@@ -31,7 +31,7 @@ export default async function AnnexPage() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
             {amenities.map(a => (
               <Link key={a.key} href={`/annex/${a.key.replace(/^annex-/, '')}`} className="card overflow-hidden group">
-                <div className="h-40 overflow-hidden">{a.heroImage ? <img src={a.heroImage} alt={a.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-cream-100" />}</div>
+                <div className="h-40 overflow-hidden">{a.heroImage ? <img loading="lazy" decoding="async" src={a.heroImage} alt={a.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full bg-cream-100" />}</div>
                 <div className="p-5">
                   <h4 className="font-semibold">{a.name}</h4>
                   <p className="text-xs text-navy-500 mt-1">{a.description}</p>

@@ -179,7 +179,7 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
             {roomTypes.map(r => (
               <button key={r.id} onClick={() => setRoomId(r.id)}
                 className={'card p-4 flex gap-4 text-left items-center border-2 ' + (roomId === r.id ? 'border-gold-500' : 'border-transparent')}>
-                <img src={r.images[0]} alt={r.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+                <img loading="lazy" decoding="async" src={r.images[0]} alt={r.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
                 <div className="flex-1">
                   <b className="block text-sm">{r.name}</b>
                   <span className="text-xs text-navy-400">{r.guests} guests · {r.bedType}</span>
@@ -236,7 +236,7 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
         <div className="max-w-md">
           <h2 className="text-2xl font-semibold mb-6">Booking summary</h2>
           <div className="card p-5 flex gap-4 mb-5">
-            <img src={room.images[0]} alt={room.name} className="w-16 h-16 rounded-lg object-cover" />
+            <img loading="lazy" decoding="async" src={room.images[0]} alt={room.name} className="w-16 h-16 rounded-lg object-cover" />
             <div><b className="block text-sm">{room.name}</b><span className="text-xs text-navy-400">{formatDate(checkIn)} → {formatDate(checkOut)} · {adults} adults{children?`, ${children} children`:''}</span></div>
           </div>
           <div className="card p-5 flex flex-col gap-1">

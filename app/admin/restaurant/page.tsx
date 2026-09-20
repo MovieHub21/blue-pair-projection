@@ -138,7 +138,7 @@ export default function RestaurantManagement() {
               <tr key={m.id} className="border-b border-black/5 last:border-none">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    <img src={m.image} className="w-11 h-11 rounded-lg object-cover" alt="" />
+                    <img loading="lazy" decoding="async" src={m.image} className="w-11 h-11 rounded-lg object-cover" alt="" />
                     <b>{m.name}</b>
                   </div>
                 </td>

@@ -13,9 +13,45 @@ const WATCHED_TABLES = new Set([
   'room_service_orders','payment_holds','room_daily_statuses',
 ])
 
+type ChangeDetail = { table: string; operation: string | null; roomId: string | null; status: string | null }
+
+// One booking/payment writes many rows, and every row produces its own broadcast. Pages react to
+// a table change by reloading that table, so reloading once per row multiplies the work. The first
+// event for a table is passed on immediately (no added delay); further events for the same table
+// within COALESCE_MS are merged into a single follow-up event that carries the latest change.
+const COALESCE_MS = 150
+
 export default function RealtimeBridge() {
   useEffect(() => {
     const startedAt = Date.now()
+    const lastEmitted = new Map<string, number>()
+    const pending = new Map<string, { timer: number; detail: ChangeDetail }>()
+
+    const emit = (detail: ChangeDetail) => {
+      lastEmitted.set(detail.table, Date.now())
+      window.dispatchEvent(new CustomEvent('bluepair:database-change', { detail }))
+    }
+
+    const dispatchCoalesced = (detail: ChangeDetail) => {
+      const queued = pending.get(detail.table)
+      if (queued) {
+        queued.detail = detail
+        return
+      }
+      const wait = COALESCE_MS - (Date.now() - (lastEmitted.get(detail.table) ?? 0))
+      if (wait <= 0) {
+        emit(detail)
+        return
+      }
+      const entry = {
+        detail,
+        timer: window.setTimeout(() => {
+          pending.delete(detail.table)
+          emit(entry.detail)
+        }, wait),
+      }
+      pending.set(detail.table, entry)
+    }
 
     console.info('[BP-DIAG][realtime][init]', {
       channel: 'bluepair:database',
@@ -49,9 +85,7 @@ export default function RealtimeBridge() {
         // consumer decides whether the changed table affects its own data.
         if (!relevant) return
 
-        window.dispatchEvent(new CustomEvent('bluepair:database-change', {
-          detail: { table, operation, roomId, status },
-        }))
+        dispatchCoalesced({ table, operation, roomId, status })
       })
       .subscribe((status, err) => {
         console.info('[BP-DIAG][realtime][subscription]', {
@@ -71,6 +105,8 @@ export default function RealtimeBridge() {
 
     return () => {
       console.info('[BP-DIAG][realtime][cleanup]')
+      pending.forEach(entry => window.clearTimeout(entry.timer))
+      pending.clear()
       void supabase.removeChannel(channel)
     }
   }, [])

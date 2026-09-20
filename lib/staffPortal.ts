@@ -1,5 +1,4 @@
 import { cache } from 'react'
-import { getCurrentUser } from './account'
 import { createSupabaseServerClient } from './supabase/server'
 import { ALWAYS_ALLOWED_SECTIONS } from './permissionSections'
 import type { AppRole } from './permissions'
@@ -19,10 +18,12 @@ const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'mainte
 
 /**
  * Loads the staff identity, roles and section permissions together for portal layouts.
- * This avoids repeating the role query once for the header and again for permissions.
+ * After the (unavoidable) auth check, the profile, role and permission lookups run in
+ * parallel instead of one after another, so the layout waits for one round trip, not three.
  */
 export const getStaffPortalContext = cache(async () => {
-  const { user, profile } = await getCurrentUser()
+  const db = createSupabaseServerClient()
+  const { data: { user } } = await db.auth.getUser()
   if (!user) {
     return {
       name: 'Staff',
@@ -32,8 +33,12 @@ export const getStaffPortalContext = cache(async () => {
     }
   }
 
-  const db = createSupabaseServerClient()
-  const { data: roleRows } = await db.from('user_roles').select('role').eq('user_id', user.id)
+  const [{ data: profile }, { data: roleRows }, { data: permRows }] = await Promise.all([
+    db.from('profiles').select('name').eq('id', user.id).maybeSingle(),
+    db.from('user_roles').select('role').eq('user_id', user.id),
+    // Small table (roles x sections). Fetched alongside the roles and filtered below.
+    db.from('role_permissions').select('role, section, allowed'),
+  ])
   const roles = (roleRows ?? []).map((r: any) => r.role as AppRole)
   const isSuperAdmin = roles.includes('super_admin')
 
@@ -41,13 +46,9 @@ export const getStaffPortalContext = cache(async () => {
   if (isSuperAdmin || roles.length === 0) {
     allowed = () => true
   } else {
-    const { data: permRows } = await db
-      .from('role_permissions')
-      .select('section, allowed')
-      .in('role', roles)
-
     const bySection = new Map<string, boolean>()
     for (const row of permRows ?? []) {
+      if (!roles.includes(row.role as AppRole)) continue
       bySection.set(row.section, bySection.get(row.section) || row.allowed)
     }
 

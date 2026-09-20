@@ -37,7 +37,7 @@ export default async function AboutPage() {
             <p className="text-navy-500 text-[15px] leading-relaxed">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced — which is why the same warmth shows up whether you're checking into a Standard Room or hosting 200 guests in the Grand Hall.</p>
           </div>
           <div className="h-[420px] rounded-xl2 overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=1000&q=80" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=1000&q=80" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
           </div>
         </div>
       </section>
@@ -62,7 +62,7 @@ export default async function AboutPage() {
               <Link href="/blog" className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-navy-900 mb-2">View all stories <ArrowRight size={15} /></Link>
             </div>
             <div className="grid md:grid-cols-3 gap-5">
-              {posts.map(post => <Link key={post.id} href={`/blog/${post.slug}`} className="group card overflow-hidden hover:-translate-y-1 transition-transform duration-300"><div className="aspect-[16/10] overflow-hidden"><img src={post.image_url} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div><div className="p-5"><div className="flex items-center justify-between text-[11px] text-navy-400"><span className="tag">{post.category}</span><span className="flex items-center gap-1"><CalendarDays size={12} />{dateLabel(post.published_at)}</span></div><h3 className="font-display text-xl text-navy-950 mt-4 leading-snug">{post.title}</h3><p className="text-sm text-navy-500 leading-6 mt-2 line-clamp-2">{post.description}</p><span className="inline-flex items-center gap-1.5 text-xs font-bold mt-4">Read story <ArrowRight size={13} /></span></div></Link>)}
+              {posts.map(post => <Link key={post.id} href={`/blog/${post.slug}`} className="group card overflow-hidden hover:-translate-y-1 transition-transform duration-300"><div className="aspect-[16/10] overflow-hidden"><img loading="lazy" decoding="async" src={post.image_url} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div><div className="p-5"><div className="flex items-center justify-between text-[11px] text-navy-400"><span className="tag">{post.category}</span><span className="flex items-center gap-1"><CalendarDays size={12} />{dateLabel(post.published_at)}</span></div><h3 className="font-display text-xl text-navy-950 mt-4 leading-snug">{post.title}</h3><p className="text-sm text-navy-500 leading-6 mt-2 line-clamp-2">{post.description}</p><span className="inline-flex items-center gap-1.5 text-xs font-bold mt-4">Read story <ArrowRight size={13} /></span></div></Link>)}
             </div>
             <Link href="/blog" className="sm:hidden btn-outline mt-6">View all stories <ArrowRight size={14} /></Link>
           </div>
@@ -71,7 +71,7 @@ export default async function AboutPage() {
       <section className="section">
         <div className="container-w">
           <SectionHeading eyebrow="Gallery" title="Around the property" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{gallery.map(g => <div key={g.id} className="h-48 rounded-xl2 overflow-hidden"><img src={g.url} alt={g.caption || 'Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State'} className="w-full h-full object-cover" /></div>)}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{gallery.map(g => <div key={g.id} className="h-48 rounded-xl2 overflow-hidden"><img loading="lazy" decoding="async" src={g.url} alt={g.caption || 'Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State'} className="w-full h-full object-cover" /></div>)}</div>
         </div>
       </section>
     </div>

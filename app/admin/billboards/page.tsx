@@ -112,7 +112,7 @@ export default function BillboardManagement() {
       <div className="grid md:grid-cols-3 gap-5">
         {billboards.map(b => (
           <div key={b.id} className="card overflow-hidden">
-            <div className="h-32"><img src={b.image} className="w-full h-full object-cover" alt={b.location} /></div>
+            <div className="h-32"><img loading="lazy" decoding="async" src={b.image} className="w-full h-full object-cover" alt={b.location} /></div>
             <div className="p-5">
               <b className="block">{b.location}</b>
               <span className="text-xs text-navy-400">{b.dimensions}</span>
@@ -134,7 +134,7 @@ export default function BillboardManagement() {
             <div><label className="field-label">Dimensions</label><input className="field-input" value={draft.dimensions} onChange={e=>setDraft({...draft,dimensions:e.target.value})} placeholder="20ft x 10ft" /></div>
             <div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})} /></div>
           </div>
-          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={draft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder="billboards/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} /></div></div>
+          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img loading="lazy" decoding="async" src={draft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder="billboards/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} /></div></div>
         </div>
         <button onClick={submit} className="btn-primary w-full justify-center mt-6">Add space</button>
       </Modal>
@@ -143,7 +143,7 @@ export default function BillboardManagement() {
         <div className="grid gap-4">
           <div><label className="field-label">Location</label><input className="field-input" value={editDraft.location} onChange={e=>setEditDraft({...editDraft,location:e.target.value})} /></div>
           <div className="grid grid-cols-2 gap-4"><div><label className="field-label">Dimensions</label><input className="field-input" value={editDraft.dimensions} onChange={e=>setEditDraft({...editDraft,dimensions:e.target.value})} /></div><div><label className="field-label">Price (₦)</label><input type="number" className="field-input" value={editDraft.price} onChange={e=>setEditDraft({...editDraft,price:e.target.value})} /></div></div>
-          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img src={editDraft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder={`billboards/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} /></div></div>
+          <div><label className="field-label">Photo</label><div className="flex items-center gap-4"><div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100"><img loading="lazy" decoding="async" src={editDraft.image} className="w-full h-full object-cover" alt="" /></div><ImageUploader folder={`billboards/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} /></div></div>
         </div>
         <button onClick={saveEdit} className="btn-primary w-full justify-center mt-6">Save changes</button>
       </Modal>

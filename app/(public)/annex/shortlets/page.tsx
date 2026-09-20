@@ -31,7 +31,7 @@ export default async function ShortLetsPage() {
             {shortLets.map(sl => (
               <div key={sl.id} className="card overflow-hidden flex flex-col">
                 <div className="h-48 relative">
-                  <img src={sl.image} alt={sl.name} className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={sl.image} alt={sl.name} className="w-full h-full object-cover" />
                   <span className={'absolute top-3 left-3 ' + (sl.available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>{sl.available ? 'Available' : 'Booked'}</span>
                 </div>
                 <div className="p-5 flex flex-col gap-2.5 flex-1">

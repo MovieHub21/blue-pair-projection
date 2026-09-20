@@ -21,7 +21,7 @@ export default async function EventsPage() {
       <SectionHeading eyebrow="Upcoming" title="Events at Blue Pair" subtitle="From pool brunches to black-tie evenings — request your spot and let our reception team confirm availability." />
       <div className="grid md:grid-cols-3 gap-6">
         {published.map(e => <div key={e.id} className="card overflow-hidden flex flex-col">
-          <div className="h-48"><img src={e.image} alt={e.title} className="w-full h-full object-cover" /></div>
+          <div className="h-48"><img loading="lazy" decoding="async" src={e.image} alt={e.title} className="w-full h-full object-cover" /></div>
           <div className="p-5 flex flex-col gap-2.5 flex-1"><h4 className="font-semibold text-lg">{e.title}</h4><span className="text-xs text-navy-500 flex items-center gap-1.5"><Calendar size={13} />{formatDate(e.date)}</span><span className="text-xs text-navy-500 flex items-center gap-1.5"><Users size={13} />{e.capacity} capacity</span><p className="text-sm text-navy-500">{e.description}</p><div className="flex items-center justify-between mt-auto pt-3"><b className="font-display">{naira(e.price)}</b><ReserveSpotButton eventId={e.id} eventTitle={e.title} eventDate={formatDate(e.date)} price={e.price} capacity={e.capacity} /></div></div>
         </div>)}
       </div>

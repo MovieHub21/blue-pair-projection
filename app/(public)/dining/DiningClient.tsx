@@ -26,7 +26,7 @@ export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
             <div className="grid sm:grid-cols-2 gap-4">
               {items.filter(i => i.category === cat).map(item => (
                 <div key={item.id} className="card p-4 flex gap-4 items-center">
-                  <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+                  <img loading="lazy" decoding="async" src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover shrink-0" />
                   <div className="flex-1">
                     <div className="flex justify-between items-start gap-2">
                       <b className="text-sm">{item.name}</b>

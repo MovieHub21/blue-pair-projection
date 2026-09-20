@@ -154,7 +154,7 @@ export default function ShortLetManagement() {
       <div className="grid md:grid-cols-2 gap-5">
         {shortLets.map(sl => (
           <div key={sl.id} className="card overflow-hidden grid grid-cols-[88px_minmax(0,1fr)] sm:grid-cols-[128px_minmax(0,1fr)]">
-            <img src={sl.image} className="w-full h-full min-h-[150px] object-cover" alt={sl.name} />
+            <img loading="lazy" decoding="async" src={sl.image} className="w-full h-full min-h-[150px] object-cover" alt={sl.name} />
             <div className="p-3.5 sm:p-5 min-w-0">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                 <div className="min-w-0">
@@ -211,7 +211,7 @@ export default function ShortLetManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={draft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={draft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder="shortlets/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
             </div>
@@ -250,7 +250,7 @@ export default function ShortLetManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={editDraft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={editDraft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder={`shortlets/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
             </div>

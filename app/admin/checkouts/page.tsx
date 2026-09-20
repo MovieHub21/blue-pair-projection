@@ -85,7 +85,7 @@ export default function CheckOutManagement() {
           const isProcessing = checkingOutId === b.id
           return (
             <div key={b.id} className={`card p-5 flex flex-col sm:flex-row sm:items-center gap-4 ${dueToday ? 'border border-gold-200' : ''}`}>
-              <img src={roomOf(b.roomTypeId)?.images[0]} className="w-16 h-16 rounded-xl object-cover" alt="" />
+              <img loading="lazy" decoding="async" src={roomOf(b.roomTypeId)?.images[0]} className="w-16 h-16 rounded-xl object-cover" alt="" />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <b>{custOf(b.customerId)?.name}</b>

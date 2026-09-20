@@ -26,7 +26,7 @@ export default function BillboardClient({ billboards }: { billboards: BillboardS
           {billboards.map(b => (
             <div key={b.id} className="card overflow-hidden flex flex-col">
               <div className="h-44 relative">
-                <img src={b.image} alt={`Billboard advertising space — ${b.location}`} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={b.image} alt={`Billboard advertising space — ${b.location}`} className="w-full h-full object-cover" />
                 <span className={'absolute top-3 left-3 ' + (b.available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>{b.available ? 'Available' : 'Reserved'}</span>
               </div>
               <div className="p-5 flex flex-col gap-2.5 flex-1">

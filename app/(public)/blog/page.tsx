@@ -58,7 +58,7 @@ export default async function BlogPage() {
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
               {rest.map(post => (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="group glass-card overflow-hidden rounded-2xl">
-                  <div className="aspect-[16/10] overflow-hidden"><img src={post.image_url} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" /></div>
+                  <div className="aspect-[16/10] overflow-hidden"><img loading="lazy" decoding="async" src={post.image_url} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" /></div>
                   <div className="p-5 md:p-6">
                     <div className="flex items-center justify-between gap-3 text-[11px] text-navy-400"><span className="tag">{post.category}</span><span>{dateLabel(post.published_at)}</span></div>
                     <h3 className="font-display text-xl text-navy-950 mt-4 leading-snug group-hover:text-navy-700">{post.title}</h3>

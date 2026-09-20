@@ -31,7 +31,7 @@ export default function AmenityPage({ config }: { config: AmenityConfig }) {
             <div className="grid grid-cols-2 gap-3 mb-10">
               {config.gallery.map((g, i) => (
                 <div key={i} className={'rounded-xl2 overflow-hidden h-44 ' + (i === 0 ? 'col-span-2 h-64' : '')}>
-                  <img src={g} alt={`${config.name} at Blue Pair Hotel, Uromi`} className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={g} alt={`${config.name} at Blue Pair Hotel, Uromi`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>

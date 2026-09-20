@@ -50,6 +50,24 @@ function rateLimit(request: NextRequest) {
   return null
 }
 
+// Every public page request used to wait on a database read of the maintenance flag. The flag
+// is now remembered for a few seconds per server instance, so almost all page loads skip that
+// round trip. Turning maintenance mode on/off takes effect within MAINTENANCE_TTL_MS.
+const MAINTENANCE_TTL_MS = 10_000
+let maintenanceCache: { environment: string; value: boolean; expiresAt: number } | null = null
+
+async function isMaintenanceMode(supabase: ReturnType<typeof createServerClient>, environment: string) {
+  const now = Date.now()
+  if (maintenanceCache && maintenanceCache.environment === environment && maintenanceCache.expiresAt > now) {
+    return maintenanceCache.value
+  }
+  const { data, error } = await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
+  if (error) return false
+  const value = !!data?.maintenance_mode
+  maintenanceCache = { environment, value, expiresAt: now + MAINTENANCE_TTL_MS }
+  return value
+}
+
 function getEnvironment() {
   if (process.env.VERCEL_ENV === 'preview') return 'preview'
   if (process.env.VERCEL_ENV === 'production') return 'production'
@@ -144,11 +162,9 @@ export async function middleware(request: NextRequest) {
   })
 
   const environment = getEnvironment()
-  const { data: siteSetting } = needsStaff
-    ? { data: null }
-    : await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
+  const maintenanceOn = needsStaff ? false : await isMaintenanceMode(supabase, environment)
 
-  if (siteSetting?.maintenance_mode && !needsStaff) {
+  if (maintenanceOn && !needsStaff) {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
@@ -178,7 +194,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (needsStaff) {
-    const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id)
+    // The section is known from the URL, so its permission rows are fetched in parallel with the
+    // user's roles instead of after them (one round trip less on every staff page navigation).
+    const section = sectionForPath(pathname)
+    const needsPermissionCheck = !!section && !ALWAYS_ALLOWED_SECTIONS.has(section)
+    const [{ data: roles }, { data: sectionPermRows }] = await Promise.all([
+      supabase.from('user_roles').select('role').eq('user_id', user.id),
+      needsPermissionCheck
+        ? supabase.from('role_permissions').select('role, allowed').eq('section', section as string)
+        : Promise.resolve({ data: null as Array<{ role: string; allowed: boolean }> | null }),
+    ])
     const list = (roles ?? []).map((r: any) => r.role as string)
     if (list.length === 0) {
       const url = request.nextUrl.clone()
@@ -188,10 +213,8 @@ export async function middleware(request: NextRequest) {
     const isSuperAdmin = list.includes('super_admin')
     const isManager = list.includes('manager')
     if (!isSuperAdmin && !isManager) {
-      const section = sectionForPath(pathname)
-      if (section && !ALWAYS_ALLOWED_SECTIONS.has(section)) {
-        const { data: permRows } = await supabase.from('role_permissions').select('allowed').in('role', list).eq('section', section)
-        const rows = permRows ?? []
+      if (needsPermissionCheck) {
+        const rows = (sectionPermRows ?? []).filter((r: any) => list.includes(r.role))
         if (rows.length > 0 && !rows.some((r: any) => r.allowed)) {
           const url = request.nextUrl.clone()
           url.pathname = list.includes('reception') ? '/admin/reception/dashboard' : list.includes('housekeeping') ? '/admin/housekeeping/dashboard' : list.includes('maintenance') ? '/admin/maintenance/dashboard' : '/admin/dashboard'

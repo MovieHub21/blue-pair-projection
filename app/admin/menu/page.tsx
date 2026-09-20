@@ -149,7 +149,7 @@ export default function MenuManagement() {
             {menuItems.filter(m => m.outlet === o).map(m => (
               <div key={m.id} className="flex items-center justify-between px-5 py-3.5 gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <img src={m.image} className="w-10 h-10 rounded-lg object-cover shrink-0" alt={m.name} />
+                  <img loading="lazy" decoding="async" src={m.image} className="w-10 h-10 rounded-lg object-cover shrink-0" alt={m.name} />
                   <div className="min-w-0">
                     <b className="text-sm block truncate">{m.name}</b>
                     <span className="text-xs text-navy-400">{m.category}</span>
@@ -195,7 +195,7 @@ export default function MenuManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={draft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={draft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder="menu/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
             </div>
@@ -222,7 +222,7 @@ export default function MenuManagement() {
             <label className="field-label">Photo</label>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img src={editDraft.image} className="w-full h-full object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={editDraft.image} className="w-full h-full object-cover" alt="" />
               </div>
               <ImageUploader folder={`menu/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
             </div>
