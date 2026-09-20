@@ -153,7 +153,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         </section>
       )}
 
-      <section id="menu" className="mx-auto max-w-7xl px-5 py-20 md:px-10 md:py-28">
+      <section id="menu" className="mx-auto max-w-7xl px-5 py-20 pb-32 md:px-10 md:py-28 md:pb-40">
         <div className="mb-12 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <span className={isBar ? 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#d7b66a]' : 'text-[10px] font-semibold uppercase tracking-[.28em] text-[#9d7428]'}>{isBar ? 'The drink list' : 'The kitchen selection'}</span>
@@ -190,7 +190,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                   <p className={isBar ? 'mt-5 text-sm leading-7 text-white/48' : 'mt-5 text-sm leading-7 text-[#697282]'}>{isBar ? 'A signature choice from the Annex selection.' : 'One of the selections that defines the Annex table.'}</p>
                   <div className="mt-8 flex items-center justify-between border-t border-current/10 pt-5">
                     <span className="font-display text-xl text-[#c39a45]">{naira(lead.price)}</span>
-                    {lead.available ? (cartItem(lead.id) ? <div className="flex items-center gap-2 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(lead.id, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-base">−</button><span className="w-5 text-center text-sm">{cartItem(lead.id)?.quantity}</span><button type="button" onClick={() => addToOrder(lead)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d7b66a] text-base font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(lead)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d7b66a] text-xl font-semibold text-[#08101d]">+</button>) : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
+                    {lead.available ? (cartItem(lead.id) ? <div className="flex items-center gap-2 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(lead.id, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-base">−</button><span className="w-5 text-center text-sm">{cartItem(lead.id)?.quantity}</span><button type="button" onClick={() => addToOrder(lead)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d7b66a] text-base font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(lead)} className="rounded-full bg-[#d7b66a] px-5 py-2.5 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add</button>) : <span className="text-[10px] uppercase tracking-[.16em] text-red-500">Unavailable</span>}
                   </div>
                 </div>
               </article>
@@ -212,7 +212,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                     <p className={isBar ? 'mt-1 text-[10px] uppercase tracking-[.15em] text-white/30' : 'mt-1 text-[10px] uppercase tracking-[.15em] text-[#8a919d]'}>{item.category || 'House selection'}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-base text-[#c39a45]">{naira(item.price)}</span>
-                  <div className="flex justify-end">{item.available ? (cartItem(item.id) ? <div className="flex items-center gap-1 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-sm">−</button><span className="w-5 text-center text-xs">{cartItem(item.id)?.quantity}</span><button type="button" onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d7b66a] text-sm font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(item)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#d7b66a] text-lg font-semibold text-[#08101d]">+</button>) : <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25">Unavailable</span>}</div>
+                  <div className="flex justify-end">{item.available ? (cartItem(item.id) ? <div className="flex items-center gap-1 rounded-full border border-[#d7b66a]/40 bg-[#d7b66a]/10 p-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-sm">−</button><span className="w-5 text-center text-xs">{cartItem(item.id)?.quantity}</span><button type="button" onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#d7b66a] text-sm font-semibold text-[#08101d]">+</button></div> : <button type="button" onClick={() => addToOrder(item)} className="rounded-full bg-[#d7b66a] px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#08101d]">Add</button>) : <span className="rounded-full border border-white/10 px-3 py-2 text-[9px] uppercase tracking-[.1em] text-white/25">Unavailable</span>}</div>
                 </article>
               ))}
             </div>
@@ -240,7 +240,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         )}
       {isBar && (
         <>
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05080e]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
+          <div className="fixed inset-x-0 bottom-0 z-[90] isolate border-t border-white/10 bg-[#05080e]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-[9px] uppercase tracking-[.2em] text-white/35">Your order</p>
@@ -252,8 +252,8 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
             </div>
           </div>
           {showOrder && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
-              <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto bg-[#0a1019] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
+            <div className="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-end justify-center overflow-hidden overscroll-none bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
+              <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain bg-[#0a1019] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
                 <div className="flex items-start justify-between gap-5">
                   <div><span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">Annex Bar</span><h2 className="mt-2 font-display text-4xl">Your order</h2></div>
                   <button type="button" onClick={() => setShowOrder(false)} className="text-sm text-white/50">Close</button>
