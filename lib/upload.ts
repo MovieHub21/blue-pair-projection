@@ -69,3 +69,22 @@ export async function uploadImage(original: File, folder = 'misc'): Promise<stri
   if (signErr || !data?.signedUrl) throw new Error(signErr?.message ?? 'Could not create image link')
   return data.signedUrl
 }
+
+
+/** Deletes an image previously uploaded to the site-images bucket. Safe for signed or public Supabase Storage URLs. */
+export async function deleteImage(url: string | null | undefined): Promise<void> {
+  if (!url) return
+  const parsed = new URL(url)
+  const marker = '/storage/v1/object/'
+  const markerIndex = parsed.pathname.indexOf(marker)
+  if (markerIndex === -1) return
+  const remainder = parsed.pathname.slice(markerIndex + marker.length)
+  const parts = remainder.split('/')
+  const mode = parts.shift()
+  const bucket = parts.shift()
+  if (!bucket || bucket !== BUCKET || !mode || !['sign', 'public'].includes(mode)) return
+  const path = parts.join('/')
+  if (!path) return
+  const { error } = await supabase.storage.from(BUCKET).remove([decodeURIComponent(path)])
+  if (error) throw error
+}

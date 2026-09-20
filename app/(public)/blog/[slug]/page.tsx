@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CalendarDays } from 'lucide-react'
 import { notFound } from 'next/navigation'
-import { getPublishedBlogPost, getPublishedBlogPosts } from '../../../../lib/blog'
+import { getPublishedBlogPost } from '../../../../lib/blog'
+import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
 
 export const dynamic = 'force-dynamic'
@@ -29,9 +30,27 @@ export default async function BlogStoryPage({ params }: Props) {
   const post = await getPublishedBlogPost(params.slug)
   if (!post) notFound()
   const paragraphs = post.content.split(/\n\s*\n/)
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    '@id': `${SITE_URL}/blog/${post.slug}#article`,
+    headline: post.title,
+    description: post.description,
+    image: post.image_url ? [post.image_url] : undefined,
+    datePublished: post.published_at,
+    dateModified: post.updated_at || post.published_at,
+    author: { '@type': 'Organization', name: 'Blue Pair Hotel', url: SITE_URL },
+    publisher: { '@type': 'Organization', name: 'Blue Pair Hotel', url: SITE_URL },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${post.slug}` },
+  }
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ]
 
   return (
-    <main className="bg-cream-50 min-h-screen">
+    <main className="bg-cream-50 min-h-screen">\n      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />
       <article>
         <div className="relative h-[48vh] min-h-[360px] max-h-[620px] overflow-hidden bg-navy-950">
           <img src={post.image_url} alt={post.title} className="w-full h-full object-cover opacity-80" />

@@ -5,6 +5,7 @@ import { Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import Modal from '../../../components/ui/Modal'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import ImageUploader from '../../../components/admin/ImageUploader'
+import { deleteImage } from '../../../lib/upload'
 import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { mapAmenity, mapDrink, mapMenuItem, mapShortLet } from '../../../lib/mappers'
@@ -152,6 +153,11 @@ export default function AnnexManagement() {
     }, { onConflict: 'key' })
     setSavingContent(false)
     if (error) return pushToast('Failed to save Annex content: ' + error.message, 'error')
+    const oldAmenity = amenities.find(item => item.key === amenityDraft.key)
+    if (oldAmenity?.heroImage && oldAmenity.heroImage !== amenityDraft.heroImage) { try { await deleteImage(oldAmenity.heroImage) } catch { pushToast('Content saved, but the old hero image could not be deleted from Storage.', 'error') } }
+    const oldGallery = oldAmenity?.gallery ?? []
+    const removedGallery = oldGallery.filter(url => !amenityDraft.gallery.includes(url))
+    for (const url of removedGallery) { try { await deleteImage(url) } catch { pushToast('Content saved, but one old gallery image could not be deleted from Storage.', 'error'); break } }
     await load()
     pushToast('Annex content saved', 'success')
   }
@@ -180,6 +186,7 @@ export default function AnnexManagement() {
       ? await supabase.from('menu_items').update(patch).eq('id', draft.id)
       : await supabase.from('menu_items').insert({ id: 'menu_' + Date.now(), ...patch })
     if (result.error) return pushToast('Failed to save menu item: ' + result.error.message, 'error')
+    if (draft.id) { const old = menuItems.find(item => item.id === draft.id)?.image; if (old && old !== draft.image) { try { await deleteImage(old) } catch { pushToast('Menu item saved, but the old image could not be deleted from Storage.', 'error') } } }
     setEditingMenu(null); await load(); pushToast('Menu item saved', 'success')
   }
 
@@ -187,6 +194,7 @@ export default function AnnexManagement() {
     if (!deleteMenu) return
     const { error } = await supabase.from('menu_items').delete().eq('id', deleteMenu.id)
     if (error) return pushToast('Failed to delete menu item: ' + error.message, 'error')
+    try { await deleteImage(deleteMenu.image) } catch { pushToast('Menu item deleted, but its image could not be removed from Storage.', 'error') }
     setDeleteMenu(null); await load(); pushToast('Menu item deleted', 'success')
   }
 
@@ -204,6 +212,7 @@ export default function AnnexManagement() {
       ? await supabase.from('drinks').update(patch).eq('id', draft.id)
       : await supabase.from('drinks').insert({ id: 'drink_' + Date.now(), ...patch })
     if (result.error) return pushToast('Failed to save drink: ' + result.error.message, 'error')
+    if (draft.id) { const old = drinks.find(item => item.id === draft.id)?.image; if (old && old !== draft.image) { try { await deleteImage(old) } catch { pushToast('Drink saved, but the old image could not be deleted from Storage.', 'error') } } }
     setEditingDrink(null); await load(); pushToast('Drink saved', 'success')
   }
 
@@ -211,6 +220,7 @@ export default function AnnexManagement() {
     if (!deleteDrink) return
     const { error } = await supabase.from('drinks').delete().eq('id', deleteDrink.id)
     if (error) return pushToast('Failed to delete drink: ' + error.message, 'error')
+    try { await deleteImage(deleteDrink.image) } catch { pushToast('Drink deleted, but its image could not be removed from Storage.', 'error') }
     setDeleteDrink(null); await load(); pushToast('Drink deleted', 'success')
   }
 
@@ -226,6 +236,7 @@ export default function AnnexManagement() {
       ? await supabase.from('short_lets').update(patch).eq('id', editingShortLet.id)
       : await supabase.from('short_lets').insert({ id: 'sl_' + Date.now(), ...patch, available: true })
     if (result.error) return pushToast('Failed to save short-let: ' + result.error.message, 'error')
+    if (editingShortLet) { const old = shortLets.find(item => item.id === editingShortLet.id)?.image; if (old && old !== patch.image) { try { await deleteImage(old) } catch { pushToast('Short-let saved, but the old image could not be deleted from Storage.', 'error') } } }
     setEditingShortLet(null); setShowAddShortLet(false); await load(); pushToast('Short-let saved', 'success')
   }
 
@@ -244,6 +255,7 @@ export default function AnnexManagement() {
     if (!deleteShortLet) return
     const { error } = await supabase.from('short_lets').delete().eq('id', deleteShortLet.id)
     if (error) return pushToast('Failed to delete property: ' + error.message, 'error')
+    try { await deleteImage(deleteShortLet.image) } catch { pushToast('Short-let deleted, but its image could not be removed from Storage.', 'error') }
     setDeleteShortLet(null); await load(); pushToast('Short-let deleted', 'success')
   }
 
