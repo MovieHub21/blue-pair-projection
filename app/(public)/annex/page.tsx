@@ -41,7 +41,7 @@ export default async function AnnexPage() {
             ))}
             {shortLets.length > 0 && <Link href="/annex/shortlets" className="card p-5 group">
               <h4 className="font-semibold">Accommodation & Short-lets</h4>
-              <p className="text-xs text-navy-500 mt-1">{shortLets.length} property{shortLets.length === 1 ? '' : 'ies'} available in the database.</p>
+              <p className="text-xs text-navy-500 mt-1">{shortLets.length} properties available in the database.</p>
               <span className="text-xs font-semibold text-navy-900 mt-3 flex items-center gap-1">Explore <ArrowRight size={12} /></span>
             </Link>}
           </div>
