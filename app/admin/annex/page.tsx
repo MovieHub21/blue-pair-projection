@@ -7,8 +7,22 @@ import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import ImageUploader from '../../../components/admin/ImageUploader'
 import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
-import { mapDrink, mapMenuItem, mapShortLet } from '../../../lib/mappers'
+import { mapAmenity, mapDrink, mapMenuItem, mapShortLet } from '../../../lib/mappers'
 import type { Drink, MenuItem, ShortLet } from '../../../data/mock'
+
+type Amenity = {
+  key: string
+  name: string
+  eyebrow: string
+  description: string
+  heroImage: string
+  gallery: string[]
+  hours: string
+  facilities: string[]
+  pricingNote: string
+  ctaLabel: string
+  published: boolean
+}
 
 type BookingRow = {
   id: string
@@ -21,6 +35,21 @@ type BookingRow = {
   payment_status: string
   status: string
   customers?: { name?: string; email?: string } | null
+}
+
+const OUTLETS = [
+  { key: 'annex-home', label: 'Annex Home' },
+  { key: 'annex-outdoor-eatery', label: 'Outdoor Eatery' },
+  { key: 'annex-grilling', label: 'Grilling' },
+  { key: 'annex-bar', label: 'Bar' },
+  { key: 'annex-vip-lounge', label: 'VIP Lounge' },
+  { key: 'annex-restaurant', label: 'Restaurant' },
+] as const
+
+type Tab = 'Content' | 'Menu' | 'Drinks' | 'Short-lets' | 'Bookings'
+
+function blankAmenity(key: string, name: string): Amenity {
+  return { key, name, eyebrow: '', description: '', heroImage: '', gallery: [], hours: '', facilities: [], pricingNote: '', ctaLabel: 'Reserve now', published: false }
 }
 
 type MenuOutlet = 'Annex Grilling' | 'Annex Outdoor Eatery' | 'Annex Restaurant'
@@ -51,6 +80,8 @@ const MENU_OUTLETS: { outlet: MenuOutlet; label: string }[] = [
   { outlet: 'Annex Restaurant', label: 'Annex Restaurant' },
 ]
 
+const TABS: Tab[] = ['Content', 'Menu', 'Drinks', 'Short-lets', 'Bookings']
+
 const emptyMenu = (outlet: MenuOutlet): MenuDraft => ({
   outlet, category: '', name: '', price: '', image: '', available: true,
 })
@@ -63,7 +94,11 @@ const emptyDrink: DrinkDraft = {
 }
 
 export default function AnnexManagement() {
-  const [tab, setTab] = useState<'Menu' | 'Drinks' | 'Short-lets' | 'Bookings'>('Menu')
+  const [tab, setTab] = useState<Tab>('Content')
+  const [amenities, setAmenities] = useState<Amenity[]>([])
+  const [selectedKey, setSelectedKey] = useState<string>('annex-home')
+  const [amenityDraft, setAmenityDraft] = useState<Amenity>(blankAmenity('annex-home', 'Annex Home'))
+  const [savingContent, setSavingContent] = useState(false)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [drinks, setDrinks] = useState<Drink[]>([])
   const [shortLets, setShortLets] = useState<ShortLet[]>([])
@@ -80,12 +115,14 @@ export default function AnnexManagement() {
   })
 
   const load = useCallback(async () => {
-    const [m, d, s, b] = await Promise.all([
+    const [a, m, d, s, b] = await Promise.all([
+      supabase.from('amenities').select('*').like('key', 'annex-%').order('name'),
       supabase.from('menu_items').select('*').in('outlet', MENU_OUTLETS.map(x => x.outlet)).order('name'),
       supabase.from('drinks').select('*').eq('bar', 'Annex Bar').order('name'),
       supabase.from('short_lets').select('*').order('price'),
       supabase.from('bookings').select('id,reference,customer_id,short_let_id,check_in,check_out,amount,payment_status,status,customers(name,email)').not('short_let_id', 'is', null).order('created_at', { ascending: false }),
     ])
+    if (a.data) setAmenities(a.data.map(mapAmenity))
     if (m.data) setMenuItems(m.data.map(mapMenuItem))
     if (d.data) setDrinks(d.data.map(mapDrink))
     if (s.data) setShortLets(s.data.map(mapShortLet))
@@ -93,10 +130,37 @@ export default function AnnexManagement() {
   }, [])
 
   useEffect(() => {
+    const found = amenities.find(item => item.key === selectedKey)
+    const label = OUTLETS.find(item => item.key === selectedKey)?.label || selectedKey
+    setAmenityDraft(found ? { ...found } : blankAmenity(selectedKey, label))
+  }, [amenities, selectedKey])
+
+  async function saveAmenity() {
+    setSavingContent(true)
+    const { error } = await supabase.from('amenities').upsert({
+      key: amenityDraft.key,
+      name: amenityDraft.name,
+      eyebrow: amenityDraft.eyebrow,
+      description: amenityDraft.description,
+      hero_image: amenityDraft.heroImage,
+      gallery: amenityDraft.gallery,
+      hours: amenityDraft.hours,
+      facilities: amenityDraft.facilities,
+      pricing_note: amenityDraft.pricingNote,
+      cta_label: amenityDraft.ctaLabel,
+      published: amenityDraft.published,
+    }, { onConflict: 'key' })
+    setSavingContent(false)
+    if (error) return pushToast('Failed to save Annex content: ' + error.message, 'error')
+    await load()
+    pushToast('Annex content saved', 'success')
+  }
+
+  useEffect(() => {
     void load()
     const refresh = (event: Event) => {
       const table = (event as CustomEvent).detail?.table
-      if (!table || ['menu_items', 'drinks', 'short_lets', 'bookings'].includes(table)) void load()
+      if (!table || ['amenities', 'menu_items', 'drinks', 'short_lets', 'bookings'].includes(table)) void load()
     }
     window.addEventListener('bluepair:database-change', refresh)
     return () => window.removeEventListener('bluepair:database-change', refresh)
@@ -191,13 +255,41 @@ export default function AnnexManagement() {
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {(['Menu', 'Drinks', 'Short-lets', 'Bookings'] as const).map(item => (
+        {TABS.map(item => (
           <button key={item} type="button" onClick={() => setTab(item)}
             className={'rounded-full border px-4 py-2.5 text-sm font-semibold ' + (tab === item ? 'border-navy-950 bg-navy-950 text-white' : 'border-black/15')}>
             {item}
           </button>
         ))}
       </div>
+
+      {tab === 'Content' && (
+        <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)]">
+          <div className="card h-fit space-y-1 p-3">
+            {OUTLETS.map(outlet => (
+              <button key={outlet.key} type="button" onClick={() => setSelectedKey(outlet.key)}
+                className={'w-full rounded-lg px-3 py-2.5 text-left text-sm ' + (selectedKey === outlet.key ? 'bg-navy-950 text-white' : 'hover:bg-cream-100')}>
+                {outlet.label}
+              </button>
+            ))}
+          </div>
+          <div className="card p-5 sm:p-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Name"><input className="field-input" value={amenityDraft.name} onChange={e => setAmenityDraft({...amenityDraft,name:e.target.value})}/></Field>
+              <Field label="Eyebrow"><input className="field-input" value={amenityDraft.eyebrow} onChange={e => setAmenityDraft({...amenityDraft,eyebrow:e.target.value})}/></Field>
+              <div className="md:col-span-2"><Field label="Description"><textarea rows={4} className="field-input !h-auto py-2.5" value={amenityDraft.description} onChange={e => setAmenityDraft({...amenityDraft,description:e.target.value})}/></Field></div>
+              <Field label="Opening hours"><input className="field-input" value={amenityDraft.hours} onChange={e => setAmenityDraft({...amenityDraft,hours:e.target.value})}/></Field>
+              <Field label="Pricing note"><input className="field-input" value={amenityDraft.pricingNote} onChange={e => setAmenityDraft({...amenityDraft,pricingNote:e.target.value})}/></Field>
+              <Field label="CTA label"><input className="field-input" value={amenityDraft.ctaLabel} onChange={e => setAmenityDraft({...amenityDraft,ctaLabel:e.target.value})}/></Field>
+              <Field label="Facilities (one per line)"><textarea rows={5} className="field-input !h-auto py-2.5" value={amenityDraft.facilities.join('\n')} onChange={e => setAmenityDraft({...amenityDraft,facilities:e.target.value.split('\n').map(x=>x.trim()).filter(Boolean)})}/></Field>
+              <div className="md:col-span-2"><Field label="Hero image"><div className="flex items-center gap-4"><div className="h-24 w-36 overflow-hidden rounded-xl bg-cream-100">{amenityDraft.heroImage && <img src={amenityDraft.heroImage} className="h-full w-full object-cover" alt=""/>}</div><ImageUploader folder={'annex/'+amenityDraft.key} label="Upload image" onUploaded={urls=>setAmenityDraft({...amenityDraft,heroImage:urls[0]||''})}/></div></Field></div>
+              <div className="md:col-span-2"><Field label="Gallery image URLs (one per line)"><textarea rows={4} className="field-input !h-auto py-2.5" value={amenityDraft.gallery.join('\n')} onChange={e => setAmenityDraft({...amenityDraft,gallery:e.target.value.split('\n').map(x=>x.trim()).filter(Boolean)})}/></Field></div>
+              <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={amenityDraft.published} onChange={e=>setAmenityDraft({...amenityDraft,published:e.target.checked})}/>Published on public Annex</label>
+            </div>
+            <button type="button" onClick={()=>void saveAmenity()} disabled={savingContent} className="btn-primary mt-6"><Save size={14}/>{savingContent ? 'Saving…' : 'Save Annex content'}</button>
+          </div>
+        </div>
+      )}
 
       {tab === 'Menu' && (
         <div className="grid gap-6">
@@ -300,4 +392,8 @@ function ShortLetModal({open,draft,onChange,onClose,onSave}:{open:boolean;draft:
     <div><label className="field-label">Image URL</label><input className="field-input" value={draft.image} onChange={e=>onChange({...draft,image:e.target.value})}/><ImageUploader folder="annex/shortlets" label="Upload image" onUploaded={urls=>onChange({...draft,image:urls[0]||''})}/></div>
     <button className="btn-primary w-full justify-center" onClick={onSave}>Save property</button>
   </div></Modal>
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><label className="field-label">{label}</label>{children}</div>
 }
