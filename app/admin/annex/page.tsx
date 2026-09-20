@@ -55,6 +55,9 @@ const emptyMenu = (outlet: MenuOutlet): MenuDraft => ({
   outlet, category: '', name: '', price: '', image: '', available: true,
 })
 
+const MENU_CATEGORIES = ['Starters', 'Main Course', 'Grills', 'Sides', 'Salads', 'Desserts', 'Breakfast', 'Snacks']
+const DRINK_CATEGORIES = ['Cocktails', 'Mocktails', 'Wine', 'Beer', 'Spirits', 'Whiskey', 'Champagne', 'Soft Drinks', 'Juices', 'Water']
+
 const emptyDrink: DrinkDraft = {
   bar: 'Annex Bar', category: '', name: '', price: '', image: '', available: true,
 }
@@ -263,7 +266,7 @@ function MenuModalInner({item,onClose,onSave}:{item:MenuDraft;onClose:()=>void;o
   return <Modal open={true} onClose={onClose} title={draft.id?'Edit menu item':'Add menu item'}><div className="grid gap-4">
     <div className="rounded-lg bg-cream-50 p-3 text-sm font-semibold">{draft.outlet}</div>
     <input className="field-input" placeholder="Item name" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/>
-    <input className="field-input" placeholder="Category" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}/>
+    <select className="field-input" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}><option value="">Select category</option>{MENU_CATEGORIES.map(category=><option key={category} value={category}>{category}</option>)}</select>
     <input type="number" className="field-input" placeholder="Price" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})}/>
     <div><label className="field-label">Image</label><input className="field-input" placeholder="Image URL" value={draft.image} onChange={e=>setDraft({...draft,image:e.target.value})}/><ImageUploader folder={'annex/menu/'+draft.outlet.toLowerCase().replaceAll(' ','-')} label="Upload image" onUploaded={urls=>setDraft({...draft,image:urls[0]||''})}/></div>
     <label className="flex gap-2 text-sm"><input type="checkbox" checked={draft.available} onChange={e=>setDraft({...draft,available:e.target.checked})}/>Available</label>
@@ -279,7 +282,7 @@ function DrinkModalInner({item,onClose,onSave}:{item:DrinkDraft;onClose:()=>void
   const [draft,setDraft]=useState(item)
   return <Modal open={true} onClose={onClose} title={draft.id?'Edit Annex drink':'Add Annex drink'}><div className="grid gap-4">
     <input className="field-input" placeholder="Drink name" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/>
-    <input className="field-input" placeholder="Category" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}/>
+    <select className="field-input" value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}><option value="">Select category</option>{DRINK_CATEGORIES.map(category=><option key={category} value={category}>{category}</option>)}</select>
     <input type="number" className="field-input" placeholder="Price" value={draft.price} onChange={e=>setDraft({...draft,price:e.target.value})}/>
     <div><label className="field-label">Drink image</label><input className="field-input" placeholder="Image URL" value={draft.image} onChange={e=>setDraft({...draft,image:e.target.value})}/><ImageUploader folder="annex/drinks" label="Upload drink image" onUploaded={urls=>setDraft({...draft,image:urls[0]||''})}/></div>
     <label className="flex gap-2 text-sm"><input type="checkbox" checked={draft.available} onChange={e=>setDraft({...draft,available:e.target.checked})}/>Available</label>
