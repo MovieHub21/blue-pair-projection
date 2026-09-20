@@ -1,0 +1,17 @@
+import { NextResponse } from 'next/server'
+import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+import { SITE_URL } from '../../../../lib/siteConfig'
+export async function GET(request:Request){
+ const url=new URL(request.url); const reference=String(url.searchParams.get('reference')||url.searchParams.get('trxref')||'').trim(); const base=process.env.NEXT_PUBLIC_SITE_URL||SITE_URL
+ const errorUrl=(reason:string)=>NextResponse.redirect(base+'/annex/bar/order/error?reason='+encodeURIComponent(reason)); if(!reference)return errorUrl('missing_reference')
+ try{ const secret=process.env.PAYSTACK_SECRET_KEY; if(!secret)return errorUrl('payment_not_configured'); const admin=createSupabaseAdminClient(); const {data:checkout,error:checkoutError}=await admin.from('bar_order_checkouts').select('*').eq('reference',reference).maybeSingle(); if(checkoutError)throw checkoutError; if(!checkout)return errorUrl('checkout_not_found'); if(checkout.status==='paid')return NextResponse.redirect(base+'/annex/bar/order/success?reference='+encodeURIComponent(reference))
+  const response=await fetch('https://api.paystack.co/transaction/verify/'+encodeURIComponent(reference),{headers:{Authorization:'Bearer '+secret},cache:'no-store'}); const result=await response.json(); const transaction=result?.data
+  if(!response.ok||!result?.status){await admin.from('bar_order_checkouts').update({status:'failed'}).eq('id',checkout.id);return errorUrl('payment_verification_failed')}
+  const txStatus=String(transaction?.status||'pending'); if(txStatus!=='success'){await admin.from('bar_order_checkouts').update({status:['abandoned','failed','reversed','timeout'].includes(txStatus)?'failed':'pending'}).eq('id',checkout.id);return errorUrl('payment_'+txStatus)}
+  if(Number(transaction.amount)!==Math.round(Number(checkout.total)*100)){await admin.from('bar_order_checkouts').update({status:'failed'}).eq('id',checkout.id);return errorUrl('amount_mismatch')}
+  const payload:any=checkout.payload||{}; const normalized=Array.isArray(payload.items)?payload.items:[]; const orderId='bar_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); const orderReference='BAR-'+Date.now()+'-'+Math.random().toString(36).slice(2,7).toUpperCase()
+  const {error:orderError}=await admin.from('bar_orders').insert({id:orderId,reference:orderReference,customer_id:checkout.customer_id,booking_id:payload.bookingId||null,delivery_location:payload.location,delivery_label:payload.deliveryLabel,notes:[payload.notes||'',payload.contactEmail?'Email: '+payload.contactEmail:'',payload.contactPhone?'Phone: '+payload.contactPhone:'',payload.deliveryAddress?'Address: '+payload.deliveryAddress:''].filter(Boolean).join(' · '),subtotal:Number(checkout.total),total:Number(checkout.total),status:'pending'}); if(orderError)throw orderError
+  const {error:itemError}=await admin.from('bar_order_items').insert(normalized.map((item:any,index:number)=>({id:'boi_'+Date.now()+'_'+index+'_'+Math.random().toString(36).slice(2,6),order_id:orderId,drink_id:item.drinkId,drink_name:item.drinkName,unit_price:item.unitPrice,quantity:item.quantity,line_total:item.lineTotal}))); if(itemError){await admin.from('bar_orders').delete().eq('id',orderId);throw itemError}
+  await admin.from('bar_order_checkouts').update({status:'paid'}).eq('id',checkout.id); return NextResponse.redirect(base+'/annex/bar/order/success?reference='+encodeURIComponent(orderReference))
+ }catch(error:any){console.error('[bar-order-payment-callback]',error);return errorUrl('order_creation_failed')}
+}
