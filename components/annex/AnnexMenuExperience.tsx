@@ -208,7 +208,16 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         <p className={isBar ? 'text-[9px] uppercase tracking-[.3em] text-white/35' : 'text-[9px] uppercase tracking-[.3em] text-[#7b8492]'}>{footerLabel}</p>
         <h2 className="mt-4 font-display text-4xl tracking-[-.03em] md:text-5xl">Stay a little longer.</h2>
         <p className={isBar ? 'mx-auto mt-4 max-w-lg text-sm leading-7 text-white/40' : 'mx-auto mt-4 max-w-lg text-sm leading-7 text-[#687181]'}>Good food, good drinks and a space worth settling into.</p>
-        {showAnnexNavigation && (\n          <nav aria-label="Annex dining links" className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[.16em] text-[#b98d37]">\n            <a href="/annex/restaurant">Annex Restaurant</a>\n            <a href="/annex/grilling">Grilling</a>\n            <a href="/annex/outdoor-eatery">Outdoor Eatery</a>\n            <a href="/annex/bar">Annex Bar</a>\n            <a href="/annex/shortlets">Short-lets</a>\n          </nav>\n        )}\n        <a href="#menu" className="mt-7 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#b98d37] transition hover:gap-3">Back to menu <ArrowRight size={14} /></a>
+        {showAnnexNavigation && (
+          <nav aria-label="Annex dining links" className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[.16em] text-[#b98d37]">
+            <a href="/annex/restaurant">Annex Restaurant</a>
+            <a href="/annex/grilling">Grilling</a>
+            <a href="/annex/outdoor-eatery">Outdoor Eatery</a>
+            <a href="/annex/bar">Annex Bar</a>
+            <a href="/annex/shortlets">Short-lets</a>
+          </nav>
+        )}
+        <a href="#menu" className="mt-7 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#b98d37] transition hover:gap-3">Back to menu <ArrowRight size={14} /></a>
       </section>
     </div>
   )
