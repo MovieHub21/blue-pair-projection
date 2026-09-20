@@ -5,6 +5,7 @@ import { getPublishedBlogPosts } from '../../../lib/blog'
 import { SITE_URL, SITE_NAME } from '../../../lib/siteConfig'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export const metadata: Metadata = {
   title: `Hotel News & Stories | ${SITE_NAME} Uromi`,
