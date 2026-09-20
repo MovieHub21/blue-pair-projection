@@ -13,8 +13,9 @@ export async function generateMetadata() { const home = await getAmenity('annex-
 const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'}]
 
 export default async function AnnexPage() {
-  const [home, amenities, shortLets] = await Promise.all([getAmenity('annex-home'), getPublishedAmenities('annex-'), getShortLets()])
+  const [home, allAmenities, shortLets] = await Promise.all([getAmenity('annex-home'), getPublishedAmenities('annex-'), getShortLets()])
   if (!home || !home.published) notFound()
+  const amenities = allAmenities.filter(a => a.key !== 'annex-home')
   const heroImage = home.heroImage || amenities[0]?.heroImage || shortLets[0]?.image || ''
   return (
     <div>
