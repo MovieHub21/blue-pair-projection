@@ -86,7 +86,8 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const cartItem = (id: string) => cart.find(x => x.id === id)
   const submitOrder = async () => {
     if (!cart.length) return
-    if (!location) return setOrderMessage('Choose where you want your order served.')
+    if (!takeout && !location) return setOrderMessage('Choose where you want your order served.')
+    if (takeout && !deliveryAddress.trim()) return setOrderMessage('Enter the delivery address for your takeaway order.')
     if ((location === 'room' || location === 'short_let') && !bookingId) return setOrderMessage('Select the current booking for that delivery location.')
     setPlacing(true); setOrderMessage('')
     try {
@@ -331,12 +332,13 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                         <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                         <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                       </div>
+                      <textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} rows={3} placeholder="Delivery address *" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                       <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
                     </>
                   )}
                     </div>
                     {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
-                    <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || !location || (takeout && (!contactEmail.trim() || !contactPhone.trim())) || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
+                    <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || (!takeout && !location) || (takeout && (!contactEmail.trim() || !contactPhone.trim() || !deliveryAddress.trim())) || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
                   </div>
                 </div>
               )}
