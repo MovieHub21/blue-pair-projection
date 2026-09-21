@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Please sign in first.' }, { status: 401 })
     const body = await request.json(); const requestedItems = Array.isArray(body.items) ? body.items : []; const location = String(body.location || ''); const bookingId = body.bookingId ? String(body.bookingId) : null
     const takeout = body.takeout === true; const notes = String(body.notes || '').trim().slice(0,1000); const contactEmail = String(body.contactEmail || '').trim().slice(0,160); const contactPhone = String(body.contactPhone || '').trim().slice(0,40); const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0,500)
-    if (takeout && (!contactEmail || !contactPhone)) return NextResponse.json({ error: 'Email and phone number are required for takeaway orders.' }, { status: 400 })
+    if (takeout && (!contactEmail || !contactPhone || !deliveryAddress)) return NextResponse.json({ error: 'Email, phone number, and delivery address are required for takeaway orders.' }, { status: 400 })
     if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one drink.' }, { status: 400 })
     if (!takeout && !LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
     const admin = createSupabaseAdminClient(); const { data: customer } = await admin.from('customers').select('id,name,email,user_id').eq('user_id', user.id).maybeSingle()
