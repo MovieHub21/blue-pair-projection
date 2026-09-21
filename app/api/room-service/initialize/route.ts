@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 
     const secret = process.env.PAYSTACK_SECRET_KEY
     if (!secret) throw new Error('Paystack is not configured.')
-    const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/api/paystack/callback`
+    const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/api/room-service/callback`
     const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },

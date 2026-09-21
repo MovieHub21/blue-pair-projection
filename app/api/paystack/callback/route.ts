@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
 import { SITE_URL } from '../../../../lib/siteConfig'
+import { isRoomServiceReference } from '../../../../lib/roomServicePayments'
+import { notifyBookingPaid } from '../../../../lib/staffEvents'
 
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 
@@ -32,6 +34,8 @@ export async function GET(request: Request) {
     const { data: payment, error: paymentLookupError } = await admin.from('payments').select('id,booking_ref,amount,customer_id,status').eq('reference', reference).maybeSingle()
     if (paymentLookupError) throw paymentLookupError
     if (!payment) return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
+    // Room-service payments belong to a room-service order, not to a booking: use the room-service callback.
+    if (isRoomServiceReference(payment.booking_ref)) return NextResponse.redirect(`${baseUrl}/api/room-service/callback?reference=${encodeURIComponent(reference)}`)
 
     const { data: booking, error: bookingLookupError } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,status,payment_status,reservation_expires_at').eq('reference', payment.booking_ref).maybeSingle()
     if (bookingLookupError) throw bookingLookupError
@@ -53,13 +57,6 @@ export async function GET(request: Request) {
     }
 
     if (Number(transaction.amount) !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
-
-    if (String(payment.booking_ref).startsWith('RS-')) {
-      const { data: order, error: orderLookupError } = await admin.from('room_service_orders').select('*').eq('reference', payment.booking_ref).maybeSingle()
-      if (orderLookupError) throw orderLookupError
-      if (!order) return NextResponse.redirect(`${guestDashboard}?payment=order-not-found`)
-      return NextResponse.redirect(`${guestDashboard}?payment=processing&room_service=${encodeURIComponent(order.reference)}`)
-    }
 
     if (booking.payment_status === 'paid' && booking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
     if (!booking.room_id && !booking.short_let_id) return NextResponse.redirect(`${guestUrl}?payment=property-missing`)
@@ -96,6 +93,7 @@ export async function GET(request: Request) {
       if (losers.length) await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).in('id', losers)
     }
 
+    await notifyBookingPaid(admin, booking, reference)
     const { data: customer, error: customerError } = await admin.from('customers').select('id,user_id,name,email').eq('id', payment.customer_id).maybeSingle()
     if (customerError) throw customerError
     if (customer?.user_id) {

@@ -9,16 +9,13 @@ const WATCHED_TABLES = new Set([
   'billboards','parking_zones','payments','offers','guest_requests','gallery_images',
   'amenities','role_permissions','site_content','email_logs','activity_logs','blog_posts',
   'event_reservations','contact_conversations','contact_messages','guest_reviews',
-  'guest_notifications','financial_transactions','financial_expenses','site_settings',
+  'guest_notifications','staff_notifications','financial_transactions','financial_expenses','site_settings',
   'room_service_orders','bar_orders','bar_order_items','payment_holds','room_daily_statuses',
 ])
 
 type ChangeDetail = { table: string; operation: string | null; roomId: string | null; status: string | null }
 
-// One booking/payment writes many rows, and every row produces its own broadcast. Pages react to
-// a table change by reloading that table, so reloading once per row multiplies the work. The first
-// event for a table is passed on immediately (no added delay); further events for the same table
-// within COALESCE_MS are merged into a single follow-up event that carries the latest change.
+
 const COALESCE_MS = 150
 
 export default function RealtimeBridge() {
@@ -81,8 +78,7 @@ export default function RealtimeBridge() {
           source: 'broadcast',
         })
 
-        // The database broadcast is the shared source-of-truth invalidation signal. Each
-        // consumer decides whether the changed table affects its own data.
+       
         if (!relevant) return
 
         dispatchCoalesced({ table, operation, roomId, status })

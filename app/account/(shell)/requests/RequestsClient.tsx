@@ -56,12 +56,11 @@ export default function RequestsClient({ initialRequests, customerId, guestName,
     const id = `gr_${Date.now()}`
     const { error } = await (await import('../../../../lib/supabase/client')).supabase.from('guest_requests').insert({ id, customer_id: customerId, booking_ref: bookingRef ?? '', room: activeRoom ?? '', guest_name: guestName, type: selected, message: note, status: 'open' })
     if (error) { setSubmitting(false); pushToast('Could not submit request', 'error'); return }
-    if (selected === 'Maintenance') {
-      await fetch('/api/admin/room-lifecycle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'maintenance_request', requestId: id }) }).catch(() => null)
-    }
+    // Each kind of request is routed to the team that handles it (maintenance, housekeeping or reception).
+    await fetch('/api/admin/room-lifecycle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'guest_request', requestId: id }) }).catch(() => null)
     setSubmitting(false)
     setSent([{ id, customerId, bookingRef: bookingRef ?? '', room: activeRoom ?? '', guestName, type: selected, message: note, status: 'open', createdAt: new Date().toISOString().slice(0, 10) }, ...sent])
-    setNote(''); pushToast(selected === 'Maintenance' ? 'Maintenance request sent to the maintenance team' : 'Request submitted to front desk', 'success')
+    setNote(''); pushToast(selected === 'Maintenance' ? 'Maintenance request sent to the maintenance team' : selected === 'Housekeeping' || selected === 'Extra towels' ? 'Request sent to housekeeping' : 'Request submitted to front desk', 'success')
   }
 
   return (

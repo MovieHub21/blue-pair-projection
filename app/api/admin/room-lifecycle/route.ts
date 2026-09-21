@@ -3,9 +3,12 @@ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { reservationReadyEmail } from '../../../../lib/email/templates'
+import { resolveDepartmentStaff } from '../../../../lib/staffRecipients'
+import { notifyStaff } from '../../../../lib/staffNotifications'
+import { notifyGuestRequest } from '../../../../lib/staffEvents'
 
 export const dynamic = 'force-dynamic'
-type Action = 'status' | 'checkout' | 'maintenance_request'
+type Action = 'status' | 'checkout' | 'maintenance_request' | 'guest_request'
 function escapeHtml(value: unknown) { return String(value ?? '').replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#039;' })[char] || char) }
 function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
 const HOLD_MINUTES = 10
@@ -17,10 +20,15 @@ async function requireStaff() {
   return user
 }
 
+const DEPARTMENT_PAGE = { housekeeping: '/admin/housekeeping/tasks', maintenance: '/admin/maintenance/tickets' } as const
+
+// Emails the department AND puts the same message in its staff notifications. Both use the same
+// department staff list (lib/staffRecipients.ts), so a message only ever reaches the team it is for.
 async function sendToDepartment(department: 'housekeeping' | 'maintenance', subject: string, html: string, text: string) {
-  const admin = createSupabaseAdminClient(); const { data: staff } = await admin.from('staff').select('email,name,department,role').eq('status', 'active')
-  const recipients = (staff ?? []).filter(s => `${s.department ?? ''} ${s.role ?? ''}`.toLowerCase().includes(department)).map(s => String(s.email || '').trim().toLowerCase()).filter(Boolean)
+  const admin = createSupabaseAdminClient()
+  const recipients = (await resolveDepartmentStaff(admin, department)).map(member => member.email).filter(Boolean)
   await Promise.all(recipients.map(to => sendResendEmail({ to, subject, html, text }).catch(error => { console.error(`[room-lifecycle] ${department} notification failed`, error); return null })))
+  await notifyStaff(admin, { audiences: [{ department, href: DEPARTMENT_PAGE[department] }], type: department, title: subject, body: text })
   return recipients.length
 }
 
@@ -58,8 +66,25 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({})) as { action?: Action; roomId?: string; status?: string; bookingId?: string; requestId?: string }
     const action = body.action
-    if (!action || !['status', 'checkout', 'maintenance_request'].includes(action)) return NextResponse.json({ error: 'Invalid lifecycle action.' }, { status: 400 })
+    if (!action || !['status', 'checkout', 'maintenance_request', 'guest_request'].includes(action)) return NextResponse.json({ error: 'Invalid lifecycle action.' }, { status: 400 })
     const admin = createSupabaseAdminClient()
+    if (action === 'guest_request') {
+      // A signed-in guest reporting their own request. Maintenance also emails the maintenance team, as before.
+      if (!body.requestId) return NextResponse.json({ error: 'Request ID is required.' }, { status: 400 })
+      const guestAuth = createSupabaseServerClient(); const { data: { user: guestUser } } = await guestAuth.auth.getUser()
+      if (!guestUser) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+      const { data: requestRow } = await admin.from('guest_requests').select('id,room,guest_name,type,message,booking_ref,customer_id').eq('id', body.requestId).maybeSingle()
+      if (!requestRow) return NextResponse.json({ error: 'Request not found.' }, { status: 404 })
+      const { data: owner } = await admin.from('customers').select('id').eq('user_id', guestUser.id).maybeSingle()
+      if (!owner || owner.id !== requestRow.customer_id) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
+      if (String(requestRow.type).toLowerCase() === 'maintenance') {
+        const room = escapeHtml(requestRow.room || '—'), guest = escapeHtml(requestRow.guest_name || 'Guest'), message = escapeHtml(requestRow.message || 'No additional details.')
+        const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}`)
+        return NextResponse.json({ ok: true, notified: count })
+      }
+      await notifyGuestRequest(admin, { requestId: requestRow.id, type: requestRow.type, room: requestRow.room, guestName: requestRow.guest_name, message: requestRow.message })
+      return NextResponse.json({ ok: true })
+    }
     if (action === 'maintenance_request') {
       if (!body.requestId) return NextResponse.json({ error: 'Request ID is required.' }, { status: 400 })
       const { data: requestRow } = await admin.from('guest_requests').select('id,room,guest_name,type,message,booking_ref').eq('id', body.requestId).maybeSingle()

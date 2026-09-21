@@ -2,13 +2,13 @@ import {
   LayoutGrid, CalendarCheck, BedDouble, Grid3x3, LogIn, LogOut, Users, CreditCard, WalletCards,
   UtensilsCrossed, Martini, ClipboardList, Building2, PartyPopper, MonitorPlay, Car, Tag,
   Image, FileCode, UserCog, ShieldCheck, BarChart3, Wrench, MessageSquare, Sparkles, Activity,
-  Newspaper, ShoppingBag,
+  Newspaper, ShoppingBag, Bell,
 } from 'lucide-react'
 import type { PortalNavGroup } from '../components/layout/PortalShell'
 import { sectionForPath } from './permissionSections'
 
 export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
-  { label: 'Overview', items: [{ href: '/admin/dashboard', label: 'Admin Dashboard', icon: <LayoutGrid size={16} />, end: true }] },
+  { label: 'Overview', items: [{ href: '/admin/dashboard', label: 'Admin Dashboard', icon: <LayoutGrid size={16} />, end: true }, { href: '/admin/notifications', label: 'Notifications', icon: <Bell size={16} /> }] },
   { label: 'Operations', items: [
     { href: '/admin/bookings', label: 'Bookings', icon: <CalendarCheck size={16} /> }, { href: '/admin/rooms', label: 'Room Management', icon: <BedDouble size={16} /> }, { href: '/admin/availability', label: 'Room Availability', icon: <Grid3x3 size={16} /> }, { href: '/admin/checkins', label: 'Check-in', icon: <LogIn size={16} /> }, { href: '/admin/checkouts', label: 'Check-out', icon: <LogOut size={16} /> }, { href: '/admin/customers', label: 'Customers', icon: <Users size={16} /> }, { href: '/admin/payments', label: 'Payments', icon: <CreditCard size={16} /> }, { href: '/admin/finance', label: 'Finance', icon: <WalletCards size={16} /> },
   ] },

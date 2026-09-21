@@ -4,6 +4,7 @@ import { SITE_EMAIL, SITE_URL } from '../../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment, withContactAttachmentUrls } from '../../../../../lib/contactAttachments'
+import { notifyContactMessage } from '../../../../../lib/staffEvents'
 
 async function getCompanyEmail(admin: ReturnType<typeof createSupabaseAdminClient>) {
   const { data } = await admin.from('site_content').select('key,value').eq('key', 'hotel_email').maybeSingle()
@@ -46,6 +47,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const { error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) })
     if (error) throw error
 
+    await notifyContactMessage(admin, { conversationId: conversation.id, guestName: conversation.guest_name, subject: conversation.subject, isReply: true })
     const companyEmail = await getCompanyEmail(admin)
     const conversationUrl = `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`
     await sendResendEmail({

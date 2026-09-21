@@ -20,7 +20,7 @@ export async function GET() {
     const { data: roles } = await server.from('user_roles').select('role').eq('user_id', user.id)
     const isStaff = (roles ?? []).some((r: any) => STAFF_ROLES.has(r.role))
     const admin = createSupabaseAdminClient()
-    const query = admin.from('room_service_orders').select('*').order('created_at', { ascending: false })
+    const query = admin.from('room_service_orders').select('*').eq('payment_status', 'paid').order('created_at', { ascending: false })
     const { data, error } = isStaff ? await query : await query.eq('customer_id', customer.id)
     if (error) throw error
     return NextResponse.json({ orders: data ?? [] })

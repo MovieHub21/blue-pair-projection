@@ -87,7 +87,9 @@ export async function POST(request: Request) {
       log('CLAIM_ROOM_RESERVATION_FAILED', { message: claimError.message, code: claimError.code, details: claimError.details, hint: claimError.hint })
       const message = String(claimError.message || '')
       if (message.includes('PAYMENT_IN_PROGRESS')) return NextResponse.json({ code: 'PAYMENT_IN_PROGRESS', error: 'Another guest is currently paying for this room. Please try again in a few minutes.' }, { status: 409 })
-      if (message.includes('ROOM_SOLD') || message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_NOT_AVAILABLE', error: 'This room is no longer available for those dates because another guest has successfully paid. Please choose another room or change your dates.' }, { status: 409 })
+      // "Paid by someone else" is only said when that is true. Cleaning never blocks a booking.
+      if (message.includes('ROOM_SOLD')) return NextResponse.json({ code: 'ROOM_SOLD', error: 'This room has just been taken by another guest who successfully paid. Please choose another room or another date.' }, { status: 409 })
+      if (message.includes('ROOM_NOT_AVAILABLE')) return NextResponse.json({ code: 'ROOM_NOT_AVAILABLE', error: 'This room is not available for booking right now. Please choose another room or different dates.' }, { status: 409 })
       if (message.includes('ROOM_NOT_FOUND')) return NextResponse.json({ error: 'That room could not be found.' }, { status: 404 })
       if (message.includes('CHECKOUT_MUST_BE_AFTER_CHECKIN')) return NextResponse.json({ error: 'Check-out must be after check-in.' }, { status: 400 })
       throw claimError

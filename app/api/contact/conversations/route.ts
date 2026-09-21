@@ -3,6 +3,7 @@ import { sendResendEmail } from '../../../../lib/email/resend'
 import { SITE_EMAIL, SITE_URL } from '../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
+import { notifyContactMessage } from '../../../../lib/staffEvents'
 
 const CATEGORIES = ['Booking', 'Existing reservation', 'Rooms', 'Restaurant & dining', 'Events', 'Short-let', 'Facilities', 'Payment', 'Complaint', 'General enquiry', 'Other']
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
     const { error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user?.id ?? null, message })
     if (messageError) throw messageError
 
+    await notifyContactMessage(admin, { conversationId: conversation.id, guestName: name, subject, isReply: false })
     const companyEmail = await getCompanyEmail(admin)
     const conversationUrl = `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`
     await sendResendEmail({
