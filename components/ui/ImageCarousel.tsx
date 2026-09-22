@@ -14,6 +14,8 @@ type Props = {
   showArrows?: boolean
   showDots?: boolean
   showCounter?: boolean
+  /** 'slide' (default) pans horizontally; 'fade' softly cross-dissolves — the subtler, hands-off feel for hero and room galleries. */
+  transition?: 'slide' | 'fade'
 }
 
 export default function ImageCarousel({
@@ -26,6 +28,7 @@ export default function ImageCarousel({
   showArrows = true,
   showDots = true,
   showCounter = false,
+  transition = 'slide',
 }: Props) {
   const slides = useMemo(() => images.filter(Boolean), [images])
   const safeSlides = slides.length ? slides : ['']
@@ -67,13 +70,22 @@ export default function ImageCarousel({
 
   return (
     <div className={`relative overflow-hidden touch-pan-y select-none ${className}`} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onPointerLeave={handlePointerCancel}>
-      <div className="flex h-full transition-transform duration-500 ease-out" style={{ transform: `translate3d(-${index * 100}%,0,0)` }}>
-        {safeSlides.map((src, i) => (
-          <div key={`${src}-${i}`} className="relative h-full w-full shrink-0">
-            {src && <img src={src} alt={`${alt}${safeSlides.length > 1 ? ` — image ${i + 1} of ${safeSlides.length}` : ''}`} className={`h-full w-full object-cover ${imageClassName}`} draggable={false} />}
-          </div>
-        ))}
-      </div>
+      {transition === 'fade' ? (
+        <div className="relative h-full w-full">
+          {safeSlides.map((src, i) => (
+            src && <img key={`${src}-${i}`} src={src} alt={`${alt}${safeSlides.length > 1 ? ` — image ${i + 1} of ${safeSlides.length}` : ''}`} draggable={false}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out ${i === index ? 'opacity-100' : 'opacity-0'} ${imageClassName}`} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex h-full transition-transform duration-500 ease-out" style={{ transform: `translate3d(-${index * 100}%,0,0)` }}>
+          {safeSlides.map((src, i) => (
+            <div key={`${src}-${i}`} className="relative h-full w-full shrink-0">
+              {src && <img src={src} alt={`${alt}${safeSlides.length > 1 ? ` — image ${i + 1} of ${safeSlides.length}` : ''}`} className={`h-full w-full object-cover ${imageClassName}`} draggable={false} />}
+            </div>
+          ))}
+        </div>
+      )}
 
       {safeSlides.length > 1 && showArrows && <><button type="button" onClick={previous} aria-label="Previous image" className="absolute left-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronLeft size={18} /></button><button type="button" onClick={next} aria-label="Next image" className="absolute right-3 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-navy-950/55 text-white backdrop-blur-md shadow-lg transition hover:bg-navy-950/75 active:scale-95"><ChevronRight size={18} /></button></>}
 

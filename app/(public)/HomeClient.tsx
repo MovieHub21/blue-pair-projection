@@ -57,7 +57,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
             </div>
 
-            <div className="motion-fade-up relative aspect-[4/3.5] overflow-hidden rounded-xl bg-navy-950 shadow-pop" style={{ animationDelay: '480ms', animationDuration: '550ms' }}>
+            <div className="motion-fade-up relative aspect-[4/3.5] max-h-[420px] overflow-hidden rounded-xl bg-navy-950 shadow-pop md:aspect-[16/11] md:max-h-[480px] lg:max-h-[520px]" style={{ animationDelay: '480ms', animationDuration: '550ms' }}>
               <img src={heroImage} alt="Blue Pair Hotel in Uromi, Edo State" className="absolute inset-0 h-full w-full object-cover" />
             </div>
           </div>
