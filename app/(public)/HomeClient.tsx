@@ -9,6 +9,7 @@ import RoomCard from '../../components/ui/RoomCard'
 import InteractiveHotelExperience from '../../components/ui/InteractiveHotelExperience'
 import { type RoomType, type Room, type Offer } from '../../data/mock'
 import type { GalleryImage } from '../../lib/mappers'
+import { SITE_HERO_IMAGE } from '../../lib/siteConfig'
 
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1400&q=85',
@@ -20,12 +21,11 @@ const FALLBACK_IMAGES = [
 export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
   const images = gallery.map(item => item.url).filter(Boolean)
 
-  const heroImage = images[0] || FALLBACK_IMAGES[0] // swap this one image to update the hero everywhere it's used
+  const heroImage = SITE_HERO_IMAGE // swap this one image to update the hero everywhere it's used
   const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
 
   const heroInfo = [
     { icon: MapPin, label: 'Location', value: '105/104, Uwalor Road, Uromi, Edo State' },
-    { icon: Users, label: 'Guest', value: '3' },
     { icon: LogIn, label: 'Check In', value: '3pm' },
     { icon: LogOut, label: 'Check Out', value: '12pm' },
   ]
@@ -41,10 +41,11 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
     <div className="bg-cream-50 text-navy-950">
 
       <header className="relative bg-cream-50 pb-14 pt-6 md:pb-20 md:pt-10">
-        <div className="container-w px-5 md:px-10">
+        <div className="w-full px-5 md:px-10">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+
             <div className="max-w-xl">
-              <span className="motion-fade-up eyebrow inline-block" style={{ animationDuration: '550ms' }}>Blue Pair · Uromi</span>
+              <span className="motion-fade-up eyebrow inline-block" style={{ animationDuration: '550ms' }}>Blue Pair Signature · Uromi</span>
               <h1 className="motion-fade-up mt-4 font-display text-[2.4rem] font-medium leading-[1.05] tracking-[-.02em] text-navy-950 sm:text-5xl md:text-[3.3rem]" style={{ animationDelay: '130ms', animationDuration: '550ms' }}>
                 {headline || <>Where Ever You Go, <span className="text-gold-600">Stay Only At Blue Pair.</span></>}
               </h1>
@@ -62,7 +63,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
           </div>
         
 
-        <div className="container-w px-5 md:px-1">
+        <div className="w-full px-5 md:px-1">
           <div className="motion-fade-up relative z-10 -mt-5 flex flex-wrap items-center gap-x-5 gap-y-4 rounded-2xl border border-black/5 bg-white px-4 py-4 shadow-pop md:-mt-7 md:gap-x-8 md:px-8 md:py-5" style={{ animationDelay: '620ms', animationDuration: '550ms' }}>
             {heroInfo.map(({ icon: Icon, label, value }, i) => (
               <div key={label} className={`motion-fade-up flex items-center gap-2.5 ${i > 0 ? 'border-l border-black/5 pl-5 md:pl-8' : ''}`} style={{ animationDelay: `${740 + i * 70}ms`, animationDuration: '550ms' }}>

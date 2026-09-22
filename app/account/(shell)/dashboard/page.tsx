@@ -3,6 +3,7 @@ import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, Cale
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
+import { SITE_HERO_IMAGE } from '../../../../lib/siteConfig'
 import StatusBadge from '../../../../components/ui/StatusBadge'
 import CancelBookingButton from '../CancelBookingButton'
 import GuestDateWeather from '../../../../components/account/GuestDateWeather'
@@ -35,7 +36,7 @@ export default async function DashboardPage() {
     ? upcoming.roomImages
     : upcoming?.room?.images?.length
       ? upcoming.room.images
-      : ['https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85']
+      : [SITE_HERO_IMAGE]
   const roomName = upcoming?.roomNumber ? `Room ${upcoming.roomNumber}` : (upcoming?.room?.name || 'Your Blue Pair stay')
 
   return (
