@@ -10,14 +10,14 @@ export async function resolveAmenityConfig(key: string, fallback: AmenityConfig)
   if (!a) return fallback
   return {
     ...fallback,
-    name: a.name || fallback.name,
-    eyebrow: a.eyebrow || fallback.eyebrow,
-    heroImage: a.heroImage || fallback.heroImage,
-    description: a.description || fallback.description,
-    gallery: a.gallery?.length ? a.gallery : fallback.gallery,
-    hours: a.hours || fallback.hours,
-    facilities: a.facilities?.length ? a.facilities : fallback.facilities,
-    pricingNote: a.pricingNote || fallback.pricingNote,
-    ctaLabel: a.ctaLabel || fallback.ctaLabel,
+    name: fallback.name,
+    eyebrow:fallback.eyebrow,
+    heroImage: fallback.heroImage,
+    description: fallback.description,
+    gallery:  fallback.gallery,
+    hours: fallback.hours,
+    facilities:  fallback.facilities,
+    pricingNote: fallback.pricingNote,
+    ctaLabel:  fallback.ctaLabel,
   }
 }

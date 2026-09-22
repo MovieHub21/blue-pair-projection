@@ -12,17 +12,17 @@ export const metadata = buildMetadata({
 export default async function PoolPage() {
   const config = await resolveAmenityConfig('pool', {
     name: 'Indoor Pool', eyebrow: 'Swim year-round',
-    heroImage: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1600&q=80',
-    description: 'A temperature-controlled indoor pool with a dedicated kids\u2019 section and poolside service from the Outdoor Bar & Eatery.',
+    heroImage: '/blue-pair-pool.jpeg',
+    description: 'A temperature-controlled indoor pool section and poolside service from the Outdoor Bar & Eatery.',
     gallery: [
-      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=900&q=80',
+      '/blue-pair-pool.jpeg',
       'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1600965962361-9035dbfd1c50?auto=format&fit=crop&w=900&q=80',
     ],
     hours: 'Daily, 6:00 AM – 9:00 PM',
-    facilities: ['Temperature-controlled water', 'Dedicated kids\u2019 section', 'Poolside towel service', 'Lifeguard on duty', 'Poolside food & drink menu', 'Sun loungers & cabanas'],
+    facilities: ['Temperature-controlled water', 'Poolside towel service', 'Lifeguard on duty', 'Poolside food & drink menu', 'Sun loungers & cabanas'],
     pricingNote: 'Complimentary for hotel guests. Day pass for non-guests: ₦15,000 (includes one drink).',
-    ctaLabel: 'Reserve a cabana',
+    ctaLabel: 'Reserve',
     breadcrumbs: [{name:'Home',path:'/'},{name:'Indoor Pool',path:'/pool'}],
     extra: (
       <div className="mt-8 bg-cream-100 rounded-xl2 p-5 text-sm text-navy-600">

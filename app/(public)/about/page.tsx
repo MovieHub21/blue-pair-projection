@@ -37,7 +37,7 @@ export default async function AboutPage() {
             <p className="text-navy-500 text-[15px] leading-relaxed">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced — which is why the same warmth shows up whether you're checking into a Standard Room or hosting 200 guests in the Grand Hall.</p>
           </div>
           <div className="h-[420px] rounded-xl2 overflow-hidden">
-            <img loading="lazy" decoding="async" src="https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=1000&q=80" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src="/aboutimage.jpeg" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
           </div>
         </div>
       </section>
@@ -70,9 +70,32 @@ export default async function AboutPage() {
       )}
       <section className="section">
         <div className="container-w">
-          <SectionHeading eyebrow="Gallery" title="Around the property" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{gallery.map(g => <div key={g.id} className="h-48 rounded-xl2 overflow-hidden"><img loading="lazy" decoding="async" src={g.url} alt={g.caption || 'Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State'} className="w-full h-full object-cover" /></div>)}</div>
-        </div>
+  <SectionHeading eyebrow="Gallery" title="Around the property" />
+
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[180px]">
+    {gallery.map((g, index) => (
+      <div
+        key={g.id}
+        className={`
+          relative overflow-hidden rounded-2xl
+          ${index === 0 ? "col-span-2 row-span-2" : ""}
+          ${index === 3 ? "md:col-span-2" : ""}
+        `}
+      >
+        <img
+          loading="lazy"
+          decoding="async"
+          src={g.url}
+          alt={
+            g.caption ||
+            "Blue Pair Signature Crown Hotel & Suites, Uromi, Edo State"
+          }
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+        />
+      </div>
+    ))}
+  </div>
+</div>
       </section>
     </div>
   )

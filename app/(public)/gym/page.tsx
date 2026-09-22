@@ -17,7 +17,7 @@ export default async function GymPage() {
     gallery: [
       'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80',
+      '/blue-pair-gym.jpeg',
     ],
     hours: 'Daily, 5:00 AM – 10:00 PM',
     facilities: ['Free weights & racks', 'Cardio machines', 'Personal trainers on request', 'Fresh towels provided', 'Changing rooms & showers', 'Bottled water station'],

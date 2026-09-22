@@ -19,7 +19,7 @@ type Experience = {
 export default function InteractiveHotelExperience({ gallery }: { gallery: GalleryImage[] }) {
   const images = useMemo(() => gallery.map(item => item.url).filter(Boolean), [gallery])
   const fallback = 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85'
-  const poolImage = images[2] || 'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?auto=format&fit=crop&w=1200&q=85'
+  const poolImage = 'blue-pair-pool.jpeg'
   const diningImage = images[3] || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=85'
   const roomImage = images[1] || fallback
   const eventsImage = images[4] || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=85'
@@ -94,7 +94,7 @@ export default function InteractiveHotelExperience({ gallery }: { gallery: Galle
                 <div><span className="text-[10px] font-semibold uppercase tracking-[.18em] text-gold-300">Selected destination</span><h3 className="mt-1 text-xl font-semibold">{active.title}</h3></div>
                 <Link href={active.href} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-navy-950 transition-transform hover:scale-105" aria-label={`Open ${active.title}`}><ArrowRight size={17} /></Link>
               </div>
-              <div className="mt-4 flex items-center gap-3 border-t border-white/10 pt-4 text-[10px] uppercase tracking-[.12em] text-white/35"><CalendarDays size={13} className="text-gold-300" /> Choose dates when you are ready to check real availability</div>
+             
             </div>
           </div>
         </div>

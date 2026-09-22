@@ -21,6 +21,8 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
  const params=useSearchParams()
  const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [liveUnits,setLiveUnits]=useState<AvailabilityUnit[]>(() => units.map(u => ({...u,guest_status:initialGuestStatus(u)}))); const [checking,setChecking]=useState(false)
  const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
+ const [roomFilter, setRoomFilter] = useState<'available' | 'all'>('available');
+const [showAllRooms, setShowAllRooms] = useState(false);
 
  useEffect(()=>{
   if(!checkIn||!checkOut||checkIn>=checkOut)return
@@ -42,9 +44,183 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
     <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
     <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{room.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{room.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{room.sizeSqm} m²</b></div></div>
     <h3 className="text-lg font-semibold mb-4">Amenities</h3><div className="grid sm:grid-cols-2 gap-3 mb-10">{room.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div>
-    <div className="flex items-center justify-between mb-4"><div><h2 className="text-2xl font-semibold">Choose your room</h2><p className="text-sm text-navy-400 mt-1">{checking?'Checking dates…':`${availableCount} of ${liveUnits.length} rooms available for your dates`}</p></div></div>
-    <div className="space-y-2.5">{liveUnits.map(u=>{const state=u.guest_status||initialGuestStatus(u); const ok=state==='available'; const blocked=state!=='available'; const unavailableSoon=state==='availableSoon'; const roomContent=<><img loading="lazy" decoding="async" src={room.images[0]} className={`w-16 h-14 sm:w-24 sm:h-20 shrink-0 rounded-md sm:rounded-md object-cover ${blocked?'grayscale opacity-45':''}`} alt={u.name||`Room ${u.room_number}`}/><div className="min-w-0 flex-1"><b className="block text-xs sm:text-sm truncate">{u.name||`Room ${u.room_number}`}</b><span className="text-[10px] sm:text-xs text-navy-400 block truncate">Room {u.room_number} · Floor {u.floor||'—'}</span><span className="text-[9px] sm:text-[10px] text-navy-400 block mt-1">View room details, images & booking options</span></div><div className="shrink-0"><ArrowRight size={14} className={blocked?'text-navy-200':'text-navy-300'}/></div></>; return ok?<Link key={u.id} href={`/rooms/${room.slug}/${u.slug}?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} className="card p-2.5 sm:p-4 flex items-center gap-2.5 sm:gap-4 min-h-0 hover:border-gold-400/60 transition-colors">{roomContent}</Link>:<div key={u.id} aria-disabled="true" className={`card p-2.5 sm:p-4 flex items-center gap-2.5 sm:gap-4 min-h-0 cursor-not-allowed select-none ${unavailableSoon?'bg-navy-100/80 opacity-65':'opacity-55'}`}>{roomContent}</div>})}</div>
-   </div>
+   <div>
+  <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
+    <div>
+      <h2 className="text-2xl font-semibold">Choose your room</h2>
+      <p className="text-sm text-navy-400 mt-1">
+        {checking
+          ? 'Checking dates…'
+          : `${availableCount} of ${liveUnits.length} rooms available for your dates`}
+      </p>
+    </div>
+
+    {/* Room filter */}
+    <div className="inline-flex items-center self-start sm:self-auto rounded-full bg-navy-50 p-1">
+      <button
+        type="button"
+        onClick={() => {
+          setRoomFilter('available');
+          setShowAllRooms(false);
+        }}
+        className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+          roomFilter === 'available'
+            ? 'bg-navy-900 text-white shadow-sm'
+            : 'text-navy-500 hover:text-navy-800'
+        }`}
+      >
+        Available
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setRoomFilter('all');
+          setShowAllRooms(false);
+        }}
+        className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+          roomFilter === 'all'
+            ? 'bg-navy-900 text-white shadow-sm'
+            : 'text-navy-500 hover:text-navy-800'
+        }`}
+      >
+        All rooms
+      </button>
+    </div>
+  </div>
+
+  {(() => {
+    const filteredUnits = liveUnits.filter(u => {
+      const state = u.guest_status || initialGuestStatus(u);
+
+      return roomFilter === 'available'
+        ? state === 'available'
+        : true;
+    });
+
+    const visibleUnits = showAllRooms
+      ? filteredUnits
+      : filteredUnits.slice(0, 3);
+
+    return (
+      <>
+        {visibleUnits.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visibleUnits.map(u => {
+              const state = u.guest_status || initialGuestStatus(u);
+              const ok = state === 'available';
+              const blocked = state !== 'available';
+              const unavailableSoon = state === 'availableSoon';
+
+              const roomContent = (
+                <>
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-md">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      src={room.images[0]}
+                      alt={u.name || `Room ${u.room_number}`}
+                      className={`w-full h-full object-cover transition-transform duration-500 ${
+                        ok
+                          ? 'group-hover:scale-[1.03]'
+                          : 'grayscale opacity-40'
+                      }`}
+                    />
+
+                    {ok && (
+                      <span className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-navy-950/75 backdrop-blur-sm px-2.5 py-1 text-[10px] text-white">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                        Available
+                      </span>
+                    )}
+
+                    {blocked && (
+                      <span className="absolute top-3 right-3 rounded-full bg-navy-950/75 backdrop-blur-sm px-2.5 py-1 text-[10px] text-white">
+                        {unavailableSoon
+                          ? 'Available Soon'
+                          : 'Unavailable'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="pt-3 px-1 pb-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-sm truncate">
+                          Room {u.room_number}
+                        </h3>
+
+                        <p className="text-xs text-navy-400 mt-1 truncate">
+                          {u.name || room.name} · Floor {u.floor || '—'}
+                        </p>
+                      </div>
+
+                      {ok && (
+                        <ArrowRight
+                          size={15}
+                          className="shrink-0 text-navy-400 group-hover:text-gold-500 transition-colors"
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-navy-400">
+                      {room.bed_type && <span>{room.bed_type}</span>}
+                      {room.max_guests && (
+                        <span>{room.max_guests} Guests</span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+
+              return ok ? (
+                <Link
+                  key={u.id}
+                  href={`/rooms/${room.slug}/${u.slug}?checkin=${encodeURIComponent(
+                    checkIn
+                  )}&checkout=${encodeURIComponent(checkOut)}`}
+                  className="group block"
+                >
+                  {roomContent}
+                </Link>
+              ) : (
+                <div
+                  key={u.id}
+                  aria-disabled="true"
+                  className={`select-none cursor-not-allowed ${
+                    unavailableSoon ? 'opacity-60' : 'opacity-45'
+                  }`}
+                >
+                  {roomContent}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-10 text-center text-sm text-navy-400">
+            {roomFilter === 'available'
+              ? 'No rooms are available for these dates.'
+              : 'No rooms found.'}
+          </div>
+        )}
+
+        {filteredUnits.length > 3 && (
+          <div className="flex justify-center mt-6">
+            <button
+              type="button"
+              onClick={() => setShowAllRooms(prev => !prev)}
+              className="text-sm font-medium text-navy-700 hover:text-gold-600 transition-colors"
+            >
+              {showAllRooms
+                ? 'Show fewer rooms'
+                : `See all ${filteredUnits.length} rooms`}
+            </button>
+          </div>
+        )}
+      </>
+    );
+  })()}
+</div> </div>
    <aside className="card p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>
     <div className="mt-5 rounded-xl bg-navy-50 border border-black/5 text-navy-600 text-sm p-4">Select a physical room above to see its specific details and the correct booking or reservation action.</div>
    </aside>
