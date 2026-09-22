@@ -1,10 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { notifyStaff } from './staffNotifications'
 
-/**
- * What each department is told about, and which page it opens. Every function is safe to call from a
- * payment or booking route: it never throws and never delays the guest's request for long.
- */
+
 const naira = (value: unknown) => '₦' + Number(value || 0).toLocaleString('en-NG')
 
 /** A booking was paid and confirmed (called by both the Paystack callback and webhook; sent once). */

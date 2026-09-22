@@ -8,7 +8,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant']
 
-/** Real signed-in staff member's display name + primary role label, for staff portal headers. */
+
 export async function getCurrentStaff() {
   const { user, profile } = await getCurrentUser()
   if (!user) return { name: 'Staff', roleLabel: 'Staff' }

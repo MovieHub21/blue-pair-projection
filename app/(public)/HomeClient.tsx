@@ -24,15 +24,15 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
   const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
 
   const heroInfo = [
-    { icon: MapPin, label: 'Location', value: 'Uromi, Edo State, Nigeria' },
-    { icon: Users, label: 'Guest', value: '2' },
+    { icon: MapPin, label: 'Location', value: '105/104, Uwalor Road, Uromi, Edo State' },
+    { icon: Users, label: 'Guest', value: '3' },
     { icon: LogIn, label: 'Check In', value: '3pm' },
     { icon: LogOut, label: 'Check Out', value: '12pm' },
   ]
 
 
   const experienceCards = [
-    { title: 'Rooms & Suites', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
+    { title: 'Suites & Rooms', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
     { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
     { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: images[3] || FALLBACK_IMAGES[3], description: 'Elegant spaces for celebrations, meetings and moments.' },
   ]
@@ -85,7 +85,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         <section className="section pt-16 md:pt-20">
           <div className="container-w">
             <div className="mb-8 flex items-end justify-between gap-4">
-              <div><span className="eyebrow">Explore Blue Pair</span><h2 className="mt-2 font-display text-3xl font-medium md:text-4xl">Everything you came for.</h2></div>
+              <div><span className="eyebrow">Explore Blue Pair Signature</span><h2 className="mt-2 font-display text-3xl font-medium md:text-4xl">Everything you came for.</h2></div>
               <Link href="/about" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-800 sm:flex">View all <ArrowRight size={14} /></Link>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
