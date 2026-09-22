@@ -9,7 +9,7 @@ export default function RoomCard({ room, availableCount, showRoomCount = false, 
   const available = hasLiveCount ? count > 0 : true
 
   return (
-    <div className="card group flex min-h-[620px] flex-col overflow-hidden rounded-md border border-navy-900/10 bg-white shadow-sm">
+    <div className="card group flex min-h-[400px] flex-col overflow-hidden rounded-md border border-navy-900/10 bg-white shadow-sm">
       <div className="relative h-64 shrink-0 overflow-hidden sm:h-72">
         <img loading="lazy" decoding="async" src={room.images[0]} alt={room.name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
         {showAvailabilityBadge && <span className={'absolute left-4 top-4 ' + (available ? 'pill-green' : 'pill-red') + ' bg-white/95 shadow-sm'}>
@@ -23,18 +23,6 @@ export default function RoomCard({ room, availableCount, showRoomCount = false, 
           <div className="shrink-0 text-right leading-none">
             <div className="font-display text-xl font-semibold text-gold-600 sm:text-2xl">{naira(room.price)}<span className="ml-1 font-body text-xs font-normal text-navy-400">/ night</span></div>
           </div>
-        </div>
-
-        <div className="my-5 h-px bg-navy-900/10" />
-
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-navy-500 sm:text-sm">
-          <span className="flex items-center gap-1.5"><Ruler size={14} className="text-navy-400" /> {room.sizeSqm} m²</span>
-          <span className="flex items-center gap-1.5"><Users size={14} className="text-navy-400" /> {room.guests} guests</span>
-          <span className="flex items-center gap-1.5"><BedDouble size={14} className="text-navy-400" /> {room.bedType}</span>
-        </div>
-
-        <div className="mt-4 text-xs leading-5 text-navy-400 sm:text-sm">
-          {room.description}
         </div>
 
         <div className="mt-auto flex items-center gap-3 border-t border-navy-900/10 pt-6">
