@@ -27,8 +27,6 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
   const heroInfo = [
     { icon: MapPin, label: 'Location', value: '105/104, Uwalor Road, Uromi, Edo State' },
-    { icon: LogIn, label: 'Check In', value: '3pm' },
-    { icon: LogOut, label: 'Check Out', value: '12pm' },
   ]
 
 
