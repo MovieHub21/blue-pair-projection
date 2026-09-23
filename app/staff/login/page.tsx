@@ -17,17 +17,84 @@ function StaffLoginForm() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setLoading(false)
-      setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message)
-      return
-    }
 
-    // Let the App Router perform one authenticated navigation. The old
-    // push()+refresh() sequence caused a second render/request and left the
-    // login screen looking frozen while the admin layout was resolving.
-    router.replace(params.get('redirect') || '/admin/dashboard')
+    const startedAt = Date.now()
+    const loginEmail = email.trim().toLowerCase()
+    console.info('[BP-AUTH][staff] login started', {
+      email: loginEmail,
+      page: window.location.href,
+      timestamp: new Date().toISOString(),
+    })
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      })
+
+      console.info('[BP-AUTH][staff] signInWithPassword completed', {
+        elapsedMs: Date.now() - startedAt,
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+        userId: data.user?.id ?? null,
+        error: authError
+          ? {
+              message: authError.message,
+              name: authError.name,
+              status: authError.status,
+              code: authError.code,
+            }
+          : null,
+      })
+
+      if (authError) {
+        console.error('[BP-AUTH][staff] authentication failed', authError)
+        setError(authError.message === 'Invalid login credentials' ? 'Incorrect email or password.' : authError.message)
+        return
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+      console.info('[BP-AUTH][staff] session check after login', {
+        hasSession: !!sessionData.session,
+        userId: sessionData.session?.user?.id ?? null,
+        error: sessionError
+          ? {
+              message: sessionError.message,
+              name: sessionError.name,
+              status: sessionError.status,
+            }
+          : null,
+      })
+
+      if (sessionError || !sessionData.session) {
+        console.error('[BP-AUTH][staff] login returned without a usable session', {
+          sessionError,
+          hasSession: !!sessionData.session,
+        })
+        setError(sessionError?.message || 'Login succeeded but no session was created. Please try again.')
+        return
+      }
+
+      const destination = params.get('redirect') || '/admin/dashboard'
+      console.info('[BP-AUTH][staff] navigating after successful login', {
+        destination,
+        userId: sessionData.session.user.id,
+      })
+
+      router.replace(destination)
+    } catch (err: any) {
+      console.error('[BP-AUTH][staff] unexpected login exception', {
+        elapsedMs: Date.now() - startedAt,
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack,
+        error: err,
+      })
+      setError(err?.message || 'Unable to sign in. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
