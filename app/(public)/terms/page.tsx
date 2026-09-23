@@ -4,7 +4,7 @@ import { getSiteContent } from '../../../lib/data'
 import { SITE_EMAIL, SITE_NAME, SITE_PHONE_DISPLAY, SITE_URL, SITE_ADDRESS_DISPLAY } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
-  title: `Terms & Conditions | ${SITE_NAME}`,
+  title: 'Terms & Conditions | Blue Pair Hotel',
   description: `Terms and Conditions for bookings, stays and use of the ${SITE_NAME} website in Uromi, Edo State.`,
   alternates: { canonical: `${SITE_URL}/terms` },
 }

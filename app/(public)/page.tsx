@@ -6,9 +6,9 @@ import HomeClient from './HomeClient'
 import GuestReviews from '../../components/public/GuestReviews'
 
 export const metadata = buildMetadata({
-  title: `${SITE_NAME} — Luxury Hotel in Uromi, Edo State`,
+  title: 'Hotels in Uromi | Blue Pair Hotel',
   description: `Book ${SITE_NAME}, a premium hotel in Uromi, Edo State, Nigeria, for rooms and suites, dining, an indoor pool, VIP lounge, events and short-let accommodation. Reserve your stay online.`,
-  keywords: 'hotel in uromi, hotel in edo state, luxury hotel uromi, hotel esan north-east, book hotel uromi, Blue Pair Signature Crown Hotel & Suites, Blue Pair Signature Crown, hotel near ekpoma, hotel near auchi',
+  keywords: 'hotels in uromi, hotels in uromi edo state, hotel in uromi, hotels in uromi edo state nigeria, hotels in uromi nigeria, best hotel in uromi, best hotel in uromi edo state, best hotels in uromi, biggest hotel in uromi nigeria, cheap hotels in uromi, hotel in edo state, luxury hotel uromi, hotel esan north-east, book hotel uromi, Blue Pair Signature Crown Hotel & Suites, Blue Pair Signature Crown, hotel near ekpoma, hotel near auchi',
   path: '/',
 })
 

@@ -4,7 +4,7 @@ import { getSiteContent } from '../../../lib/data'
 import { SITE_EMAIL, SITE_NAME, SITE_PHONE_DISPLAY, SITE_URL, SITE_ADDRESS_DISPLAY } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
-  title: `Privacy Policy | ${SITE_NAME}`,
+  title: 'Privacy Policy | Blue Pair Hotel',
   description: `Privacy Policy for ${SITE_NAME}, Uromi, Edo State. Learn how we collect, use, protect and retain guest information.`,
   alternates: { canonical: `${SITE_URL}/privacy` },
 }
