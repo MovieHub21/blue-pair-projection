@@ -12,6 +12,7 @@ export async function resolveAmenityConfig(key: string, fallback: AmenityConfig)
     ...fallback,
     name: fallback.name,
     eyebrow:fallback.eyebrow,
+    mini:fallback.mini,
     heroImage: fallback.heroImage,
     description: fallback.description,
     gallery:  fallback.gallery,
