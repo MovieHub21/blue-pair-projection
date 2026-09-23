@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-import { ArrowRight, Coffee, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, MapPin, Users, LogIn, LogOut } from 'lucide-react'
+import { ArrowRight, Coffee, Wifi, Waves, Dumbbell, UtensilsCrossed, PartyPopper, Car, MapPin, Users, LogIn, LogOut, House } from 'lucide-react'
 
 import SectionHeading from '../../components/ui/SectionHeading'
 import RoomCard from '../../components/ui/RoomCard'
@@ -200,7 +200,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
           <div className="container-w">
             <SectionHeading eyebrow="On the property" title="More to enjoy at Blue Pair" light center subtitle="Thoughtful spaces, good food and experiences made for your stay." />
             <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-              {[{ icon: Waves, name: 'Indoor Pool', to: '/pool' }, { icon: Dumbbell, name: 'Fitness Gym', to: '/gym' }, { icon: UtensilsCrossed, name: 'Blue Pair Restaurant', to: '/dining' }, { icon: PartyPopper, name: 'The Club', to: '/club' }, { icon: Wifi, name: 'VIP Lounge', to: '/vip-lounge' }, { icon: Car, name: 'VIP Parking', to: '/parking' }].map(item => <Link href={item.to} key={item.name} className="group rounded-xl border border-white/10 bg-white/[.04] p-5 transition-colors hover:bg-white/[.08]"><div className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-gold-500/15 text-gold-300"><item.icon size={18} /></div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.name}</span><ArrowRight size={14} className="text-white/30 transition-transform group-hover:translate-x-1 group-hover:text-gold-300" /></div></Link>)}
+              {[{ icon: Waves, name: 'Indoor Pool', to: '/pool' }, { icon: Dumbbell, name: 'Fitness Gym', to: '/gym' }, { icon: UtensilsCrossed, name: 'Blue Pair Restaurant', to: '/dining' }, { icon: PartyPopper, name: 'The Club', to: '/club' }, { icon: Wifi, name: 'VIP Lounge', to: '/vip-lounge' }, { icon: House, name: 'Annex', to: '/annex' }].map(item => <Link href={item.to} key={item.name} className="group rounded-xl border border-white/10 bg-white/[.04] p-5 transition-colors hover:bg-white/[.08]"><div className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-gold-500/15 text-gold-300"><item.icon size={18} /></div><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.name}</span><ArrowRight size={14} className="text-white/30 transition-transform group-hover:translate-x-1 group-hover:text-gold-300" /></div></Link>)}
             </div>
           </div>
         </section>

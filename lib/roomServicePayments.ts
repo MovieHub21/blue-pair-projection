@@ -19,10 +19,7 @@ function itemSummary(items: any[]) {
   return list.length > 4 ? `${text} and ${list.length - 4} more` : text
 }
 
-/**
- * Marks a room-service order as paid once Paystack has confirmed the money. It is safe to call twice
- * (the callback and the webhook both do): the order is only marked, and staff only told, the first time.
- */
+
 export async function settleRoomServicePayment(admin: SupabaseClient, paymentReference: string, paidAmountKobo: number): Promise<RoomServiceSettlement> {
   const { data: payment } = await admin.from('payments').select('id,booking_ref,amount,status,customer_id').eq('reference', paymentReference).maybeSingle()
   if (!payment || !isRoomServiceReference(payment.booking_ref)) return { ok: false, reason: 'payment_not_found' }
