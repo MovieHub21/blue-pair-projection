@@ -108,14 +108,14 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-950 px-5 py-12 sm:px-6 sm:py-16">
-      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-7 sm:p-8">
+      <form onInvalidCapture={(e) => console.warn('[BP-AUTH][guest] FORM VALIDATION BLOCKED SUBMIT', { target: (e.target as HTMLInputElement).name || (e.target as HTMLInputElement).type, valueMissing: (e.target as HTMLInputElement).validity?.valueMissing, typeMismatch: (e.target as HTMLInputElement).validity?.typeMismatch, validationMessage: (e.target as HTMLInputElement).validationMessage })} onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-7 sm:p-8">
         <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
         <p className="text-sm text-navy-400 mb-7 text-center">Sign in to manage your bookings</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Email</label>
-        <input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
+        <input type="email" name="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@email.com" />
         <label className="field-label">Password</label>
-        <input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-2" placeholder="••••••••" />
+        <input type="password" name="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-2" placeholder="••••••••" />
         <div className="flex justify-end mb-5"><Link href="/account/forgot-password" className="text-xs font-semibold text-navy-700 hover:text-gold-600">Forgot password?</Link></div>
         <button type="submit" disabled={loading} onClick={() => console.info('[BP-AUTH][guest] SIGN IN BUTTON CLICKED', { disabled: loading, timestamp: new Date().toISOString() })} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-xs text-navy-400 text-center mt-5">Don't have an account? <Link href="/account/register" className="text-navy-900 font-semibold">Register</Link></p>
