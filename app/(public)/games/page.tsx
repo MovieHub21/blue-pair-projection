@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 
 export default async function GamesPage() {
   const config = await resolveAmenityConfig('games', {
-    name: 'Games & Entertainment', eyebrow: 'For every evening',
+    name: 'Games & Entertainment', eyebrow: 'For every evening', mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80',
     description: 'A dedicated games room with pool tables, table tennis, board games, and a big-screen sports lounge.',
     gallery: [
