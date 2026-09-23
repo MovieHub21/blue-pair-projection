@@ -14,6 +14,7 @@ export default async function AnnexVipLoungePage() {
   const config = amenity || {
     name: 'Annex VIP Lounge',
     eyebrow: 'Private lounge',
+    mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: '',
     description: 'A private, intimate VIP lounge within the Blue Pair Hotel Annex — ideal for small celebrations and relaxed evenings.',
     gallery: [],
