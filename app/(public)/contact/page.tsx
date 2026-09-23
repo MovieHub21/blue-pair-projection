@@ -47,7 +47,7 @@ export default async function ContactPage() {
               </div>
               <div className="relative h-72 sm:h-80">
                 <iframe title="Blue Pair Hotel location map" src={BLUE_PAIR_MAP_EMBED_URL} className="absolute inset-0 h-full w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
-                <a href={BLUE_PAIR_MAP_URL} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Hotel location in Google Maps" className="absolute inset-0 z-10" />
+                <a href={BLUE_PAIR_MAP_URL} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Hotel location in Google Maps" className="absolute inset-0 z-10"><span className="sr-only">Open Blue Pair Hotel location in Google Maps</span></a>
               </div>
             </div>
           </div>
