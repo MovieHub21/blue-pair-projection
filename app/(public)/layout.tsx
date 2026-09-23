@@ -4,7 +4,7 @@ import PublicMotion from '../../components/layout/PublicMotion'
 import JsonLd from '../../components/JsonLd'
 import BackButton from '../../components/ui/BackButton'
 import { getSiteContent } from '../../lib/data'
-import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from '../../lib/siteConfig'
+import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE, SITE_PHONE, SITE_EMAIL, SITE_ADDRESS, SITE_GEO } from '../../lib/siteConfig'
 
 export default async function PublicRouteLayout({ children }: { children: React.ReactNode }) {
   const content = await getSiteContent()
@@ -18,6 +18,21 @@ export default async function PublicRouteLayout({ children }: { children: React.
     name: SITE_NAME,
     url: SITE_URL,
     image: DEFAULT_OG_IMAGE,
+    telephone: SITE_PHONE,
+    email: SITE_EMAIL,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: SITE_ADDRESS.street,
+      addressLocality: SITE_ADDRESS.locality,
+      addressRegion: SITE_ADDRESS.region,
+      postalCode: SITE_ADDRESS.postalCode,
+      addressCountry: SITE_ADDRESS.country,
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: SITE_GEO.lat,
+      longitude: SITE_GEO.lng,
+    },
     sameAs,
   }
 
