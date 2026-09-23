@@ -92,6 +92,7 @@ function LoginForm() {
 
       router.push(destination)
       router.refresh()
+      return
     } catch (err: any) {
       console.error('[BP-AUTH][guest] unexpected login exception', {
         elapsedMs: Date.now() - startedAt,
