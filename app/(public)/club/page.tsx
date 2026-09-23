@@ -8,7 +8,7 @@ import { formatDate, naira } from '../../../lib/format'
 export const metadata = buildMetadata({
   title: 'Nightclub in Uromi, Edo State | The Club at Blue Pair Hotel',
   description: 'Edo State\u2019s after-dark address — resident DJs, bottle service and VIP tables at The Club, Blue Pair Hotel, Uromi. Open Thursday to Sunday, 9pm–4am.',
-  keywords: 'nightclub uromi, club edo state, vip table uromi, night club esan north-east, blue pair hotel club',
+  keywords: 'nightclub uromi, club edo state, vip table uromi, night club esan north-east, blue pair hotel club, best club in uromi',
   path: '/club',
 })
 
