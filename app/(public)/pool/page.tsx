@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 
 export default async function PoolPage() {
   const config = await resolveAmenityConfig('pool', {
-    name: 'Indoor Pool', eyebrow: 'Swim year-round',
+    name: 'Indoor Pool', eyebrow: 'Swim year-round', mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: '/blue-pair-pool.jpeg',
     description: 'A temperature-controlled indoor pool section and poolside service from the Outdoor Bar & Eatery.',
     gallery: [
