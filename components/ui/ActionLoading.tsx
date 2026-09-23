@@ -26,7 +26,16 @@ export default function ActionLoading() {
       if (clearClickTimer) clearTimeout(clearClickTimer)
       clearClickTimer = setTimeout(() => { clickedButton = null }, 1500)
       pending.set(button, (pending.get(button) ?? 0) + 1)
-      setLoading(button, true)
+
+      // Do not disable a submit button during the click event itself. The browser's
+      // native default action (which dispatches the form submit event) runs after
+      // click propagation. Disabling it here cancels that default submission.
+      setTimeout(() => {
+        if (button.isConnected && (pending.get(button) ?? 0) > 0 && !button.disabled) {
+          setLoading(button, true)
+        }
+      }, 0)
+
       setTimeout(() => {
         if ((pending.get(button) ?? 0) === 1) {
           pending.delete(button)
