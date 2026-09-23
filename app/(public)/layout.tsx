@@ -20,6 +20,7 @@ export default async function PublicRouteLayout({ children }: { children: React.
     image: DEFAULT_OG_IMAGE,
     telephone: SITE_PHONE,
     email: SITE_EMAIL,
+    priceRange: '₦45,000–₦180,000',
     address: {
       '@type': 'PostalAddress',
       streetAddress: SITE_ADDRESS.street,
