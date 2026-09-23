@@ -91,6 +91,7 @@ function StaffLoginForm() {
       })
 
       router.replace(destination)
+      return
     } catch (err: any) {
       console.error('[BP-AUTH][staff] unexpected login exception', {
         elapsedMs: Date.now() - startedAt,
