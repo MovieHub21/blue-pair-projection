@@ -1,7 +1,7 @@
 
 export const SITE_NAME = 'Blue Pair Signature Crown Hotel & Suites'
 export const SITE_URL = 'https://bluepairsignature.com'
-export const SITE_HERO_IMAGE = '/blue-pair-hero.jpeg'
+export const SITE_HERO_IMAGE = 'https://bluepairsignature.com/blue-pair-hero.jpeg'
 export const DEFAULT_OG_IMAGE = SITE_HERO_IMAGE
 
 
