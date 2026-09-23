@@ -12,12 +12,12 @@ export const metadata = buildMetadata({
 export default async function GymPage() {
   const config = await resolveAmenityConfig('gym', {
     name: 'Fitness Gym', eyebrow: 'Stay on routine', mini: 'AN EXPERIENCE FOR THE SENSES',
-    heroImage: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1600&q=80',
+    heroImage: 'https://www.bluepairsignature.com/blue-pair-gym.jpeg',
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',
     gallery: [
       'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=900&q=80',
-      '/blue-pair-gym.jpeg',
+      'https://www.bluepairsignature.com/blue-pair-gym.jpeg',
     ],
     hours: 'Daily, 5:00 AM – 10:00 PM',
     facilities: ['Free weights & racks', 'Cardio machines', 'Personal trainers on request', 'Fresh towels provided', 'Changing rooms & showers', 'Bottled water station'],
