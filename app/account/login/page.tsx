@@ -1,9 +1,11 @@
 'use client'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase/client'
 import { Loader2 } from 'lucide-react'
+
+console.info('[BP-AUTH][guest] login module loaded')
 
 function LoginForm() {
   const router = useRouter()
@@ -13,7 +15,13 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    console.info('[BP-AUTH][guest] LoginForm hydrated', { page: window.location.href, timestamp: new Date().toISOString() })
+    return () => console.info('[BP-AUTH][guest] LoginForm unmounted')
+  }, [])
+
   async function submit(e: React.FormEvent) {
+    console.info('[BP-AUTH][guest] FORM SUBMIT EVENT FIRED', { page: window.location.href, timestamp: new Date().toISOString() })
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -109,7 +117,7 @@ function LoginForm() {
         <label className="field-label">Password</label>
         <input type="password" required autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-2" placeholder="••••••••" />
         <div className="flex justify-end mb-5"><Link href="/account/forgot-password" className="text-xs font-semibold text-navy-700 hover:text-gold-600">Forgot password?</Link></div>
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
+        <button type="submit" disabled={loading} onClick={() => console.info('[BP-AUTH][guest] SIGN IN BUTTON CLICKED', { disabled: loading, timestamp: new Date().toISOString() })} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-xs text-navy-400 text-center mt-5">Don't have an account? <Link href="/account/register" className="text-navy-900 font-semibold">Register</Link></p>
       </form>
     </div>
