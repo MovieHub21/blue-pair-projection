@@ -33,7 +33,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
   const experienceCards = [
     { title: 'Suites & Rooms', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
     { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
-    { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: images[3] || FALLBACK_IMAGES[3], description: 'Elegant spaces for celebrations, meetings and moments.' },
+    { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: '/club2.jpg', description: 'Elegant spaces for celebrations, meetings and moments.' },
   ]
 
   return (
@@ -178,7 +178,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         <section className="pb-16 md:pb-20">
           <div className="container-w">
             <div className="relative overflow-hidden rounded-2xl bg-navy-950 text-white">
-              <img loading="lazy" decoding="async" src="walkway.jpg" alt="Blue Pair Hotel experience" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+              <img loading="lazy" decoding="async" src="/walkway.jpg" alt="Blue Pair Hotel experience" className="absolute inset-0 h-full w-full object-cover opacity-55" />
               <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/65 to-transparent" />
               <div className="relative min-h-[280px] px-6 py-10 md:min-h-[320px] md:px-12 md:py-14">
                 <div className="max-w-xl"><span className="eyebrow text-gold-300">Your stay, your way</span><h2 className="mt-3 max-w-lg font-display text-3xl font-medium leading-tight md:text-5xl">Make your time at Blue Pair feel effortless.</h2><p className="mt-4 max-w-md text-sm leading-6 text-white/60">Stay, dine, unwind, celebrate and explore — with everything you need in one place.</p><Link href="/rooms" className="btn-gold mt-6 px-5 py-3">Plan your stay <ArrowRight size={15} /></Link></div>
