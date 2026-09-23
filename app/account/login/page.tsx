@@ -14,11 +14,88 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (error) { setError(error.message === 'Invalid login credentials' ? 'Incorrect email or password.' : error.message); return }
-    router.push(params.get('redirect') || '/account/dashboard'); router.refresh()
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const startedAt = Date.now()
+    const loginEmail = email.trim().toLowerCase()
+    console.info('[BP-AUTH][guest] login started', {
+      email: loginEmail,
+      page: window.location.href,
+      timestamp: new Date().toISOString(),
+    })
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      })
+
+      console.info('[BP-AUTH][guest] signInWithPassword completed', {
+        elapsedMs: Date.now() - startedAt,
+        hasUser: !!data.user,
+        hasSession: !!data.session,
+        userId: data.user?.id ?? null,
+        error: authError
+          ? {
+              message: authError.message,
+              name: authError.name,
+              status: authError.status,
+              code: authError.code,
+            }
+          : null,
+      })
+
+      if (authError) {
+        console.error('[BP-AUTH][guest] authentication failed', authError)
+        setError(authError.message === 'Invalid login credentials' ? 'Incorrect email or password.' : authError.message)
+        return
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+      console.info('[BP-AUTH][guest] session check after login', {
+        hasSession: !!sessionData.session,
+        userId: sessionData.session?.user?.id ?? null,
+        error: sessionError
+          ? {
+              message: sessionError.message,
+              name: sessionError.name,
+              status: sessionError.status,
+            }
+          : null,
+      })
+
+      if (sessionError || !sessionData.session) {
+        console.error('[BP-AUTH][guest] login returned without a usable session', {
+          sessionError,
+          hasSession: !!sessionData.session,
+        })
+        setError(sessionError?.message || 'Login succeeded but no session was created. Please try again.')
+        return
+      }
+
+      const destination = params.get('redirect') || '/account/dashboard'
+      console.info('[BP-AUTH][guest] navigating after successful login', {
+        destination,
+        userId: sessionData.session.user.id,
+      })
+
+      router.push(destination)
+      router.refresh()
+    } catch (err: any) {
+      console.error('[BP-AUTH][guest] unexpected login exception', {
+        elapsedMs: Date.now() - startedAt,
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack,
+        error: err,
+      })
+      setError(err?.message || 'Unable to sign in. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
