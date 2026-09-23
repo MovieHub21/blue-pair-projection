@@ -107,16 +107,16 @@ function StaffLoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-950 px-6 py-16">
-      <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8">
+      <form onInvalidCapture={(e) => console.warn('[BP-AUTH][staff] FORM VALIDATION BLOCKED SUBMIT', { target: (e.target as HTMLInputElement).name || (e.target as HTMLInputElement).type, valueMissing: (e.target as HTMLInputElement).validity?.valueMissing, typeMismatch: (e.target as HTMLInputElement).validity?.typeMismatch, validationMessage: (e.target as HTMLInputElement).validationMessage })} onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8">
         <div className="flex items-center gap-2 font-display text-lg font-semibold mb-1">
           <ShieldCheck size={18} className="text-gold-500" />Blue Pair Staff Portal
         </div>
         <p className="text-sm text-navy-400 mb-7">Sign in with your staff credentials</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Work email</label>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@bluepairhotel.com" />
+        <input type="email" name="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@bluepairhotel.com" />
         <label className="field-label">Password</label>
-        <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
+        <input type="password" name="password" required value={password} onChange={e => setPassword(e.target.value)} className="field-input mb-6" placeholder="••••••••" />
         <button type="submit" disabled={loading} onClick={() => console.info('[BP-AUTH][staff] SIGN IN BUTTON CLICKED', { disabled: loading, timestamp: new Date().toISOString() })} className="btn-primary w-full justify-center disabled:opacity-60 flex items-center gap-2">{loading && <Loader2 size={15} className="animate-spin" />}{loading ? 'Signing in…' : 'Sign in'}</button>
         <p className="text-[11px] text-navy-400 text-center mt-6">Staff accounts are created by an administrator. Contact HR/IT if you need access.</p>
         <p className="text-[11px] text-navy-300 text-center mt-4">Guest? <Link href="/account/login" className="underline">Sign in to your booking account</Link></p>
