@@ -52,7 +52,7 @@ export default function AmenityPage({ config }: { config: AmenityConfig }) {
                 <p className="text-sm text-navy-500 mb-6">{config.pricingNote}</p>
               </>
             )}
-            <button className="btn-gold w-full justify-center">{config.ctaLabel ?? 'Reserve now'}</button>
+           
             <p className="text-[11px] text-navy-400 text-center mt-3">Guests staying at Blue Pair Hotel enjoy priority access.</p>
           </aside>
         </div>

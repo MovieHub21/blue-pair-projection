@@ -33,7 +33,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
   const experienceCards = [
     { title: 'Suites & Rooms', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
     { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
-    { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: 'club2.jpg', description: 'Elegant spaces for celebrations, meetings and moments.' },
+    { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: '/CLUB2.jpg', description: 'Elegant spaces for celebrations, meetings and moments.' },
   ]
 
   return (
@@ -153,7 +153,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
       <main>
          <section className="section">
           <div className="container-w grid items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
-            <div className="relative min-h-[380px] overflow-hidden rounded-2xl"><img loading="lazy" decoding="async" src="blue-pair-image.jpeg" alt="Blue Pair Hotel exterior" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-navy-950/80 p-5 text-white backdrop-blur-md"><span className="eyebrow text-gold-300">The Blue Pair signature</span><h2 className="mt-2 font-display text-3xl font-medium">A stay that feels considered.</h2></div></div>
+            <div className="relative min-h-[380px] overflow-hidden rounded-2xl"><img loading="lazy" decoding="async" src="/blue-pair-image.jpeg" alt="Blue Pair Hotel exterior" className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-navy-950/80 p-5 text-white backdrop-blur-md"><span className="eyebrow text-gold-300">The Blue Pair signature</span><h2 className="mt-2 font-display text-3xl font-medium">A stay that feels considered.</h2></div></div>
             <div><span className="eyebrow">Luxury Hotel in Uromi Edo State </span><h2 className="mt-3 font-display text-3xl font-medium md:text-5xl">Comfort, character and thoughtful hospitality.</h2><p className="mt-5 max-w-xl text-sm leading-7 text-navy-600 md:text-base">From restful rooms to memorable evenings, Blue Pair brings the essentials of a refined hotel experience together under one roof.</p><Link href="/about" className="btn-outline mt-7 px-5 py-3">Discover our story <ArrowRight size={15} /></Link></div>
           </div>
         </section>
@@ -178,7 +178,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         <section className="pb-16 md:pb-20">
           <div className="container-w">
             <div className="relative overflow-hidden rounded-2xl bg-navy-950 text-white">
-              <img loading="lazy" decoding="async" src="walkway.jpg" alt="Blue Pair Hotel experience" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+              <img loading="lazy" decoding="async" src="/WALKWAY.jpg" alt="Blue Pair Hotel experience" className="absolute inset-0 h-full w-full object-cover opacity-55" />
               <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/65 to-transparent" />
               <div className="relative min-h-[280px] px-6 py-10 md:min-h-[320px] md:px-12 md:py-14">
                 <div className="max-w-xl"><span className="eyebrow text-gold-300">Your stay, your way</span><h2 className="mt-3 max-w-lg font-display text-3xl font-medium leading-tight md:text-5xl">Make your time at Blue Pair feel effortless.</h2><p className="mt-4 max-w-md text-sm leading-6 text-white/60">Stay, dine, unwind, celebrate and explore — with everything you need in one place.</p><Link href="/rooms" className="btn-gold mt-6 px-5 py-3">Plan your stay <ArrowRight size={15} /></Link></div>
