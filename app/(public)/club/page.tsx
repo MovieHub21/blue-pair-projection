@@ -20,7 +20,7 @@ export default async function ClubPage() {
     offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' },
   }))
   const config = await resolveAmenityConfig('club', {
-    name: 'The Club', eyebrow: 'Nightlife',
+    name: 'The Club', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=80',
     description: 'Edo State\u2019s after-dark address — resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [
