@@ -80,7 +80,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
       const response = await fetch('/api/bar/orders/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart.map(x => ({ id: x.id, quantity: x.quantity })), location, bookingId: bookingId || null, takeout, notes, contactEmail, contactPhone, deliveryAddress }),
+        body: JSON.stringify({ outlet, items: cart.map(x => ({ id: x.id, name: x.name, quantity: x.quantity })), location, bookingId: bookingId || null, takeout, notes, contactEmail, contactPhone, deliveryAddress }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result?.error || 'Unable to start payment.')
