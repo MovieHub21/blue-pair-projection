@@ -111,7 +111,7 @@ export default function AnnexOrdersPanel({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[.18em] text-gold-600">Order desk</p>
-          <h2 className="mt-1 text-2xl font-semibold text-navy-950">Annex Bar Orders</h2>
+          <h2 className="mt-1 text-2xl font-semibold text-navy-950">Annex Orders</h2>
           <p className="mt-1 max-w-2xl text-sm text-navy-400">A clearer live queue for receiving, preparing and completing guest drink orders.</p>
         </div>
         <button type="button" onClick={() => void onRefresh()} className="btn-outline btn-sm self-start lg:self-auto">
@@ -134,7 +134,7 @@ export default function AnnexOrdersPanel({
               value={search}
               onChange={event => setSearch(event.target.value)}
               className="field-input pl-9"
-              placeholder="Search reference, location, drink or contact…"
+              placeholder="Search reference, location, item or contact…"
               aria-label="Search Annex Bar orders"
             />
           </div>
@@ -168,7 +168,7 @@ export default function AnnexOrdersPanel({
       {visibleOrders.length === 0 ? (
         <div className="card p-10 text-center">
           <Package size={28} className="mx-auto text-navy-300" />
-          <h3 className="mt-3 font-semibold text-navy-950">{orders.length ? 'No matching orders' : 'No Annex Bar orders yet'}</h3>
+          <h3 className="mt-3 font-semibold text-navy-950">{orders.length ? 'No matching orders' : 'No Annex orders yet'}</h3>
           <p className="mt-1 text-sm text-navy-400">{orders.length ? 'Try another status or search term.' : 'Paid guest orders will appear here automatically.'}</p>
         </div>
       ) : (
