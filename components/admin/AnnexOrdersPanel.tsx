@@ -225,16 +225,14 @@ export default function AnnexOrdersPanel({
                       <ChevronDown size={14} className={'transition-transform ' + (isExpanded ? 'rotate-180' : '')} />
                     </button>
 
-                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
-                      <button
-                        type="button"
-                        disabled={updating === order.id}
-                        onClick={() => void updateStatus(order, 'cancelled')}
-                        className="btn-outline btn-sm justify-center border-red-200 text-red-600 hover:bg-red-50 sm:min-w-[120px]"
-                      >
-                        Cancel order
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={updating === order.id || order.status === 'cancelled' || order.status === 'delivered'}
+                      onClick={() => void updateStatus(order, 'cancelled')}
+                      className="btn-outline btn-sm justify-center border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[120px]"
+                    >
+                      {order.status === 'cancelled' ? 'Cancelled' : order.status === 'delivered' ? 'Already delivered' : 'Cancel order'}
+                    </button>
 
                     {nextStatus && (
                       <button
