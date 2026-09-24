@@ -103,7 +103,7 @@ export async function PATCH(request: Request) {
         const { data } = await admin.from('drinks').select('id,name,price,available,bar').in('id', ids).eq('bar','Annex Bar')
         catalogue = data ?? []
       } else {
-        const outletName = order.outlet === 'restaurant' ? 'Annex Restaurant' : order.outlet === 'grilling' ? 'Annex Grilling' : 'Annex Outdoor Eatery'
+        const outletName = order.outlet === 'restaurant' ? 'Annex Restaurant' : order.outlet === 'grilling' ? 'Annex Grilling' : 'Outdoor Bar & Eatery'
         const { data } = await admin.from('menu_items').select('id,name,price,available,outlet').in('id', ids).eq('outlet', outletName)
         catalogue = data ?? []
       }
