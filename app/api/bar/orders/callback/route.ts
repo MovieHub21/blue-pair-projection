@@ -82,7 +82,11 @@ export async function GET(request: Request) {
     await sendAnnexOrderStaffEmails(admin, orderId)
 
     await notifyStaff(admin, {
-      audiences: [{ department: 'annex', href: '/admin/annex' }],
+      audiences: [
+        { department: 'annex', href: '/admin/annex' },
+        { department: 'restaurant', href: '/admin/annex' },
+        { department: 'bar', href: '/admin/annex' },
+      ],
       type: 'annex_order',
       title: 'New Annex order — ' + orderReference,
       body: (payload.deliveryLabel || 'Annex') + ' · ₦' + Number(checkout.total).toLocaleString('en-NG') + ' · paid',
