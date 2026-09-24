@@ -2,6 +2,7 @@ import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
 import { getMenuItems, getAmenity } from '../../../../lib/data'
+import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 export const metadata = buildMetadata({
@@ -12,7 +13,7 @@ export const metadata = buildMetadata({
 })
 
 export default async function AnnexRestaurantPage() {
-  const [menuItems, amenity] = await Promise.all([getMenuItems(), getAmenity('annex-restaurant')])
+  const [menuItems, amenity, activeBookings] = await Promise.all([getMenuItems(), getAmenity('annex-restaurant'), getAnnexActiveBookings()])
   const items = menuItems.filter(item => item.outlet === 'Annex Restaurant')
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Annex Restaurant', path: '/annex/restaurant' }]
   const restaurantJsonLd = {
@@ -26,7 +27,7 @@ export default async function AnnexRestaurantPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
-      <AnnexMenuExperience mode="food" eyebrow={amenity?.eyebrow || 'Dining'} title={amenity?.name || 'Annex Restaurant'} description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.'} heroImage={amenity?.heroImage || ''} items={items} />
+      <AnnexMenuExperience outlet="restaurant" mode="food" eyebrow={amenity?.eyebrow || 'Dining'} title={amenity?.name || 'Annex Restaurant'} description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.'} heroImage={amenity?.heroImage || ''} items={items} activeBookings={activeBookings} />
     </>
   )
 }
