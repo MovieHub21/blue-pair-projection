@@ -25,7 +25,7 @@ export default function ImageCarousel({
   imageClassName = '',
   autoPlay = false,
   interval = 5000,
-  showArrows = true,
+  showArrows = false,
   showDots = true,
   showCounter = false,
   transition = 'slide',
@@ -74,7 +74,7 @@ export default function ImageCarousel({
         <div className="relative h-full w-full">
           {safeSlides.map((src, i) => (
             src && <img key={`${src}-${i}`} src={src} alt={`${alt}${safeSlides.length > 1 ? ` — image ${i + 1} of ${safeSlides.length}` : ''}`} draggable={false}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms] ease-in-out ${i === index ? 'opacity-100' : 'opacity-0'} ${imageClassName}`} />
+              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-[1800ms] ease-in-out ${i === index ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 translate-x-[1.5%] scale-[1.01]'} ${imageClassName}`} />
           ))}
         </div>
       ) : (
