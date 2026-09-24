@@ -81,7 +81,7 @@ const MENU_OUTLETS: { outlet: MenuOutlet; label: string }[] = [
   { outlet: 'Annex Restaurant', label: 'Annex Restaurant' },
 ]
 
-const TABS: Tab[] = ['Content', 'Menu', 'Drinks', 'Orders', 'Short-lets', 'Bookings']
+const TABS: Tab[] = ['Menu', 'Drinks', 'Orders', 'Short-lets', 'Bookings']
 
 const emptyMenu = (outlet: MenuOutlet): MenuDraft => ({
   outlet, category: '', name: '', price: '', image: '', available: true,
@@ -95,7 +95,7 @@ const emptyDrink: DrinkDraft = {
 }
 
 export default function AnnexManagement() {
-  const [tab, setTab] = useState<Tab>('Content')
+  const [tab, setTab] = useState<Tab>('Menu')
   const [amenities, setAmenities] = useState<Amenity[]>([])
   const [selectedKey, setSelectedKey] = useState<string>('annex-home')
   const [amenityDraft, setAmenityDraft] = useState<Amenity>(blankAmenity('annex-home', 'Annex Home'))
@@ -277,34 +277,6 @@ export default function AnnexManagement() {
           </button>
         ))}
       </div>
-
-      {tab === 'Content' && (
-        <div className="grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)]">
-          <div className="card h-fit space-y-1 p-3">
-            {OUTLETS.map(outlet => (
-              <button key={outlet.key} type="button" onClick={() => setSelectedKey(outlet.key)}
-                className={'w-full rounded-lg px-3 py-2.5 text-left text-sm ' + (selectedKey === outlet.key ? 'bg-navy-950 text-white' : 'hover:bg-cream-100')}>
-                {outlet.label}
-              </button>
-            ))}
-          </div>
-          <div className="card p-5 sm:p-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Name"><input className="field-input" value={amenityDraft.name} onChange={e => setAmenityDraft({...amenityDraft,name:e.target.value})}/></Field>
-              <Field label="Eyebrow"><input className="field-input" value={amenityDraft.eyebrow} onChange={e => setAmenityDraft({...amenityDraft,eyebrow:e.target.value})}/></Field>
-              <div className="md:col-span-2"><Field label="Description"><textarea rows={4} className="field-input !h-auto py-2.5" value={amenityDraft.description} onChange={e => setAmenityDraft({...amenityDraft,description:e.target.value})}/></Field></div>
-              <Field label="Opening hours"><input className="field-input" value={amenityDraft.hours} onChange={e => setAmenityDraft({...amenityDraft,hours:e.target.value})}/></Field>
-              <Field label="Pricing note"><input className="field-input" value={amenityDraft.pricingNote} onChange={e => setAmenityDraft({...amenityDraft,pricingNote:e.target.value})}/></Field>
-              <Field label="CTA label"><input className="field-input" value={amenityDraft.ctaLabel} onChange={e => setAmenityDraft({...amenityDraft,ctaLabel:e.target.value})}/></Field>
-              <Field label="Facilities (one per line)"><textarea rows={5} className="field-input !h-auto py-2.5" value={amenityDraft.facilities.join('\n')} onChange={e => setAmenityDraft({...amenityDraft,facilities:e.target.value.split('\n').map(x=>x.trim()).filter(Boolean)})}/></Field>
-              <div className="md:col-span-2"><Field label="Hero image"><div className="flex items-center gap-4"><div className="h-24 w-36 overflow-hidden rounded-xl bg-cream-100">{amenityDraft.heroImage && <img src={amenityDraft.heroImage} className="h-full w-full object-cover" alt=""/>}</div><ImageUploader folder={'annex/'+amenityDraft.key} label="Upload image" onUploaded={urls=>setAmenityDraft({...amenityDraft,heroImage:urls[0]||''})}/></div></Field></div>
-              <div className="md:col-span-2"><Field label="Gallery image URLs (one per line)"><textarea rows={4} className="field-input !h-auto py-2.5" value={amenityDraft.gallery.join('\n')} onChange={e => setAmenityDraft({...amenityDraft,gallery:e.target.value.split('\n').map(x=>x.trim()).filter(Boolean)})}/></Field></div>
-              <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={amenityDraft.published} onChange={e=>setAmenityDraft({...amenityDraft,published:e.target.checked})}/>Published on public Annex</label>
-            </div>
-            <button type="button" onClick={()=>void saveAmenity()} disabled={savingContent} className="btn-primary mt-6"><Save size={14}/>{savingContent ? 'Saving…' : 'Save Annex content'}</button>
-          </div>
-        </div>
-      )}
 
       {tab === 'Menu' && (
         <div className="grid gap-6">
