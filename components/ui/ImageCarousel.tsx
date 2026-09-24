@@ -24,7 +24,7 @@ export default function ImageCarousel({
   className = '',
   imageClassName = '',
   autoPlay = false,
-  interval = 5000,
+  interval = 3000,
   showArrows = false,
   showDots = true,
   showCounter = false,

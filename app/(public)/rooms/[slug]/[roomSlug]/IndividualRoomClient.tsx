@@ -32,5 +32,56 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
   window.history.replaceState(window.history.state,'',url.toString())
 }
  const bookable=!checking&&status==='available'
- return <div className="container-w min-w-0 max-w-full overflow-x-hidden px-4 sm:px-6 md:px-10 py-8"><Link href={`/rooms/${type.slug}?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} className="text-xs text-navy-400 hover:text-navy-700">← Back to {type.name}</Link><div className="grid min-w-0 lg:grid-cols-[1.35fr,.65fr] gap-8 mt-5"><div className="min-w-0 max-w-full"><RoomGallery images={gallery} name={name}/><span className="eyebrow mt-8 inline-block">{type.category} · Room {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1><p className="text-xs text-navy-400 mt-2">Floor {unit.floor||'—'} · Specific physical room</p><p className="text-navy-500 leading-relaxed mt-4">{type.description}</p><div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{type.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{type.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{type.sizeSqm} m²</b></div></div><AvailabilityCalendar roomId={unit.id} initialCheckIn={checkIn} initialCheckOut={checkOut} onSelect={updateDates}/><h2 className="text-xl font-semibold mt-8 mb-4">Amenities</h2><div className="grid sm:grid-cols-2 gap-3">{type.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div></div><aside className="card p-6 h-fit sticky top-24 min-w-0 max-w-full"><div className="text-xs text-navy-400 mb-2">Room rate</div><b className="font-display text-3xl">{naira(type.price)}</b><span className="text-xs text-navy-400"> / night</span><div className="h-px bg-black/10 my-5"/><div className="flex justify-between text-sm"><span>{naira(type.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>{bookable&&<Link href={`/booking?room=${type.slug}&unit=${unit.id}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} className="btn-primary w-full justify-center mt-5">Book & pay <ArrowRight size={15}/></Link>}{!checking&&status==='availableSoon'&&<button type="button" disabled className="w-full justify-center mt-5 rounded-md bg-navy-100 text-navy-400 px-4 py-3 text-sm font-semibold cursor-not-allowed">Unavailable for selected dates</button>}{!checking&&status==='held'&&<div className="mt-5 rounded-md bg-amber-50 px-3 py-2.5 text-xs text-amber-800 flex gap-2"><Clock3 size={15} className="shrink-0 mt-0.5"/><span>Another guest is currently completing payment for these dates. Please try again in a few minutes.</span></div>}{!checking&&status==='taken'&&<button type="button" disabled className="w-full justify-center mt-5 rounded-md bg-navy-100 text-navy-400 px-4 py-3 text-sm font-semibold cursor-not-allowed">Unavailable for selected dates</button>}{!checking&&status==='reserved'&&<Link href="/account/bookings" className="btn-gold w-full justify-center mt-5">Continue payment <ArrowRight size={15}/></Link>}{checking&&<div className="mt-5 text-center text-xs text-navy-400"><Loader2 size={14} className="inline animate-spin mr-1"/>Checking dates…</div>}{error&&<div className="mt-3 rounded-md bg-red-50 px-3 py-2.5 text-xs text-red-700">{error}</div>}</aside></div></div>
+ return <div className="container-w min-w-0 max-w-full overflow-x-hidden px-4 sm:px-6 md:px-10 py-8">
+  <Link href={`/rooms/${type.slug}?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} 
+  className="text-xs text-navy-400 hover:text-navy-700">← Back to {type.name}</Link>
+  <div className="grid min-w-0 lg:grid-cols-[1.35fr,.65fr] gap-8 mt-5"><div className="min-w-0 max-w-full">
+
+    <RoomGallery images={gallery} name={name}/><span className="eyebrow mt-8 inline-block">{type.category} · Room 
+      {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1><p className="text-xs text-navy-400 mt-2">
+        Floor {unit.floor||'—'} · Specific physical room</p>
+        <p className="text-navy-500 leading-relaxed mt-4">{type.description}</p>
+
+        <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} 
+
+        className="text-gold-500"/><b>{type.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} 
+        className="text-gold-500"/><b>{type.bedType}</b></div><div className="flex gap-2"><Ruler size={18} 
+        className="text-gold-500"/><b>{type.sizeSqm} m²</b></div></div><AvailabilityCalendar roomId={unit.id} 
+        initialCheckIn={checkIn} initialCheckOut={checkOut} onSelect={updateDates}/>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">Amenities</h2><div className="grid sm:grid-cols-2 gap-3">
+          {type.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} 
+          className="text-gold-500"/>{a}</div>)}</div></div><aside className="card p-6 h-fit sticky top-24 min-w-0 max-w-full">
+           
+            <div className="text-xs text-navy-400 mb-2">Room rate</div><b className="font-display text-3xl">{naira(type.price)}
+              </b><span className="text-xs text-navy-400"> / night</span><div className="h-px bg-black/10 my-5"/>
+             
+              <div className="flex justify-between text-sm"><span>{naira(type.price)} × {nights} nights</span><b>
+                {naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span>
+                <b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4">
+               
+                <span>Total</span><b>{naira(total+tax)}</b></div>{bookable&&<Link href={`/booking?room=${type.slug}&unit=$
+                {unit.id}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} 
+                className="btn-primary w-full justify-center mt-5">Book & pay 
+                
+                <ArrowRight size={15}/></Link>}
+                {!checking&&status==='availableSoon'&&<button type="button" disabled 
+                className="w-full justify-center mt-5 rounded-md bg-navy-100 text-navy-400 px-4 py-3 
+                text-sm font-semibold cursor-not-allowed">Unavailable for selected dates</button>}
+                {!checking&&status==='held'&&<div className="mt-5 rounded-md bg-amber-50 px-3 py-2.5 
+                text-xs text-amber-800 flex gap-2"><Clock3 size={15} className="shrink-0 mt-0.5"/>
+               
+                <span>Another guest is currently completing payment for these dates. Please try again in a few minutes.
+                  </span></div>}{!checking&&status==='taken'&&<button type="button" disabled 
+                  className="w-full justify-center mt-5 rounded-md bg-navy-100 text-navy-400 px-4 py-3 
+                  text-sm font-semibold cursor-not-allowed">Unavailable for selected dates</button>}
+                  {!checking&&status==='reserved'&&<Link href="/account/bookings" className="btn-gold 
+                  w-full justify-center mt-5">Continue payment <ArrowRight size={15}/></Link>}
+                  {checking&&<div className="mt-5 text-center text-xs text-navy-400"><Loader2 size={14} 
+                  className="inline animate-spin mr-1"/>Checking dates…</div>}{error&&
+                  <div className="mt-3 rounded-md bg-red-50 px-3 py-2.5 text-xs text-red-700">{error}
+                  </div>}
+                  </aside>
+                  </div>
+                  </div>
 }
