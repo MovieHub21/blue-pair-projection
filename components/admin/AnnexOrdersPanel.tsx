@@ -245,7 +245,7 @@ export default function AnnexOrdersPanel({
                           {order.delivery_address && <Detail icon={<MapPin size={14} />} label="Pickup / address" value={order.delivery_address} />}
                         </>
                       ) : (
-                        {order.customer?.email && <Detail icon={<Mail size={14} />} label="Account email" value={order.customer.email} />}
+                        order.customer?.email ? <Detail icon={<Mail size={14} />} label="Account email" value={order.customer.email} /> : null
                       )}
                       {order.notes && <div className="sm:col-span-2"><Detail icon={<Package size={14} />} label="Instructions" value={order.notes} /></div>}
                     </div>
