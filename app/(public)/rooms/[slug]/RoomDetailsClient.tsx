@@ -40,7 +40,7 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
   <div className="text-xs text-navy-400 mb-5">Home / Rooms & Suites / {room.name}</div>
   <div className="grid lg:grid-cols-[1.35fr,.65fr] gap-10 items-start">
    <div>
-    <ImageCarousel images={room.images} alt={room.name} className="h-[420px] rounded-2xl" autoPlay interval={5500} transition="fade" showArrows showDots />
+    <ImageCarousel images={room.images} alt={room.name} className="h-[420px] rounded-2xl" autoPlay interval={5500} transition="fade" showArrows={false} showDots />
     <h1 className="text-3xl md:text-4xl font-semibold mt-8">{room.name}</h1>
     <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
     <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{room.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{room.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{room.sizeSqm} m²</b></div></div>
