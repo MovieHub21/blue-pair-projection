@@ -21,12 +21,13 @@ type Props = {
   heroImage: string
   items: AnnexMenuItem[]
   mode: 'bar' | 'food'
+  outlet: 'bar' | 'restaurant' | 'grilling' | 'outdoor_eatery'
   showAnnexNavigation?: boolean
   footerLabel?: string
   activeBookings?: { id: string; type: 'room' | 'short_let'; label: string; reference: string }[]
 }
 
-export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex', activeBookings = [] }: Props) {
+export default function AnnexMenuExperience({ title, eyebrow, description, heroImage, items, mode, outlet, showAnnexNavigation = true, footerLabel = 'Blue Pair Hotel · The Annex', activeBookings = [] }: Props) {
   const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([])
   const [showOrder, setShowOrder] = useState(false)
   const [location, setLocation] = useState<'room' | 'short_let' | 'bar' | 'outdoor_eatery' | 'vip_lounge' | ''>('')
@@ -39,7 +40,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const [placing, setPlacing] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [orderMessage, setOrderMessage] = useState('')
-  const isBar = mode === 'bar'
+  const outletName = outlet === 'bar' ? 'Annex Bar' : outlet === 'restaurant' ? 'Annex Restaurant' : outlet === 'grilling' ? 'Annex Grilling' : 'Outdoor Eatery'
 
   useEffect(() => {
     setMounted(true)
@@ -90,10 +91,9 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
     }
   }
 
-  const nouns = isBar ? DRINK_NOUNS : DISH_NOUNS
+  const nouns = mode === 'bar' ? DRINK_NOUNS : DISH_NOUNS
   const heroPicture = heroImage || items.find(item => item.image)?.image
 
-  // Ordering is only offered where it works: the Annex Bar. The food pages are menus to browse.
   const orderControl = (item: AnnexMenuItem) => {
     const inCart = cartItem(item.id)
     return inCart ? (
@@ -115,8 +115,8 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         items={items}
         nouns={nouns}
         label={title}
-        renderAction={isBar ? orderControl : undefined}
-        note={isBar ? 'Prices are in Nigerian naira. Add drinks to your order and check out when you are ready.' : 'Prices are in Nigerian naira. Dishes marked unavailable are off the menu for now.'}
+        renderAction={orderControl}
+        note="Prices are in Nigerian naira. Add items to your order and check out when you are ready."
       />
 
       <MenuClosing
@@ -131,12 +131,11 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
           { label: 'Annex Bar', href: '/annex/bar' },
           { label: 'Short-lets', href: '/annex/shortlets' },
         ] : undefined}
-        bottomInset={isBar}
+        bottomInset
       />
-      {mounted && isBar && createPortal(
+      {mounted && createPortal(
         <>
-          {isBar && (
-            <>
+          <>
               <div className="fixed inset-x-0 bottom-0 z-[90] isolate border-t border-white/10 bg-[#060B17]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -168,11 +167,11 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                       </div>
                       <label className={takeout ? 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4' : 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4'}>
                     <input type="checkbox" checked={takeout} onChange={e => { const checked = e.target.checked; setTakeout(checked); if (checked) { setLocation(''); setBookingId('') } }} className="h-4 w-4 accent-[#d7b66a]" />
-                    <span><span className="block text-sm font-semibold">Order as takeaway</span><span className="mt-1 block text-xs text-white/35">Pick up your order from the Annex Bar. Contact details are required.</span></span>
+                    <span><span className="block text-sm font-semibold">Order as takeaway</span><span className="mt-1 block text-xs text-white/35">We will arrange delivery to the address you provide. Contact details are required.</span></span>
                   </label>
                   {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
                       <div className="mt-7"> 
-                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]"> Order Takeout? </p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]"> Order for takeaway / delivery? </p>
                       </div>
                       {takeout && (
                     <>
@@ -191,7 +190,6 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                 </div>
               )}
             </>
-          )}
         </>,
         document.body,
       )}
