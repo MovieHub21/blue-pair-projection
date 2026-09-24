@@ -190,7 +190,7 @@ export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
                       <article
                         key={`${groupIndex}-${review.id}-${reviewIndex}`}
                         className="
-                           p-6 flex flex-col shrink-0
+                          card p-6 flex flex-col shrink-0
                           w-[88vw] sm:w-[360px] md:w-[390px]
                           min-h-[330px]
                         "
