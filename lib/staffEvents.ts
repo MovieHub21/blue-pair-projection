@@ -24,21 +24,6 @@ export async function notifyBookingPaid(admin: SupabaseClient, booking: any, pay
   } catch (error) { console.error('[staff-events] booking paid', error) }
 }
 
-/** An Annex Bar order was paid: the bar team prepares it. */
-export async function notifyBarOrderPaid(admin: SupabaseClient, order: { reference: string; label?: string; items: any[]; total: unknown }) {
-  try {
-    const items = (order.items || []).slice(0, 4).map(item => `${item.quantity}× ${item.drinkName || item.name}`).join(', ')
-    await notifyStaff(admin, {
-      audiences: [{ department: 'bar', href: '/admin/annex' }],
-      type: 'bar_order',
-      title: `New Annex Bar order — ${order.label || 'Bar'}`,
-      body: `${items} · ${naira(order.total)} (paid)`,
-      metadata: { bar_order_reference: order.reference },
-      dedupeKey: `bar_order_paid:${order.reference}`,
-    })
-  } catch (error) { console.error('[staff-events] bar order', error) }
-}
-
 /** A guest wrote to the hotel through the contact form or an open conversation: reception answers. */
 export async function notifyContactMessage(admin: SupabaseClient, input: { conversationId: string; guestName: string; subject: string; isReply: boolean }) {
   try {
