@@ -151,7 +151,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
                 <div className="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-end justify-center overflow-hidden overscroll-none bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
                   <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain bg-[#0A1229] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
                     <div className="flex items-start justify-between gap-5">
-                      <div><span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">Annex Bar</span><h2 className="mt-2 font-display text-4xl">Your order</h2></div>
+                      <div><span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">{outletName}</span><h2 className="mt-2 font-display text-4xl">Your order</h2></div>
                       <button type="button" onClick={() => setShowOrder(false)} className="text-sm text-white/50">Close</button>
                     </div>
                     <div className="mt-7 divide-y divide-white/10 border-y border-white/10">
