@@ -14,7 +14,7 @@ export const metadata = buildMetadata({
 
 export default async function OutdoorEateryPage() {
   const [amenity, menuItems, activeBookings] = await Promise.all([getAmenity('annex-outdoor-eatery'), getMenuItems(), getAnnexActiveBookings()])
-  const items = menuItems.filter(item => item.outlet === 'Annex Outdoor Eatery')
+  const items = menuItems.filter(item => item.outlet === 'Outdoor Bar & Eatery' || item.outlet === 'Annex Outdoor Eatery')
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Outdoor Eatery', path: '/annex/outdoor-eatery' }]
   const restaurantJsonLd = {
     '@context': 'https://schema.org',
