@@ -9,6 +9,7 @@ import { deleteImage } from '../../../lib/upload'
 import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { mapAmenity, mapDrink, mapMenuItem, mapShortLet } from '../../../lib/mappers'
+import AnnexOrdersPanel from '../../../components/admin/AnnexOrdersPanel'
 import type { Drink, MenuItem, ShortLet } from '../../../data/mock'
 
 type Amenity = {
@@ -123,7 +124,7 @@ export default function AnnexManagement() {
       supabase.from('drinks').select('*').eq('bar', 'Annex Bar').order('name'),
       supabase.from('short_lets').select('*').order('price'),
       supabase.from('bookings').select('id,reference,customer_id,short_let_id,check_in,check_out,amount,payment_status,status,customers(name,email)').not('short_let_id', 'is', null).order('created_at', { ascending: false }),
-      supabase.from('bar_orders').select('*, bar_order_items(*)').order('created_at', { ascending: false }),
+      supabase.from('bar_orders').select('*, bar_order_items(*), customers(name,email)').order('created_at', { ascending: false }),
     ])
     if (a.data) setAmenities(a.data.map(mapAmenity))
     if (m.data) setMenuItems(m.data.map(mapMenuItem))
@@ -331,33 +332,7 @@ export default function AnnexManagement() {
         </div>
       )}
 
-      {tab === 'Orders' && (
-        <div className="card overflow-hidden">
-          <div className="border-b border-black/5 p-5"><h2 className="font-semibold">Annex Bar Orders</h2><p className="mt-1 text-xs text-navy-400">Live guest drink orders and their delivery locations.</p></div>
-          <div className="divide-y divide-black/5">
-            {barOrders.map(order => <div key={order.id} className="p-5">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div><div className="flex flex-wrap items-center gap-3"><b>{order.reference}</b><span className="pill-green capitalize">{String(order.status).replaceAll('_',' ')}</span></div><p className="mt-2 text-sm font-semibold">{order.delivery_label}</p><p className="mt-1 text-xs text-navy-400">{new Date(order.created_at).toLocaleString()} · {nairaOrder(order.total)}</p></div>
-                <select className="field-input max-w-[190px]" value={order.status} onChange={async e => { const status=e.target.value; const result=await fetch('/api/bar/orders',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.id,status})}); if(result.ok) await load(); else pushToast('Failed to update bar order','error') }}>
-                  {['pending','accepted','preparing','ready','delivered','cancelled'].map(status => <option key={status} value={status}>{status.replaceAll('_',' ')}</option>)}
-                </select>
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">{(order.bar_order_items ?? []).map((item:any) => <div key={item.id} className="rounded-lg bg-cream-50 p-3 text-sm"><span className="font-medium">{item.quantity} × {item.drink_name}</span><span className="float-right">{nairaOrder(item.line_total)}</span></div>)}</div>
-              {order.takeout && (
-                <div className="mt-3 rounded-lg border border-[#d7b66a]/30 bg-[#d7b66a]/5 p-4 text-xs text-navy-500">
-                  <p className="font-semibold text-navy-950">Takeaway order</p>
-                  {order.contact_email && <p className="mt-1">Email: {order.contact_email}</p>}
-                  {order.contact_phone && <p className="mt-1">Phone: {order.contact_phone}</p>}
-                  {order.delivery_address && <p className="mt-1">Address: {order.delivery_address}</p>}
-                  {order.notes && <p className="mt-1">Instructions: {order.notes}</p>}
-                </div>
-              )}
-              {!order.takeout && order.notes && <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-navy-500">Note: {order.notes}</p>}
-            </div>)}
-            {barOrders.length === 0 && <div className="p-10 text-center text-sm text-navy-400">No Annex Bar orders yet.</div>}
-          </div>
-        </div>
-      )}
+      {tab === 'Orders' && <AnnexOrdersPanel orders={barOrders} onRefresh={load} />}
 
       {tab === 'Short-lets' && (
         <div>
