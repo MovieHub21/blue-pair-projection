@@ -197,7 +197,7 @@ export default function AnnexOrdersPanel({
                       <div className="mt-0.5 rounded-xl bg-white p-2 text-gold-600 shadow-sm"><MapPin size={15} /></div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-[.14em] text-navy-400">Delivery</p>
-                        <p className="mt-1 font-semibold text-navy-950">{order.takeout ? 'Takeaway / Pickup' : order.delivery_label}</p>
+                        <p className="mt-1 font-semibold text-navy-950">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label}</p>
                         {!order.takeout && <p className="mt-1 text-xs text-navy-500">{order.delivery_location.replaceAll('_', ' ')}</p>}
                       </div>
                     </div>
@@ -253,7 +253,7 @@ export default function AnnexOrdersPanel({
                         <>
                           {order.contact_email && <Detail icon={<Mail size={14} />} label="Email" value={order.contact_email} />}
                           {order.contact_phone && <Detail icon={<Phone size={14} />} label="Phone" value={order.contact_phone} />}
-                          {order.delivery_address && <Detail icon={<MapPin size={14} />} label="Pickup / address" value={order.delivery_address} />}
+                          {order.delivery_address && <Detail icon={<MapPin size={14} />} label="Delivery address" value={order.delivery_address} />}
                         </>
                       ) : (
                         order.customer?.email ? <Detail icon={<Mail size={14} />} label="Account email" value={order.customer.email} /> : null
