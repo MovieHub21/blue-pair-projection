@@ -116,7 +116,7 @@ export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
           {/* IMAGE */}
           <div className="relative min-h-[380px] lg:min-h-[520px] rounded-2xl overflow-hidden">
             <img
-              src="/blue-pair-image.jpeg"
+              src="https://bluepairsignature.com/blue-pair-image.jpeg"
               alt="Guest experience at Blue Pair Hotel"
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -190,7 +190,7 @@ export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
                       <article
                         key={`${groupIndex}-${review.id}-${reviewIndex}`}
                         className="
-                          card p-6 flex flex-col shrink-0
+                           p-6 flex flex-col shrink-0
                           w-[88vw] sm:w-[360px] md:w-[390px]
                           min-h-[330px]
                         "
