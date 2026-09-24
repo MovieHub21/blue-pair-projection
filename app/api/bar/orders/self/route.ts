@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { sendAnnexOrderStatusEmail } from '../../../../../lib/email/annexOrders'
+import { notifyStaff } from '../../../../../lib/staffNotifications'
 
 const LOCATIONS = new Set(['room','short_let','bar','outdoor_eatery','vip_lounge'])
 
@@ -41,6 +42,19 @@ export async function PATCH(request: Request) {
         .single()
       if (error) throw error
       await sendAnnexOrderStatusEmail(admin, order.id, 'cancelled')
+      await notifyStaff(admin, {
+        audiences: [
+          { department: 'annex', href: '/admin/annex' },
+          { department: 'restaurant', href: '/admin/annex' },
+          { department: 'bar', href: '/admin/annex' },
+        ],
+        type: 'annex_order_cancelled',
+        title: 'Annex order cancelled — ' + order.reference,
+        body: 'The guest cancelled a pending paid order.',
+        metadata: { annex_order_id: order.id, reference: order.reference, status: 'cancelled' },
+        includeManagement: true,
+        dedupeKey: 'annex_order_cancelled:' + order.reference,
+      })
       await admin.from('guest_notifications').insert({
         user_id: user.id,
         type: 'annex_order_status',
