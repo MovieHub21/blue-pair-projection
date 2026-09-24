@@ -19,6 +19,7 @@ type BarOrder = {
   status: string
   created_at: string
   customer?: { name?: string | null; email?: string | null } | null
+  outlet?: string | null
   bar_order_items?: Array<{
     id: string
     drink_name: string
@@ -37,6 +38,7 @@ const STATUSES = [
 ] as const
 
 const statusLabel = (status: string) => STATUSES.find(item => item.value === status)?.label || status.replaceAll('_', ' ')
+const outletLabel = (outlet?: string | null) => ({ bar: 'Annex Bar', restaurant: 'Annex Restaurant', grilling: 'Annex Grilling', outdoor_eatery: 'Outdoor Eatery' } as Record<string,string>)[outlet || ''] || 'Annex Order'
 const naira = (value: unknown) => '₦' + Number(value || 0).toLocaleString('en-NG')
 
 function statusClass(status: string) {
@@ -180,7 +182,7 @@ export default function AnnexOrdersPanel({
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-sm font-bold text-navy-950">{order.reference}</span>
+                        <div className="flex min-w-0 flex-wrap items-center gap-2"><span className="font-mono text-sm font-bold text-navy-950">{order.reference}</span><span className="rounded-full bg-cream-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-navy-500">{outletLabel(order.outlet)}</span></div>
                         <span className={'rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ' + statusClass(order.status)}>
                           {statusLabel(order.status)}
                         </span>
@@ -223,6 +225,17 @@ export default function AnnexOrdersPanel({
                       <ChevronDown size={14} className={'transition-transform ' + (isExpanded ? 'rotate-180' : '')} />
                     </button>
 
+                    {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                      <button
+                        type="button"
+                        disabled={updating === order.id}
+                        onClick={() => void updateStatus(order, 'cancelled')}
+                        className="btn-outline btn-sm justify-center border-red-200 text-red-600 hover:bg-red-50 sm:min-w-[120px]"
+                      >
+                        Cancel order
+                      </button>
+                    )}
+
                     {nextStatus && (
                       <button
                         type="button"
@@ -251,7 +264,7 @@ export default function AnnexOrdersPanel({
                     </div>
                   )}
 
-                  <div className="mt-4">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-[1fr,auto]">
                     <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[.14em] text-navy-400">Update status</label>
                     <select
                       value={order.status}
