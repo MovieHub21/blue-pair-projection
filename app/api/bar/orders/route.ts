@@ -45,7 +45,7 @@ export async function PATCH(request: Request) {
 
     const { data: roles } = await server.from('user_roles').select('role').eq('user_id', user.id)
     const roleList = (roles ?? []).map((r: any) => String(r.role).toLowerCase())
-    if (!roleList.some(role => ['super_admin','manager','bar','restaurant'].includes(role))) {
+    if (!roleList.some(role => ['super_admin','manager','bar','restaurant','reception'].includes(role))) {
       return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
     }
 
