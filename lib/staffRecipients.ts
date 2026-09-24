@@ -45,11 +45,27 @@ export async function resolveDepartmentStaff(admin: SupabaseClient, department: 
 
 /** Managers and super admins (from the same role table the portal permissions use). */
 export async function resolveManagement(admin: SupabaseClient): Promise<StaffRecipient[]> {
-  const { data: roles } = await admin.from('user_roles').select('user_id,role').in('role', ['super_admin', 'manager'])
-  const ids = Array.from(new Set((roles ?? []).map((row: any) => String(row.user_id))))
-  if (!ids.length) return []
-  const { data: profiles } = await admin.from('profiles').select('id,name,email').in('id', ids)
-  return ids.map(id => {
+  // Management is primarily sourced from user_roles (the same source used by staff portal
+  // permissions), with the legacy staff.role values accepted as a compatibility fallback.
+  const [{ data: roles }, { data: staff }] = await Promise.all([
+    admin.from('user_roles').select('user_id,role').in('role', ['super_admin', 'manager', 'admin']),
+    admin.from('staff').select('user_id,role').eq('status', 'active'),
+  ])
+
+  const ids = new Set<string>()
+  for (const row of roles ?? []) {
+    if (row.user_id) ids.add(String(row.user_id))
+  }
+  for (const row of staff ?? []) {
+    const role = String(row.role ?? '').toLowerCase().replace(/\\s+/g, '_')
+    if (row.user_id && ['super_admin', 'manager', 'admin'].includes(role)) ids.add(String(row.user_id))
+  }
+
+  const userIds = Array.from(ids)
+  if (!userIds.length) return []
+
+  const { data: profiles } = await admin.from('profiles').select('id,name,email').in('id', userIds)
+  return userIds.map(id => {
     const profile = (profiles ?? []).find((p: any) => p.id === id)
     return { userId: id, email: String(profile?.email || '').trim().toLowerCase(), name: String(profile?.name || '') }
   })
