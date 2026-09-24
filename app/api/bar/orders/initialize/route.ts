@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         subtotal += lineTotal
       }
     } else {
-      const outletName = outlet === 'restaurant' ? 'Annex Restaurant' : outlet === 'grilling' ? 'Annex Grilling' : 'Annex Outdoor Eatery'
+      const outletName = outlet === 'restaurant' ? 'Annex Restaurant' : outlet === 'grilling' ? 'Annex Grilling' : 'Outdoor Bar & Eatery'
       const { data: menuItems, error } = await admin.from('menu_items').select('id,name,price,available,outlet').in('id', ids).eq('outlet', outletName)
       if (error) throw error
       const map = new Map((menuItems || []).map((item:any) => [item.id, item]))
