@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+import { sendBarOrderStatusEmail } from '../../../../lib/email/barOrders'
 
 const LOCATIONS = new Set(['room','short_let','bar','outdoor_eatery','vip_lounge'])
 const STATUSES = new Set(['pending','accepted','preparing','ready','delivered','cancelled'])
@@ -64,11 +65,11 @@ export async function PATCH(request: Request) {
     const patch: any = { status }
     if (status === 'accepted') patch.accepted_at = new Date().toISOString()
     if (status === 'delivered') patch.delivered_at = new Date().toISOString()
-    const { data: order, error } = await admin.from('bar_orders').update(patch).eq('id', orderId).select('*').single()
+    const { data: before } = await admin.from('bar_orders').select('status').eq('id', orderId).maybeSingle()\n    if (!before) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })\n    if (before.status === status) return NextResponse.json({ order: before })\n    const { data: order, error } = await admin.from('bar_orders').update(patch).eq('id', orderId).select('*').single()
     if (error) throw error
 
     const { data: customer } = await admin.from('customers').select('user_id').eq('id', order.customer_id).maybeSingle()
-    if (customer?.user_id) {
+    await sendBarOrderStatusEmail(admin, order.id, status)\n\n    if (customer?.user_id) {
       const labels: Record<string,string> = { pending:'Order received', accepted:'Order accepted', preparing:'Your drinks are being prepared', ready:'Your order is ready', delivered:'Order delivered', cancelled:'Order cancelled' }
       await admin.from('guest_notifications').insert({
         user_id: customer.user_id, type: 'bar_order_status', title: labels[status],
