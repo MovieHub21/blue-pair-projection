@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { sendBarOrderStatusEmail } from '../../../../lib/email/barOrders'
+import { sendAnnexOrderStatusEmail } from '../../../../lib/email/annexOrders'
 
 const STATUSES = new Set(['pending','accepted','preparing','ready','delivered','cancelled'])
 
@@ -13,7 +13,7 @@ async function getAuth() {
 
 async function getCustomer(userId: string) {
   const admin = createSupabaseAdminClient()
-  const { data } = await admin.from('customers').select('id,name,user_id').eq('user_id', userId).maybeSingle()
+  const { data } = await admin.from('customers').select('id,name,email,user_id').eq('user_id', userId).maybeSingle()
   return { admin, customer: data }
 }
 
@@ -24,21 +24,18 @@ export async function GET() {
     const { admin, customer } = await getCustomer(user.id)
     if (!customer) return NextResponse.json({ orders: [] })
     const { data: orders, error } = await admin.from('bar_orders')
-      .select('*,bar_order_items(*)')
+      .select('*,bar_order_items(*),customers(name,email)')
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false })
     if (error) throw error
     return NextResponse.json({ orders: orders ?? [] })
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'Unable to load bar orders.' }, { status: 500 })
+    return NextResponse.json({ error: error?.message || 'Unable to load Annex orders.' }, { status: 500 })
   }
 }
 
 export async function POST() {
-  return NextResponse.json(
-    { error: 'Bar orders must be paid through Paystack before they can be placed.' },
-    { status: 409 },
-  )
+  return NextResponse.json({ error: 'Orders must be paid through Paystack before they can be placed.' }, { status: 409 })
 }
 
 export async function PATCH(request: Request) {
@@ -48,21 +45,18 @@ export async function PATCH(request: Request) {
 
     const { data: roles } = await server.from('user_roles').select('role').eq('user_id', user.id)
     const roleList = (roles ?? []).map((r: any) => String(r.role).toLowerCase())
-    if (!roleList.some(role => ['super_admin','manager','bar staff','bar_staff'].includes(role))) {
+    if (!roleList.some(role => ['super_admin','manager','bar','restaurant'].includes(role))) {
       return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
     }
 
     const body = await request.json()
     const orderId = String(body.orderId || '')
     const status = String(body.status || '')
-    if (!orderId || !STATUSES.has(status)) {
-      return NextResponse.json({ error: 'Invalid order or status.' }, { status: 400 })
-    }
+    if (!orderId || !STATUSES.has(status)) return NextResponse.json({ error: 'Invalid order or status.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
     const { data: current } = await admin.from('bar_orders').select('status').eq('id', orderId).maybeSingle()
     if (!current) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
-
     if (current.status === status) {
       const { data: unchanged } = await admin.from('bar_orders').select('*').eq('id', orderId).single()
       return NextResponse.json({ order: unchanged })
@@ -79,30 +73,30 @@ export async function PATCH(request: Request) {
       .single()
     if (error) throw error
 
-    await sendBarOrderStatusEmail(admin, order.id, status)
+    await sendAnnexOrderStatusEmail(admin, order.id, status)
 
     const { data: customer } = await admin.from('customers').select('user_id').eq('id', order.customer_id).maybeSingle()
     if (customer?.user_id) {
       const labels: Record<string,string> = {
         pending: 'Order received',
         accepted: 'Order accepted',
-        preparing: 'Your drinks are being prepared',
+        preparing: 'Your order is being prepared',
         ready: 'Your order is ready',
         delivered: 'Order delivered',
         cancelled: 'Order cancelled',
       }
       await admin.from('guest_notifications').insert({
         user_id: customer.user_id,
-        type: 'bar_order_status',
+        type: 'annex_order_status',
         title: labels[status],
-        body: `Bar order ${order.reference} is now ${status.replaceAll('_', ' ')}.`,
-        href: '/account/requests',
-        metadata: { bar_order_id: order.id, reference: order.reference, status },
+        body: `Order ${order.reference} is now ${status === 'pending' ? 'pending' : status.replaceAll('_', ' ')}.`,
+        href: '/account/orders',
+        metadata: { annex_order_id: order.id, reference: order.reference, status },
       })
     }
 
     return NextResponse.json({ order })
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'Unable to update bar order.' }, { status: 500 })
+    return NextResponse.json({ error: error?.message || 'Unable to update Annex order.' }, { status: 500 })
   }
 }
