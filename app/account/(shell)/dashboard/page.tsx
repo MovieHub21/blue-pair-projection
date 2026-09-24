@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3 } from 'lucide-react'
+import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
@@ -9,7 +9,6 @@ import CancelBookingButton from '../CancelBookingButton'
 import GuestDateWeather from '../../../../components/account/GuestDateWeather'
 import ReviewForm from '../ReviewForm'
 import ImageCarousel from '../../../../components/ui/ImageCarousel'
-import { ShoppingBag } from 'lucide-react'
 
 export default async function DashboardPage() {
   const { user, profile } = await getCurrentUser()
