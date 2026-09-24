@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const reference = String(url.searchParams.get('reference') || url.searchParams.get('trxref') || '').trim()
   const base = process.env.NEXT_PUBLIC_SITE_URL || SITE_URL
-  const errorUrl = (reason: string) => NextResponse.redirect(base + '/annex/bar/order/error?reason=' + encodeURIComponent(reason))
+  const errorUrl = (reason: string) => NextResponse.redirect(base + '/annex/order/error?reason=' + encodeURIComponent(reason))
   if (!reference) return errorUrl('missing_reference')
 
   try {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     const { data: checkout, error: checkoutError } = await admin.from('bar_order_checkouts').select('*').eq('reference', reference).maybeSingle()
     if (checkoutError) throw checkoutError
     if (!checkout) return errorUrl('checkout_not_found')
-    if (checkout.status === 'paid') return NextResponse.redirect(base + '/annex/bar/order/success?reference=' + encodeURIComponent(reference))
+    if (checkout.status === 'paid') return NextResponse.redirect(base + '/annex/order/success?reference=' + encodeURIComponent(reference))
 
     const response = await fetch('https://api.paystack.co/transaction/verify/' + encodeURIComponent(reference), {
       headers: { Authorization: 'Bearer ' + secret },
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
       dedupeKey: 'annex_order_paid:' + orderReference,
     })
 
-    return NextResponse.redirect(base + '/annex/bar/order/success?reference=' + encodeURIComponent(orderReference))
+    return NextResponse.redirect(base + '/annex/order/success?reference=' + encodeURIComponent(orderReference))
   } catch (error:any) {
     console.error('[annex-order-payment-callback]', error)
     return errorUrl('order_creation_failed')
