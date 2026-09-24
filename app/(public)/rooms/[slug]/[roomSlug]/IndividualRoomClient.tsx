@@ -16,7 +16,7 @@ type GuestStatus = 'available'|'availableSoon'|'taken'|'held'|'reserved'
 function RoomGallery({ images, name }: { images:string[]; name:string }) {
  if (images.length === 0) return null
  // A slow, hands-off cross-fade — every room of this type shares the same gallery, so there is nothing to click through.
- return <ImageCarousel images={images} alt={name} className="h-[360px] sm:h-[420px] md:h-[500px] rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop" autoPlay interval={6000} transition="fade" showArrows={images.length>1} showDots={images.length>1} />
+ return <ImageCarousel images={images} alt={name} className="h-[360px] sm:h-[420px] md:h-[500px] rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop" autoPlay interval={6000} transition="fade" showArrows={false} showDots={images.length>1} />
 }
 
 export default function IndividualRoomClient({ type, unit }: { type: RoomType; unit: Unit }) {
