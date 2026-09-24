@@ -110,6 +110,75 @@ export function reservationReadyEmail(input:{guestName:string;reference:string;r
      Once you select your dates, complete payment to secure the room.</p>`) }
 }
 
+export type BarOrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
+
+export function barOrderStatusEmail(input: {
+  guestName: string
+  reference: string
+  status: BarOrderStatus
+  deliveryLabel: string
+  takeout: boolean
+  total: number
+  items: Array<{ drinkName: string; quantity: number; lineTotal: number }>
+}) {
+  const labels: Record<BarOrderStatus, { subject: string; title: string; message: string }> = {
+    pending: {
+      subject: 'Order received',
+      title: 'Your order has been received',
+      message: 'We have received your Annex Bar order and the bar team has been notified.',
+    },
+    accepted: {
+      subject: 'Order accepted',
+      title: 'Your order has been accepted',
+      message: 'The Annex Bar team has accepted your order and will begin preparing it shortly.',
+    },
+    preparing: {
+      subject: 'Your order is being prepared',
+      title: 'Your order is being prepared',
+      message: 'The Annex Bar team is now preparing your order.',
+    },
+    ready: {
+      subject: 'Your order is ready',
+      title: 'Your order is ready',
+      message: input.takeout
+        ? 'Your order is ready for pickup from the Annex Bar.'
+        : 'Your order is ready and the team is arranging delivery to your selected location.',
+    },
+    delivered: {
+      subject: 'Order delivered',
+      title: 'Your order has been delivered',
+      message: 'Your Annex Bar order has been marked as delivered. We hope you enjoy it.',
+    },
+    cancelled: {
+      subject: 'Order cancelled',
+      title: 'Your order has been cancelled',
+      message: 'Your Annex Bar order has been cancelled by the hotel team. Please contact the hotel if you need assistance.',
+    },
+  }
+
+  const current = labels[input.status]
+  const itemRows = input.items.map(item =>
+    `<tr><td style="padding:7px 0;color:#566079">${item.quantity} × ${escapeHtml(item.drinkName)}</td><td style="padding:7px 0;text-align:right;font-weight:600">${money(item.lineTotal)}</td></tr>`
+  ).join('')
+  const detailsHtml = `<div style="background:#f8f6f0;border:1px solid #e9e4d8;padding:20px;margin:24px 0">
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr><td style="padding:6px 0;color:#777f91">Order reference</td><td style="padding:6px 0;text-align:right;font-weight:700">${escapeHtml(input.reference)}</td></tr>
+      <tr><td style="padding:6px 0;color:#777f91">Service</td><td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(input.takeout ? 'Takeaway / Pickup' : input.deliveryLabel)}</td></tr>
+      ${itemRows}
+      <tr><td style="padding:12px 0 6px;border-top:1px solid #e5e1d7;color:#777f91">Total paid</td><td style="padding:12px 0 6px;border-top:1px solid #e5e1d7;text-align:right;font-weight:700">${money(input.total)}</td></tr>
+    </table>
+  </div>`
+  const itemText = input.items.map(item => `${item.quantity} × ${item.drinkName} — ${money(item.lineTotal)}`).join('\n')
+  return {
+    subject: `${current.subject} — ${input.reference} | Blue Pair Hotel`,
+    text: `Hello ${input.guestName || 'Guest'},\n\n${current.message}\n\nOrder: ${input.reference}\nService: ${input.takeout ? 'Takeaway / Pickup' : input.deliveryLabel}\nStatus: ${current.title}\n\nItems:\n${itemText}\n\nTotal paid: ${money(input.total)}\n\nBlue Pair Hotel, Uromi.`,
+    html: layout(current.title, `<p style="font-size:16px">Hello ${escapeHtml(input.guestName || 'Guest')},</p>
+      <p style="color:#566079;line-height:1.7">${escapeHtml(current.message)}</p>
+      ${detailsHtml}
+      <p style="margin-top:28px;color:#566079;line-height:1.7">You will receive another email when the order moves to its next status.</p>`)
+  }
+}
+
 export function eventReservationGuestEmail(input:{guestName:string;reservationId:string;eventTitle:
   string;eventDate:string;guestCount:number;status:string;staffNote?:string}) {
   const label = input.status === 'reserved' ? 'Reservation confirmed' : input.status === 'declined' ? 
