@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag } from 'lucide-react'
+import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag, CheckCircle2 } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
@@ -41,47 +41,99 @@ export default async function DashboardPage() {
   const roomName = upcoming?.roomNumber ? `Room ${upcoming.roomNumber}` : (upcoming?.room?.name || 'Your Blue Pair stay')
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-[1280px]">
       <GuestDateWeather />
 
-      <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
-        {isAdmin && <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-900 hover:bg-gold-500/20"><ShieldCheck size={14} /> Admin Portal</Link>}
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
-        <span className="rounded-full border border-navy-900/10 bg-white/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-navy-800 backdrop-blur-md shadow-sm">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow">Guest portal</p>
+          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-navy-950 md:text-4xl">Welcome back, {firstName}</h1>
+          <p className="mt-1.5 max-w-2xl text-sm text-navy-500">Everything you need for your stay, services and Blue Pair experience — in one place.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isAdmin && <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-900 hover:bg-gold-500/20"><ShieldCheck size={14} /> Admin Portal</Link>}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
+        </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[260px] md:min-h-[340px] text-white shadow-pop">
-        <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/60 via-navy-950/25 to-navy-950/10 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-cream-50 via-cream-50/80 to-transparent pointer-events-none" />
+      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 text-white shadow-pop">
+        <div className="relative h-[270px] md:h-[300px]">
+          <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-950/85 via-navy-950/45 to-navy-950/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 p-5 md:p-7">
+            <div className="max-w-xl">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur-md">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
+              <h2 className="mt-2 font-display text-2xl font-semibold md:text-3xl">{upcoming ? roomName : 'Your Blue Pair experience starts here'}</h2>
+              <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-white/75">{upcoming ? `${formatDate(upcoming.checkIn)} — ${formatDate(upcoming.checkOut)} · ${upcoming.adults} adults` : 'Explore rooms, dining, amenities and everything waiting for you at Blue Pair.'}</p>
+            </div>
+            <Link href={upcoming ? '/account/bookings' : '/rooms'} className="hidden shrink-0 items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[11px] font-bold text-navy-950 shadow-lg transition hover:-translate-y-0.5 sm:inline-flex">{upcoming ? 'View stay' : 'Explore rooms'} <ArrowRight size={14} /></Link>
+          </div>
+        </div>
       </section>
 
       {upcoming ? (
-        <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-lg font-semibold text-navy-950">{roomName}</h2></div></div><StatusBadge status={upcoming.status} /></div>
-          <div className="grid grid-cols-2 gap-3 pt-3 text-xs"><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span><p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p></div><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span><p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p></div></div>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><span className="text-[10px] text-navy-400">Ref: {upcoming.reference}</span><div className="flex gap-2"><Link href="/account/bookings" className="btn-outline btn-sm flex-1 sm:flex-none">View reservation</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div>
+        <section className="mt-4 mb-7 overflow-hidden rounded-2xl border border-gold-500/20 bg-white shadow-sm">
+          <div className="flex flex-col gap-5 p-5 md:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div>
+                <div className="min-w-0"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="truncate font-display text-lg font-semibold text-navy-950">{roomName}</h2></div>
+                <StatusBadge status={upcoming.status} />
+              </div>
+              <div className="mt-4 grid max-w-2xl grid-cols-2 gap-2.5">
+                <div className="rounded-xl bg-cream-100/70 px-3.5 py-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span><p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p></div>
+                <div className="rounded-xl bg-cream-100/70 px-3.5 py-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span><p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p></div>
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2 lg:min-w-[210px] lg:border-l lg:border-black/5 lg:pl-6">
+              <span className="text-[10px] text-navy-400">Ref: {upcoming.reference}</span>
+              <Link href="/account/bookings" className="btn-outline btn-sm justify-center">View reservation</Link>
+              {['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}
+            </div>
+          </div>
         </section>
       ) : (
-        <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
+        <section className="mt-4 mb-7 rounded-2xl border border-gold-500/20 bg-white p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div>
+            <div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-lg font-semibold text-navy-950">No reservation yet</h2><p className="mt-1 text-xs text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></div>
+            <Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-4 py-2.5 text-[11px] font-bold text-navy-950 transition hover:bg-gold-400">Browse rooms</Link>
+          </div>
+        </section>
       )}
 
-      <div className="grid grid-cols-3 gap-2.5 md:gap-3 mb-8"><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><UtensilsCrossed size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Room service</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Order something in</span></Link><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><Sparkles size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Request help</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">We are here for you</span></Link><Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link></div>
-
       <section className="mb-8">
-        <div className="flex items-end justify-between gap-4 mb-4">
-          <div><span className="eyebrow">Food & drinks</span><h2 className="text-xl md:text-2xl font-semibold mt-1">Your Annex orders</h2><p className="text-sm text-navy-500 mt-1">Track your latest food and drink orders. Pending orders can still be modified or cancelled.</p></div>
-          <Link href="/account/orders" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900">Manage orders <ArrowRight size={14} /></Link>
+        <div className="mb-3.5 flex items-end justify-between"><div><span className="eyebrow">At your service</span><h2 className="mt-1 text-xl font-semibold text-navy-950 md:text-2xl">Quick access</h2></div></div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Link href="/account/requests" className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold-500/25 hover:shadow-pop md:p-5"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><UtensilsCrossed size={20} /></div><div className="min-w-0"><span className="block text-sm font-semibold text-navy-950">Room service</span><span className="mt-0.5 block text-[11px] text-navy-400">Order something in</span></div><ArrowRight size={15} className="ml-auto text-navy-300 transition group-hover:translate-x-1 group-hover:text-gold-600" /></Link>
+          <Link href="/account/requests" className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold-500/25 hover:shadow-pop md:p-5"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><Sparkles size={20} /></div><div className="min-w-0"><span className="block text-sm font-semibold text-navy-950">Request help</span><span className="mt-0.5 block text-[11px] text-navy-400">We are here for you</span></div><ArrowRight size={15} className="ml-auto text-navy-300 transition group-hover:translate-x-1 group-hover:text-gold-600" /></Link>
+          <Link href="/contact" className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold-500/25 hover:shadow-pop md:p-5"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><ConciergeBell size={20} /></div><div className="min-w-0"><span className="block text-sm font-semibold text-navy-950">Concierge</span><span className="mt-0.5 block text-[11px] text-navy-400">Ask us anything</span></div><ArrowRight size={15} className="ml-auto text-navy-300 transition group-hover:translate-x-1 group-hover:text-gold-600" /></Link>
         </div>
-        <div className="card divide-y divide-black/5">
-          {(annexOrders ?? []).length === 0 ? <div className="p-5 text-sm text-navy-400">No Annex orders yet. <Link href="/annex" className="font-semibold text-navy-800">Explore the Annex</Link>.</div> : (annexOrders ?? []).map((order:any) => <div key={order.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><ShoppingBag size={17} /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><b className="font-mono text-sm">{order.reference}</b><StatusBadge status={order.status === 'pending' ? 'pending' : order.status} /></div><p className="mt-1 truncate text-xs text-navy-400">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label} · ₦{Number(order.total).toLocaleString('en-NG')}</p></div></div><div className="flex items-center gap-2"><Link href="/account/orders" className="btn-outline btn-sm">View / modify</Link></div></div>)}
-        </div>
-        <Link href="/account/orders" className="mt-3 inline-flex sm:hidden items-center gap-1.5 text-sm font-semibold text-navy-900">Manage all orders <ArrowRight size={14} /></Link>
       </section>
 
-      <section className="mb-8"><div className="flex items-end justify-between gap-4 mb-4"><div><span className="eyebrow">Discover Blue Pair</span><h2 className="text-xl md:text-2xl font-semibold mt-1">Everything the hotel has to offer</h2><p className="text-sm text-navy-500 mt-1">Explore the hotel without leaving your guest space.</p></div><Link href="/" className="hidden sm:flex text-sm font-semibold items-center gap-1.5 text-navy-900">Full website <ArrowRight size={14} /></Link></div><div className="grid grid-cols-2 md:grid-cols-3 gap-3">{hotelGuide.map(item => <Link key={item.title} href={item.href} className="group card p-4 md:p-5 hover:-translate-y-0.5 hover:shadow-pop transition-all"><div className="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-600 flex items-center justify-center mb-3"><item.icon size={19} /></div><div className="font-semibold text-sm">{item.title}</div><p className="text-[11px] md:text-xs text-navy-400 leading-relaxed mt-1">{item.text}</p><span className="text-[11px] font-semibold text-navy-800 inline-flex items-center gap-1 mt-3">Explore <ArrowRight size={11} /></span></Link>)}</div></section>
+      <section className="mb-8">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div><span className="eyebrow">Food & drinks</span><h2 className="mt-1 text-xl font-semibold text-navy-950 md:text-2xl">Your Annex orders</h2><p className="mt-1 text-sm text-navy-500">Track your latest food and drink orders. Pending orders can still be modified or cancelled.</p></div>
+          <Link href="/account/orders" className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-navy-900 sm:inline-flex">Manage orders <ArrowRight size={14} /></Link>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+          {(annexOrders ?? []).length === 0 ? <div className="p-6 text-sm text-navy-400">No Annex orders yet. <Link href="/annex" className="font-semibold text-navy-800">Explore the Annex</Link>.</div> : (annexOrders ?? []).map((order:any) => <div key={order.id} className="flex flex-col gap-3 border-b border-black/5 p-4 last:border-0 sm:flex-row sm:items-center sm:justify-between md:px-5"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><ShoppingBag size={17} /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><b className="font-mono text-sm">{order.reference}</b><StatusBadge status={order.status === 'pending' ? 'pending' : order.status} /></div><p className="mt-1 truncate text-xs text-navy-400">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label} · ₦{Number(order.total).toLocaleString('en-NG')}</p></div></div><Link href="/account/orders" className="btn-outline btn-sm self-start sm:self-auto">View / modify</Link></div>)}
+        </div>
+        <Link href="/account/orders" className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900 sm:hidden">Manage all orders <ArrowRight size={14} /></Link>
+      </section>
 
-      {bookings.length > 0 && <section className="grid md:grid-cols-2 gap-6"><div><h4 className="font-semibold mb-3 text-sm">Booking history</h4><div className="card divide-y divide-black/5">{bookings.map(b => <div key={b.id} className="px-5 py-4 flex justify-between items-center"><div><b className="text-sm block">{b.room?.name ?? 'Room'}</b><span className="text-xs text-navy-400">{formatDate(b.checkIn)}</span></div><StatusBadge status={b.status} /></div>)}</div></div><div><h4 className="font-semibold mb-3 text-sm">Recent payments</h4><div className="card divide-y divide-black/5">{payments.length === 0 && <div className="px-5 py-4 text-sm text-navy-400">No payments yet.</div>}{payments.map(p => <div key={p.id} className="px-5 py-4 flex justify-between items-center"><div><b className="text-sm block">{p.reference}</b><span className="text-xs text-navy-400">{p.method}</span></div><div className="text-right"><b className="text-sm block">{naira(p.amount)}</b><StatusBadge status={p.status} /></div></div>)}</div></div></section>}
+      <section className="mb-8">
+        <div className="mb-4 flex items-end justify-between gap-4"><div><span className="eyebrow">Discover Blue Pair</span><h2 className="mt-1 text-xl font-semibold text-navy-950 md:text-2xl">Everything the hotel has to offer</h2><p className="mt-1 text-sm text-navy-500">Explore the hotel without leaving your guest space.</p></div><Link href="/" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-900 sm:flex">Full website <ArrowRight size={14} /></Link></div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {hotelGuide.map(item => <Link key={item.title} href={item.href} className="group flex min-h-[148px] flex-col rounded-2xl border border-black/5 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold-500/25 hover:shadow-pop md:p-5"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><item.icon size={19} /></div><div className="mt-3 font-semibold text-sm text-navy-950">{item.title}</div><p className="mt-1 flex-1 text-[11px] leading-relaxed text-navy-400 md:text-xs">{item.text}</p><span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-navy-800">Explore <ArrowRight size={11} className="transition group-hover:translate-x-0.5" /></span></Link>)}
+        </div>
+      </section>
+
+      {bookings.length > 0 && <section className="grid gap-4 md:grid-cols-2 md:gap-5">
+        <div><div className="mb-3 flex items-center gap-2"><CheckCircle2 size={15} className="text-gold-600" /><h4 className="font-semibold text-sm text-navy-950">Booking history</h4></div><div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm divide-y divide-black/5">{bookings.map(b => <div key={b.id} className="flex items-center justify-between gap-3 px-5 py-4"><div className="min-w-0"><b className="block truncate text-sm">{b.room?.name ?? 'Room'}</b><span className="text-xs text-navy-400">{formatDate(b.checkIn)}</span></div><StatusBadge status={b.status} /></div>)}</div></div>
+        <div><div className="mb-3 flex items-center gap-2"><CheckCircle2 size={15} className="text-gold-600" /><h4 className="font-semibold text-sm text-navy-950">Recent payments</h4></div><div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm divide-y divide-black/5">{payments.length === 0 && <div className="px-5 py-4 text-sm text-navy-400">No payments yet.</div>}{payments.map(p => <div key={p.id} className="flex items-center justify-between gap-3 px-5 py-4"><div className="min-w-0"><b className="block truncate text-sm">{p.reference}</b><span className="text-xs text-navy-400">{p.method}</span></div><div className="text-right"><b className="block text-sm">{naira(p.amount)}</b><StatusBadge status={p.status} /></div></div>)}</div></div>
+      </section>}
 
       {hasCheckedIn && <div className="mt-8"><ReviewForm /></div>}
     </div>
