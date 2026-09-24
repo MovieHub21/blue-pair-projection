@@ -121,21 +121,9 @@ export async function PATCH(request: Request) {
       if (Math.abs(nextTotal - Number(order.total)) > 0.001) {
         return NextResponse.json({ error: 'Item changes must keep the total unchanged. For a different total, cancel this order and place a new one.' }, { status: 409 })
       }
-      await admin.from('bar_order_items').delete().eq('order_id', order.id)
-      const { error: itemError } = await admin.from('bar_order_items').insert(nextItems.map((item:any,index:number) => ({
-        id: 'aoi_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2,6),
-        order_id: order.id,
-        drink_id: item.itemType === 'drink' ? item.id : null,
-        menu_item_id: item.itemType === 'food' ? item.id : null,
-        item_type: item.itemType,
-        drink_name: item.name,
-        unit_price: item.unitPrice,
-        quantity: item.quantity,
-        line_total: item.lineTotal,
-      })))
+      const { error: itemError } = await admin.rpc('replace_annex_order_items', { p_order_id: order.id, p_items: nextItems })
       if (itemError) throw itemError
     }
-
     const { data: updated, error } = await admin.from('bar_orders')
       .update(patch)
       .eq('id', order.id)
