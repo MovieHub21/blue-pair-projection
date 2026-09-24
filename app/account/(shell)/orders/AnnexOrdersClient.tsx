@@ -6,7 +6,7 @@ import { naira } from '../../../../lib/format'
 import { pushToast } from '../../../../components/ui/Toast'
 
 type Booking = { id: string; type: 'room' | 'short_let'; label: string; reference: string }
-type OrderItem = { id: string; drink_name: string; quantity: number; unit_price: number; line_total: number; item_type: string }
+type OrderItem = { id: string; drink_id?: string | null; menu_item_id?: string | null; drink_name: string; quantity: number; unit_price: number; line_total: number; item_type: string }
 type Order = {
   id: string; reference: string; outlet: string; delivery_location: string; delivery_label: string; takeout: boolean
   contact_email?: string | null; contact_phone?: string | null; delivery_address?: string | null; notes?: string | null
@@ -70,7 +70,7 @@ export default function AnnexOrdersClient({ activeBookings }: { activeBookings: 
       body: JSON.stringify({
         orderId: order.id,
         action: 'update',
-        items: draft.items.map(item => ({ id: item.id, name: item.drink_name, quantity: item.quantity })),
+        items: draft.items.map(item => ({ id: item.drink_id || item.menu_item_id, name: item.drink_name, quantity: item.quantity })),
         takeout: draft.takeout,
         location: draft.location,
         bookingId: draft.bookingId || null,
@@ -168,7 +168,7 @@ function EditOrderModal({ order, activeBookings, saving, onClose, onSave }: { or
     items: (order.bar_order_items ?? []).map(item => ({ ...item })),
     takeout: Boolean(order.takeout),
     location: order.takeout ? '' : order.delivery_location,
-    bookingId: '',
+    bookingId: activeBookings.find(item => item.label === order.delivery_label)?.id || '',
     deliveryLabel: order.delivery_label,
     contactEmail: order.contact_email || '',
     contactPhone: order.contact_phone || '',
