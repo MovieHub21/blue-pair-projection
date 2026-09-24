@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/gallery', priority: 0.5 }, 
     { path: '/contact', priority: 0.6 }, 
     { path: '/blog', priority: 0.7 },
+    { path: '/reviews', priority: 0.7 },
   ]
   const [posts] = await Promise.all([getPublishedBlogPosts()])
   const roomRoutes = roomTypes.map(r => ({ path: `/rooms/${r.slug}`, priority: 0.8 }))
