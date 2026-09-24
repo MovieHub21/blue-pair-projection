@@ -233,14 +233,7 @@ export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
             </div>
 
             {/* BOTTOM */}
-            <div className="flex items-center justify-between mt-7">
-              <Link
-                href="/reviews"
-                className="text-xs text-navy-400 hover:text-navy-800 transition-colors"
-              >
-                View all guest reviews
-              </Link>
-
+            <div className="flex items-center justify-end mt-7">
               <Link
                 href="/booking"
                 className="btn-outline inline-flex items-center gap-2"
