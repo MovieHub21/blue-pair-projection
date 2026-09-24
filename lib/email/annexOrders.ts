@@ -80,8 +80,10 @@ export async function sendAnnexOrderStaffEmails(admin: SupabaseClient, orderId: 
     ])
 
     const recipients = new Map<string, string>()
-    for (const member of await resolveDepartmentStaff(admin, 'annex')) {
-      if (member.email) recipients.set(member.email, member.name)
+    for (const department of ['annex', 'restaurant', 'bar'] as const) {
+      for (const member of await resolveDepartmentStaff(admin, department)) {
+        if (member.email) recipients.set(member.email, member.name)
+      }
     }
     for (const member of await resolveManagement(admin)) {
       if (member.email) recipients.set(member.email, member.name)
