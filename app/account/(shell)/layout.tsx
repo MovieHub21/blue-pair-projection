@@ -3,11 +3,15 @@ import PortalShell from '../../../components/layout/PortalShell'
 import PwaInstallPrompt from '../../../components/ui/PwaInstallPrompt'
 import { LayoutGrid, CalendarCheck, FileText, MessageSquarePlus, ShoppingBag, MessageSquare, User, PartyPopper, Bell } from 'lucide-react'
 import { getCurrentUser } from '../../../lib/account'
+import { createSupabaseServerClient } from '../../../lib/supabase/server'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 export default async function AccountShellLayout({ children }: { children: React.ReactNode }) {
   const { user, profile } = await getCurrentUser(); const userName = profile?.name || user?.email || 'Guest'
-  return <PortalShell portalName="My Account" portalTag="Customer Portal" userName={userName} userRole="Guest" groups={[{ items: [
+  const supabase = createSupabaseServerClient()
+  const { data: roleRows } = user ? await supabase.from('user_roles').select('role').eq('user_id', user.id) : { data: [] as { role: string }[] }
+  const showAdminPortal = (roleRows ?? []).some((row: any) => ['super_admin', 'manager', 'admin'].includes(row.role))
+  return <PortalShell portalName="My Account" portalTag="Customer Portal" userName={userName} userRole="Guest" showAdminPortal={showAdminPortal} groups={[{ items: [
     { href:'/account/dashboard', label:'Dashboard', icon:<LayoutGrid size={16}/>, end:true },
     { href:'/account/bookings', label:'My Bookings', icon:<CalendarCheck size={16}/> },
     { href:'/account/events', label:'Event Reservations', icon:<PartyPopper size={16}/> },
