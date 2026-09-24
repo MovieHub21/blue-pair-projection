@@ -74,6 +74,9 @@ export default async function DashboardPage() {
               <Link href="/account/requests" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><Sparkles size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Request help</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">We are here for you</span></Link>
               <Link href="/contact" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><ConciergeBell size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Concierge</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">Ask us anything</span></Link>
             </div>
+            <Link href="/annex" className="mt-3 flex items-center justify-between rounded-2xl border border-gold-500/20 bg-navy-950 px-4 py-3 text-white transition-all hover:-translate-y-0.5 hover:shadow-pop">
+              <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-500/15 text-gold-400"><ShoppingBag size={17} /></div><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-300">Food & drinks</span><p className="mt-0.5 text-xs font-medium text-white/90">Explore the Annex menu & place an order</p></div></div><ArrowRight size={16} className="text-gold-300" />
+            </Link>
           </div>
         </div>
       </div>
