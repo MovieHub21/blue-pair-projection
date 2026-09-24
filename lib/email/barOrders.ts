@@ -8,20 +8,23 @@ export async function sendBarOrderStatusEmail(admin: SupabaseClient, orderId: st
   if (!STATUS_SET.has(status as BarOrderStatus)) return
 
   try {
-    const [{ data: order }, { data: customer }, { data: items }] = await Promise.all([
-      admin.from('bar_orders').select('id,reference,customer_id,delivery_label,takeout,contact_email,total').eq('id', orderId).maybeSingle(),
-      admin.from('bar_orders').select('customer_id').eq('id', orderId).maybeSingle()
-        .then(async result => result.data?.customer_id
-          ? admin.from('customers').select('name,email').eq('id', result.data.customer_id).maybeSingle()
-          : { data: null }),
+    const { data: order } = await admin
+      .from('bar_orders')
+      .select('id,reference,customer_id,delivery_label,takeout,contact_email,total')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (!order) return
+
+    const [{ data: customer }, { data: items }] = await Promise.all([
+      admin.from('customers').select('name,email').eq('id', order.customer_id).maybeSingle(),
       admin.from('bar_order_items').select('drink_name,quantity,line_total').eq('order_id', orderId).order('id'),
     ])
-
-    if (!order || !customer?.email && !order.contact_email) return
 
     const recipient = order.takeout
       ? String(order.contact_email || '').trim().toLowerCase()
       : String(customer?.email || '').trim().toLowerCase()
+
     if (!recipient) return
 
     const dedupeKey = `bar_order_status:${order.id}:${status}`
