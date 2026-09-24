@@ -29,9 +29,9 @@ function addBookingAccountCta(html: string, text: string | undefined, subject: s
   }
 }
 
-export async function sendResendEmail(input: { to: string; subject: string; html: string; text?: string; includeAccountCta?: boolean }) {
+export async function sendResendEmail(input: { to: string; subject: string; html: string; text?: string; includeAccountCta?: boolean; idempotencyKey?: string }) {
   const bookingAccountCta = addBookingAccountCta(input.html, input.text, input.subject, input.includeAccountCta !== false)
-  const response = await fetch(RESEND_API_URL, { method: 'POST', headers: { Authorization: `Bearer ${requiredEnv('RESEND_API_KEY')}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from: requiredEnv('RESEND_FROM_EMAIL'), to: [input.to], subject: input.subject, html: addBrandLogo(bookingAccountCta.html), ...(bookingAccountCta.text ? { text: bookingAccountCta.text } : {}) }), cache: 'no-store' })
+  const response = await fetch(RESEND_API_URL, { method: 'POST', headers: { Authorization: `Bearer ${requiredEnv('RESEND_API_KEY')}`, 'Content-Type': 'application/json', ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}) }, body: JSON.stringify({ from: requiredEnv('RESEND_FROM_EMAIL'), to: [input.to], subject: input.subject, html: addBrandLogo(bookingAccountCta.html), ...(bookingAccountCta.text ? { text: bookingAccountCta.text } : {}) }), cache: 'no-store' })
   const body = await response.json().catch(() => null)
   if (!response.ok) { console.error('[resend] send failed', response.status, body); throw new Error('Unable to send email') }
   return body as { id?: string }
