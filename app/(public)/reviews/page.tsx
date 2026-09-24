@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Star } from 'lucide-react'
-import { getPublishedGuestReviews } from '../../lib/reviews'
-import { SITE_NAME, SITE_URL } from '../../lib/siteConfig'
+import { getPublishedGuestReviews } from '../../../lib/reviews'
+import { SITE_NAME, SITE_URL } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
   title: 'Guest Reviews | Blue Pair Hotel Uromi',
