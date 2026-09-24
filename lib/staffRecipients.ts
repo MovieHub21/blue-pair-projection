@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * or "role" (for example role "Reception" / department "Front Desk"). Managers and super admins are the
  * "management" group and can also be added to any notification.
  */
-export type StaffDepartment = 'reception' | 'housekeeping' | 'maintenance' | 'restaurant' | 'bar' | 'management'
+export type StaffDepartment = 'reception' | 'housekeeping' | 'maintenance' | 'restaurant' | 'bar' | 'annex' | 'management'
 
 export type StaffRecipient = { userId: string | null; email: string; name: string }
 
@@ -19,6 +19,7 @@ const DEPARTMENT_KEYWORDS: Record<Exclude<StaffDepartment, 'management'>, string
   maintenance: ['maintenance'],
   restaurant: ['restaurant', 'kitchen'],
   bar: ['bar staff', 'bartender'],
+  annex: ['annex'],
 }
 
 export function staffBelongsTo(member: { department?: string | null; role?: string | null }, department: Exclude<StaffDepartment, 'management'>) {
