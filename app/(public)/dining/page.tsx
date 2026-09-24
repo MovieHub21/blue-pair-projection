@@ -8,7 +8,7 @@ import type { MenuItem } from '../../../data/mock'
 export const metadata = buildMetadata({
   title: 'Restaurant & Bar in Uromi, Edo State | Blue Pair Dining',
   description: 'Explore dining at Blue Pair Hotel in Uromi, Edo State, with Nigerian and continental dishes, an outdoor eatery and drinks menu.',
-  keywords: 'restaurant uromi, restaurant edo state, blue pair restaurant, outdoor bar uromi, dining uromi, food menu uromi',
+  keywords: 'restaurant uromi, restaurant edo state, blue pair restaurant, outdoor bar uromi, dining uromi, food menu uromi, best restaurant in uromi',
   path: '/dining',
 })
 

@@ -65,9 +65,9 @@ export default async function DashboardPage() {
               <div className="mt-3 flex items-center justify-between gap-3"><span className="text-[10px] text-navy-400 truncate">Ref: {upcoming.reference}</span><div className="flex gap-2 shrink-0"><Link href="/account/bookings" className="btn-outline btn-sm">View reservation</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div>
             </section>
           ) : (
-            <section className="rounded-[1.5rem] border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
+            <section className="rounded-[0.5rem] border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
           )}
-          <div className="rounded-[1.5rem] border border-gold-500/15 bg-white p-4 shadow-sm">
+          <div className="rounded-[0.5rem] border border-gold-500/15 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3"><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">At your service</span><h2 className="font-display text-base font-semibold text-navy-950 mt-0.5">Make your stay effortless</h2></div><ConciergeBell size={18} className="text-gold-500" /></div>
             <div className="grid grid-cols-3 gap-2.5">
               <Link href="/account/requests" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><UtensilsCrossed size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Room service</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">Order something in</span></Link>
@@ -75,19 +75,20 @@ export default async function DashboardPage() {
               <Link href="/contact" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><ConciergeBell size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Concierge</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">Ask us anything</span></Link>
             </div>
 
-          <div className="block rounded-[1.5rem] border border-gold-500/15 bg-white p-4 shadow-sm">
-            <div>
+         
+          </div>
+           
+            <div className="rounded-[0.5rem] border border-gold-500/15 bg-white p-4 shadow-sm">
         <div className="flex items-end justify-between gap-3 mb-3">
           <div><span className="eyebrow">Food & drinks</span><h2 className="text-base font-semibold mt-1">Your Annex orders</h2><p className="text-sm text-navy-500 mt-1">Track your latest food and drink orders. Pending orders can still be modified or cancelled.</p></div>
-          <Link href="/account/orders" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900">Manage orders <ArrowRight size={14} /></Link>
+          <Link href="/account/orders" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900">View <ArrowRight size={14} /></Link>
         </div>
+        
         <div className="card divide-y divide-black/5">
           {(annexOrders ?? []).length === 0 ? <div className="p-5 text-sm text-navy-400">No Annex orders yet. <Link href="/annex" className="font-semibold text-navy-800">Explore the Annex</Link>.</div> : (annexOrders ?? []).map((order:any) => <div key={order.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><ShoppingBag size={17} /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><b className="font-mono text-sm">{order.reference}</b><StatusBadge status={order.status === 'pending' ? 'pending' : order.status} /></div><p className="mt-1 truncate text-xs text-navy-400">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label} · ₦{Number(order.total).toLocaleString('en-NG')}</p></div></div><div className="flex items-center gap-2"><Link href="/account/orders" className="btn-outline btn-sm">View / modify</Link></div></div>)}
         </div>
         <Link href="/account/orders" className="mt-3 inline-flex sm:hidden items-center gap-1.5 text-sm font-semibold text-navy-900">Manage all orders <ArrowRight size={14} /></Link>
       </div>
-          </div>
-          </div>
         </div>
       </div>
 
