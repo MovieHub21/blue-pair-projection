@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ConciergeBell, ShieldCheck, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag } from 'lucide-react'
+import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag } from 'lucide-react'
 import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
@@ -13,8 +13,6 @@ import ImageCarousel from '../../../../components/ui/ImageCarousel'
 export default async function DashboardPage() {
   const { user, profile } = await getCurrentUser()
   const supabase = createSupabaseServerClient()
-  const { data: roleRows } = user ? await supabase.from('user_roles').select('role').eq('user_id', user.id) : { data: [] as { role: string }[] }
-  const isAdmin = (roleRows ?? []).some((row: any) => ['super_admin', 'manager'].includes(row.role))
   const [bookings, payments, customerResult] = await Promise.all([getMyBookings(), getMyPayments(), user ? supabase.from('customers').select('id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null })])
   const { data: annexOrders } = customerResult?.data ? await supabase.from('bar_orders').select('id,reference,outlet,total,status,created_at,delivery_label,takeout').eq('customer_id', customerResult.data.id).order('created_at', { ascending: false }).limit(3) : { data: [] as any[] }
   const upcoming = bookings.find(b => ['confirmed', 'checked_in'].includes(b.status))
@@ -45,28 +43,60 @@ export default async function DashboardPage() {
       <GuestDateWeather />
 
       <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
-        {isAdmin && <Link href="/admin/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-navy-900 hover:bg-gold-500/20"><ShieldCheck size={14} /> Admin Portal</Link>}
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
         <span className="rounded-full border border-navy-900/10 bg-white/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-navy-800 backdrop-blur-md shadow-sm">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
       </div>
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[260px] md:min-h-[340px] text-white shadow-pop">
-        <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
-        <div className="absolute inset-0 bg-gradient-to-r from-navy-950/60 via-navy-950/25 to-navy-950/10 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-cream-50 via-cream-50/80 to-transparent pointer-events-none" />
-      </section>
-
-      {upcoming ? (
-        <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-lg font-semibold text-navy-950">{roomName}</h2></div></div><StatusBadge status={upcoming.status} /></div>
-          <div className="grid grid-cols-2 gap-3 pt-3 text-xs"><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span><p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p></div><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span><p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p></div></div>
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><span className="text-[10px] text-navy-400">Ref: {upcoming.reference}</span><div className="flex gap-2"><Link href="/account/bookings" className="btn-outline btn-sm flex-1 sm:flex-none">View reservation</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div>
+      <div className="hidden lg:grid lg:grid-cols-[1.02fr_0.98fr] gap-5 xl:gap-6 items-stretch mb-8">
+        <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[390px] text-white shadow-pop">
+          <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/75 via-navy-950/10 to-transparent pointer-events-none" />
+          <div className="absolute left-6 bottom-6 right-6 z-10">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-black/20 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md">{upcoming ? 'Your stay' : 'Blue Pair Signature'}</span>
+            <h1 className="mt-3 font-display text-2xl xl:text-3xl font-semibold text-white">{upcoming ? roomName : `Welcome back, ${firstName}`}</h1>
+            <p className="mt-1.5 max-w-md text-xs leading-relaxed text-white/70">{upcoming ? 'Everything you need for a seamless stay, right from your guest portal.' : 'Your private space to manage stays, requests, orders and more.'}</p>
+          </div>
         </section>
-      ) : (
-        <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
-      )}
+        <div className="flex flex-col gap-4">
+          {upcoming ? (
+            <section className="rounded-[1.5rem] border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3"><div className="flex items-center gap-3 min-w-0"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-lg font-semibold text-navy-950 truncate">{roomName}</h2></div></div><StatusBadge status={upcoming.status} /></div>
+              <div className="grid grid-cols-2 gap-3 pt-3 text-xs"><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span><p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p></div><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span><p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p></div></div>
+              <div className="mt-3 flex items-center justify-between gap-3"><span className="text-[10px] text-navy-400 truncate">Ref: {upcoming.reference}</span><div className="flex gap-2 shrink-0"><Link href="/account/bookings" className="btn-outline btn-sm">View reservation</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div>
+            </section>
+          ) : (
+            <section className="rounded-[1.5rem] border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
+          )}
+          <div className="rounded-[1.5rem] border border-gold-500/15 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3"><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">At your service</span><h2 className="font-display text-base font-semibold text-navy-950 mt-0.5">Make your stay effortless</h2></div><ConciergeBell size={18} className="text-gold-500" /></div>
+            <div className="grid grid-cols-3 gap-2.5">
+              <Link href="/account/requests" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><UtensilsCrossed size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Room service</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">Order something in</span></Link>
+              <Link href="/account/requests" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><Sparkles size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Request help</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">We are here for you</span></Link>
+              <Link href="/contact" className="group rounded-2xl border border-black/5 bg-cream-100/70 p-3.5 transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"><ConciergeBell size={19} className="text-gold-500 mb-2" /><span className="text-xs font-semibold block text-navy-900">Concierge</span><span className="text-[10px] leading-relaxed text-navy-400 mt-1 block">Ask us anything</span></Link>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-3 gap-2.5 md:gap-3 mb-8"><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><UtensilsCrossed size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Room service</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Order something in</span></Link><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><Sparkles size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Request help</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">We are here for you</span></Link><Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link></div>
+      <div className="lg:hidden">
+              <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[260px] md:min-h-[340px] text-white shadow-pop">
+                <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+                <div className="absolute inset-0 bg-gradient-to-r from-navy-950/60 via-navy-950/25 to-navy-950/10 pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-cream-50 via-cream-50/80 to-transparent pointer-events-none" />
+              </section>
+        
+              {upcoming ? (
+                <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-3"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-lg font-semibold text-navy-950">{roomName}</h2></div></div><StatusBadge status={upcoming.status} /></div>
+                  <div className="grid grid-cols-2 gap-3 pt-3 text-xs"><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><CalendarDays size={11} /> Stay dates</span><p className="mt-1 font-semibold text-navy-900">{formatDate(upcoming.checkIn)} → {formatDate(upcoming.checkOut)}</p></div><div className="rounded-xl bg-cream-100/70 p-3"><span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-navy-400"><Clock3 size={11} /> Guests</span><p className="mt-1 font-semibold text-navy-900">{upcoming.adults} adults</p></div></div>
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><span className="text-[10px] text-navy-400">Ref: {upcoming.reference}</span><div className="flex gap-2"><Link href="/account/bookings" className="btn-outline btn-sm flex-1 sm:flex-none">View reservation</Link>{['pending', 'confirmed'].includes(upcoming.status) && <CancelBookingButton bookingId={upcoming.id} />}</div></div>
+                </section>
+              ) : (
+                <section className="mt-3 md:mt-4 mb-5 md:mb-6 rounded-2xl border border-gold-500/20 bg-white p-4 md:p-5 shadow-sm"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><CalendarDays size={19} /></div><div className="min-w-0 flex-1"><span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold-600">Current reservation</span><h2 className="font-display text-base font-semibold text-navy-950">No reservation yet</h2></div><Link href="/rooms" className="shrink-0 rounded-xl bg-gold-500 px-3.5 py-2 text-[11px] font-semibold text-navy-950">Browse rooms</Link></div><p className="mt-2.5 text-[11px] leading-relaxed text-navy-400">Choose a room and make your next Blue Pair stay part of the experience.</p></section>
+              )}
+        
+              <div className="grid grid-cols-3 gap-2.5 md:gap-3 mb-8"><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><UtensilsCrossed size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Room service</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Order something in</span></Link><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><Sparkles size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Request help</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">We are here for you</span></Link><Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link></div>
+      </div>
 
       <section className="mb-8">
         <div className="flex items-end justify-between gap-4 mb-4">
