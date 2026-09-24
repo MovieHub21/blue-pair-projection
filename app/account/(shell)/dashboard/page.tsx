@@ -9,13 +9,15 @@ import CancelBookingButton from '../CancelBookingButton'
 import GuestDateWeather from '../../../../components/account/GuestDateWeather'
 import ReviewForm from '../ReviewForm'
 import ImageCarousel from '../../../../components/ui/ImageCarousel'
+import { ShoppingBag } from 'lucide-react'
 
 export default async function DashboardPage() {
   const { user, profile } = await getCurrentUser()
   const supabase = createSupabaseServerClient()
   const { data: roleRows } = user ? await supabase.from('user_roles').select('role').eq('user_id', user.id) : { data: [] as { role: string }[] }
   const isAdmin = (roleRows ?? []).some((row: any) => ['super_admin', 'manager'].includes(row.role))
-  const [bookings, payments] = await Promise.all([getMyBookings(), getMyPayments()])
+  const [bookings, payments, customerResult] = await Promise.all([getMyBookings(), getMyPayments(), user ? supabase.from('customers').select('id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null })])
+  const { data: annexOrders } = customerResult?.data ? await supabase.from('bar_orders').select('id,reference,outlet,total,status,created_at,delivery_label,takeout').eq('customer_id', customerResult.data.id).order('created_at', { ascending: false }).limit(3) : { data: [] as any[] }
   const upcoming = bookings.find(b => ['confirmed', 'checked_in'].includes(b.status))
   const firstName = (profile?.name || 'there').split(' ')[0]
   const hasCheckedIn = bookings.some((b: any) => b.checkedInAt || b.checked_in_at || b.status === 'checked_in' || b.status === 'checked_out')
@@ -66,6 +68,17 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-3 gap-2.5 md:gap-3 mb-8"><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><UtensilsCrossed size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Room service</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Order something in</span></Link><Link href="/account/requests" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><Sparkles size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Request help</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">We are here for you</span></Link><Link href="/contact" className="group card p-3.5 md:p-5 hover:-translate-y-0.5 transition-transform"><ConciergeBell size={20} className="mx-auto text-gold-500 mb-2" /><span className="text-xs font-semibold block text-center">Concierge</span><span className="hidden md:block text-[11px] text-navy-400 text-center mt-1">Ask us anything</span></Link></div>
+
+      <section className="mb-8">
+        <div className="flex items-end justify-between gap-4 mb-4">
+          <div><span className="eyebrow">Food & drinks</span><h2 className="text-xl md:text-2xl font-semibold mt-1">Your Annex orders</h2><p className="text-sm text-navy-500 mt-1">Track your latest food and drink orders. Pending orders can still be modified or cancelled.</p></div>
+          <Link href="/account/orders" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900">Manage orders <ArrowRight size={14} /></Link>
+        </div>
+        <div className="card divide-y divide-black/5">
+          {(annexOrders ?? []).length === 0 ? <div className="p-5 text-sm text-navy-400">No Annex orders yet. <Link href="/annex" className="font-semibold text-navy-800">Explore the Annex</Link>.</div> : (annexOrders ?? []).map((order:any) => <div key={order.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-500/10 text-gold-600"><ShoppingBag size={17} /></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><b className="font-mono text-sm">{order.reference}</b><StatusBadge status={order.status === 'pending' ? 'pending' : order.status} /></div><p className="mt-1 truncate text-xs text-navy-400">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label} · ₦{Number(order.total).toLocaleString('en-NG')}</p></div></div><div className="flex items-center gap-2"><Link href="/account/orders" className="btn-outline btn-sm">View / modify</Link></div></div>)}
+        </div>
+        <Link href="/account/orders" className="mt-3 inline-flex sm:hidden items-center gap-1.5 text-sm font-semibold text-navy-900">Manage all orders <ArrowRight size={14} /></Link>
+      </section>
 
       <section className="mb-8"><div className="flex items-end justify-between gap-4 mb-4"><div><span className="eyebrow">Discover Blue Pair</span><h2 className="text-xl md:text-2xl font-semibold mt-1">Everything the hotel has to offer</h2><p className="text-sm text-navy-500 mt-1">Explore the hotel without leaving your guest space.</p></div><Link href="/" className="hidden sm:flex text-sm font-semibold items-center gap-1.5 text-navy-900">Full website <ArrowRight size={14} /></Link></div><div className="grid grid-cols-2 md:grid-cols-3 gap-3">{hotelGuide.map(item => <Link key={item.title} href={item.href} className="group card p-4 md:p-5 hover:-translate-y-0.5 hover:shadow-pop transition-all"><div className="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-600 flex items-center justify-center mb-3"><item.icon size={19} /></div><div className="font-semibold text-sm">{item.title}</div><p className="text-[11px] md:text-xs text-navy-400 leading-relaxed mt-1">{item.text}</p><span className="text-[11px] font-semibold text-navy-800 inline-flex items-center gap-1 mt-3">Explore <ArrowRight size={11} /></span></Link>)}</div></section>
 
