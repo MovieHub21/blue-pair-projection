@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { CheckCircle2, ChevronDown, Clock3, Mail, MapPin, Package, Phone, RefreshCw, Search, Truck } from 'lucide-react'
-import { pushToast } from './Toast'
+import { pushToast } from '../ui/Toast'
 
 type BarOrder = {
   id: string
@@ -17,6 +18,7 @@ type BarOrder = {
   total: number
   status: string
   created_at: string
+  customer?: { name?: string | null; email?: string | null } | null
   bar_order_items?: Array<{
     id: string
     drink_name: string
@@ -243,7 +245,7 @@ export default function AnnexOrdersPanel({
                           {order.delivery_address && <Detail icon={<MapPin size={14} />} label="Pickup / address" value={order.delivery_address} />}
                         </>
                       ) : (
-                        <Detail icon={<Mail size={14} />} label="Account email" value="Guest account email" />
+                        {order.customer?.email && <Detail icon={<Mail size={14} />} label="Account email" value={order.customer.email} />}
                       )}
                       {order.notes && <div className="sm:col-span-2"><Detail icon={<Package size={14} />} label="Instructions" value={order.notes} /></div>}
                     </div>
@@ -274,6 +276,6 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return <div className="card p-4 sm:p-5"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-navy-400">{label}</p><p className="mt-2 text-2xl font-semibold text-navy-950">{value}</p></div>
 }
 
-function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Detail({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <div className="flex min-w-0 items-start gap-2.5"><span className="mt-0.5 text-gold-600">{icon}</span><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-navy-400">{label}</p><p className="mt-1 break-words text-xs font-medium text-navy-800">{value}</p></div></div>
 }
