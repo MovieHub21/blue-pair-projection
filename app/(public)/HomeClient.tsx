@@ -191,8 +191,10 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
         <section className="section">
           <div className="container-w">
-            <div className="mb-10 flex items-end justify-between gap-4"><SectionHeading eyebrow="Featured stays" title="Rooms & suites" /><Link href="/rooms" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-900 sm:flex">View all rooms <ArrowRight size={14} /></Link></div>
-            <div className="grid gap-6 md:grid-cols-3">{roomTypes.slice(0, 3).map(room => <RoomCard key={room.id} room={room} availableCount={availableCount(room.id)} showRoomCount />)}</div>
+            <div className="mb-10 flex items-end justify-between gap-4"><SectionHeading eyebrow="Featured stays" title="Rooms & suites" />
+            <Link href="/rooms" className="hidden items-center gap-1.5 text-sm font-semibold text-navy-900 sm:flex">View all rooms <ArrowRight size={14} /></Link></div>
+            <div className="grid gap-6 md:grid-cols-3">{roomTypes.slice(0, 3).map(room => 
+              <RoomCard key={room.id} room={room} availableCount={availableCount(room.id)} showRoomCount />)}</div>
           </div>
         </section>
 

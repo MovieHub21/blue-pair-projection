@@ -37,7 +37,7 @@ export default async function AnnexPage() {
       <section className="section">
         <div className="container-w">
           <SectionHeading eyebrow="The Annex" title="Everything the Annex has to offer"
-            subtitle="Explore the Annex outlets, dining, drinks, leisure and short-let accommodation. Select an option below to view its dedicated page." />
+            subtitle="Explore the Annex outlets, dining, drinks, leisure and short-let accommodation. " />
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
 
