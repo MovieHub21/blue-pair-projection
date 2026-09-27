@@ -5,6 +5,11 @@ import { getDrinks, getAmenity } from '../../../../lib/data'
 import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
+const ANNEX_BAR_IMAGES = [
+  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85',
+  'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=85',
+]
+
 export const metadata = buildMetadata({
   title: 'Annex Bar Drinks Menu in Uromi, Edo State | Blue Pair Hotel',
   description: 'Explore drinks at the Blue Pair Hotel Annex Bar in Uromi, Edo State, with a browsable menu of available selections.',
@@ -26,7 +31,7 @@ export default async function AnnexBarPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), barJsonLd]} />
-      <AnnexMenuExperience outlet="bar" mode="bar" eyebrow={amenity?.eyebrow || 'Drinks & nightlife'} title={amenity?.name || 'Annex Bar'} description={amenity?.description || 'A relaxed Annex bar for drinks, conversation and late-evening atmosphere.'} heroImage={amenity?.heroImage || ''} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience outlet="bar" mode="bar" eyebrow={amenity?.eyebrow || 'Drinks & nightlife'} title={amenity?.name || 'Annex Bar'} description={amenity?.description || 'A relaxed Annex bar for drinks, conversation and late-evening atmosphere.'} heroImage={ANNEX_BAR_IMAGES[0]} items={items} activeBookings={activeBookings} />
     </>
   )
 }
