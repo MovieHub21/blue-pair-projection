@@ -47,16 +47,17 @@ export default function ShortLetManagement() {
 
   async function submit() {
     if (!draft.name) return
-    const images = SHORTLET_IMAGES[sl.id] || [DEFAULT_IMAGE]
+    const id = `sl_${Date.now()}`
+    const images = SHORTLET_IMAGES[id] || [DEFAULT_IMAGE]
     const sl: ShortLet = {
-      id: `sl_${Date.now()}`,
+      id,
       name: draft.name,
       type: draft.type,
       price: Number(draft.price) || 0,
       bedrooms: Number(draft.bedrooms),
       amenities: draft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: undefined,
-      images: undefined,
+      image: images[0],
+      images,
       available: true,
       description: draft.description,
     }
@@ -67,8 +68,6 @@ export default function ShortLetManagement() {
       price: sl.price,
       bedrooms: sl.bedrooms,
       amenities: sl.amenities,
-      image: sl.image,
-      images: sl.images,
       available: sl.available,
       description: sl.description,
     })
@@ -97,15 +96,12 @@ export default function ShortLetManagement() {
 
   async function saveEdit() {
     if (!editing) return
-    const images = SHORTLET_IMAGES[editing.id] || [DEFAULT_IMAGE]
     const patch = {
       name: editDraft.name,
       type: editDraft.type,
       price: Number(editDraft.price),
       bedrooms: Number(editDraft.bedrooms),
       amenities: editDraft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: images[0],
-      images,
       description: editDraft.description,
     }
     const { error } = await supabase.from('short_lets').update(patch).eq('id', editing.id)
