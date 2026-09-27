@@ -10,6 +10,8 @@ const LINK_TTL = 60 * 60 * 24 * 365 * 10
 const MAX_DIMENSION = 1920
 const WEBP_QUALITY = 0.82
 const SKIP_BELOW_BYTES = 150 * 1024
+// site-images is currently restricted to 10 MB per object in Supabase Storage.
+const MAX_STORED_BYTES = 9.5 * 1024 * 1024
 
 /**
  * Returns a smaller copy of the image (longest side <= MAX_DIMENSION, WebP). Falls back to the
@@ -54,7 +56,17 @@ export async function optimizeImage(file: File): Promise<File> {
 
 /** Uploads an image picked from the user's device and returns a public-usable URL. */
 export async function uploadImage(original: File, folder = 'misc'): Promise<string> {
+  if (!original.type.startsWith('image/')) {
+    throw new Error('Please select an image file.')
+  }
+
   const file = await optimizeImage(original)
+
+  if (file.size > MAX_STORED_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
+    throw new Error('This image is still ' + sizeMb + ' MB after optimization. Please choose a smaller image (maximum 9.5 MB).')
+  }
+
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
@@ -63,10 +75,24 @@ export async function uploadImage(original: File, folder = 'misc'): Promise<stri
     upsert: false,
     contentType: file.type || undefined,
   })
-  if (error) throw new Error(error.message)
+
+  if (error) {
+    const code = (error as any).error || (error as any).statusCode
+    if (code === 'EntityTooLarge' || (error as any).statusCode === 413) {
+      throw new Error('This image is too large for the image storage limit. Please choose a smaller image.')
+    }
+    if ((error as any).statusCode === 401 || (error as any).statusCode === 403) {
+      throw new Error('Image upload is not permitted for this staff account. Please check the staff role assigned to this account.')
+    }
+    throw new Error(error.message)
+  }
 
   const { data, error: signErr } = await supabase.storage.from(BUCKET).createSignedUrl(path, LINK_TTL)
-  if (signErr || !data?.signedUrl) throw new Error(signErr?.message ?? 'Could not create image link')
+  if (signErr || !data?.signedUrl) {
+    try { await supabase.storage.from(BUCKET).remove([path]) } catch {}
+    throw new Error(signErr?.message ?? 'Image uploaded, but its display link could not be created.')
+  }
+
   return data.signedUrl
 }
 
