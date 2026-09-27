@@ -30,7 +30,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
     supabase
       .from('site_settings')
       .select('maintenance_mode')
-      .eq('environment', environment)
+      .eq('environment', 'production')
       .maybeSingle()
       .then(({ data, error }) => {
         if (!active) return
@@ -48,7 +48,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
     const { data, error } = await supabase
       .from('site_settings')
       .update({ maintenance_mode: next })
-      .eq('environment', environment)
+      .eq('environment', 'production')
       .select('maintenance_mode')
       .maybeSingle()
     setSaving(false)
@@ -59,7 +59,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
     }
 
     setEnabled(!!data.maintenance_mode)
-    pushToast(`Maintenance mode ${next ? 'enabled' : 'disabled'} for ${environment}`, 'success')
+    pushToast(`Maintenance mode ${next ? 'enabled' : 'disabled'} for production`, 'success')
   }
 
   return (
@@ -92,9 +92,10 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
           <ShieldCheck size={14} className={enabled ? 'text-amber-600' : 'text-emerald-600'} />
           {enabled ? 'Visitors are seeing the maintenance screen' : 'Website is live'}
         </span>
-        <span className="uppercase tracking-wider font-semibold text-navy-400">
-          {environment || '...'}
-        </span>
+
+
+        <span className="uppercase tracking-wider font-semibold text-navy-400">{environment || '...'}</span>
+
       </div>
 
       {!canEdit && <p className="text-[11px] text-navy-400 mt-3">Only a Developer or Super Admin can change this setting.</p>}
