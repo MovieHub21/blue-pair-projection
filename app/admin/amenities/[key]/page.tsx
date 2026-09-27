@@ -68,7 +68,6 @@ export default function AmenityManagementPage({ params }: { params: { key: strin
   }
 
   const gallery = CODE_AMENITY_IMAGES[k] || amenity.gallery
-  const heroImage = gallery[0] || amenity.heroImage
 
   return (
     <div>
