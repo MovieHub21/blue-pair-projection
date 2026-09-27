@@ -54,6 +54,7 @@ export async function GET(request: Request) {
       contact_email: payload.contactEmail || null,
       contact_phone: payload.contactPhone || null,
       delivery_address: payload.deliveryAddress || null,
+      service_point: payload.servicePoint || null,
       notes: payload.notes || '',
       subtotal: Number(checkout.total),
       total: Number(checkout.total),
