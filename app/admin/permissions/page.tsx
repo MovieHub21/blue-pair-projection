@@ -2,10 +2,10 @@ import { getMyPermissions } from '../../../lib/permissions'
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
 import PermissionsClient from './PermissionsClient'
 
-const ROLES = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant'] as const
+const ROLES = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant', 'developer'] as const
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin', manager: 'Manager', reception: 'Reception', housekeeping: 'Housekeeping',
-  maintenance: 'Maintenance', restaurant: 'Restaurant', bar: 'Bar', accountant: 'Accountant',
+  maintenance: 'Maintenance', restaurant: 'Restaurant', bar: 'Bar', accountant: 'Accountant', developer: 'Developer',
 }
 
 export default async function PermissionsPage() {
