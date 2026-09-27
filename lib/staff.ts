@@ -4,9 +4,9 @@ import { createSupabaseServerClient } from './supabase/server'
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin', manager: 'Manager', reception: 'Reception',
   housekeeping: 'Housekeeping', maintenance: 'Maintenance', restaurant: 'Restaurant',
-  bar: 'Bar', accountant: 'Accountant',
+  bar: 'Bar', accountant: 'Accountant', developer: 'Developer',
 }
-const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant']
+const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant', 'developer']
 
 
 export async function getCurrentStaff() {
