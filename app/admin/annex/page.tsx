@@ -234,13 +234,12 @@ export default function AnnexManagement() {
       name: shortLetDraft.name.trim(), type: shortLetDraft.type.trim(), price: Number(shortLetDraft.price) || 0,
       bedrooms: Number(shortLetDraft.bedrooms) || 1,
       amenities: shortLetDraft.amenities.split(',').map(x => x.trim()).filter(Boolean),
-      image: shortLetDraft.image, description: shortLetDraft.description,
+      image: '', description: shortLetDraft.description,
     }
     const result = editingShortLet
       ? await supabase.from('short_lets').update(patch).eq('id', editingShortLet.id)
       : await supabase.from('short_lets').insert({ id: 'sl_' + Date.now(), ...patch, available: true })
     if (result.error) return pushToast('Failed to save short-let: ' + result.error.message, 'error')
-    if (editingShortLet) { const old = shortLets.find(item => item.id === editingShortLet.id)?.image; if (old && old !== patch.image) { try { await deleteImage(old) } catch { pushToast('Short-let saved, but the old image could not be deleted from Storage.', 'error') } } }
     setEditingShortLet(null); setShowAddShortLet(false); await load(); pushToast('Short-let saved', 'success')
   }
 
@@ -259,7 +258,6 @@ export default function AnnexManagement() {
     if (!deleteShortLet) return
     const { error } = await supabase.from('short_lets').delete().eq('id', deleteShortLet.id)
     if (error) return pushToast('Failed to delete property: ' + error.message, 'error')
-    try { await deleteImage(deleteShortLet.image) } catch { pushToast('Short-let deleted, but its image could not be removed from Storage.', 'error') }
     setDeleteShortLet(null); await load(); pushToast('Short-let deleted', 'success')
   }
 
@@ -379,7 +377,7 @@ function ShortLetModal({open,draft,onChange,onClose,onSave}:{open:boolean;draft:
     <input type="number" className="field-input" placeholder="Price / night" value={draft.price} onChange={e=>onChange({...draft,price:e.target.value})}/>
     <input className="field-input" placeholder="Amenities, comma separated" value={draft.amenities} onChange={e=>onChange({...draft,amenities:e.target.value})}/>
     <textarea rows={4} className="field-input !h-auto py-2.5" placeholder="Description" value={draft.description} onChange={e=>onChange({...draft,description:e.target.value})}/>
-    <div><label className="field-label">Image URL</label><input className="field-input" value={draft.image} onChange={e=>onChange({...draft,image:e.target.value})}/><ImageUploader folder="annex/shortlets" label="Upload image" onUploaded={urls=>onChange({...draft,image:urls[0]||''})}/></div>
+    <div className="rounded-lg border border-black/10 bg-cream-50 p-3 text-xs text-navy-500">Short-let photography is code-managed. Add or replace the property image paths in <code>lib/staticImages.ts</code>. Multiple images are supported; the first image is the cover.</div>
     <button className="btn-primary w-full justify-center" onClick={onSave}>Save property</button>
   </div></Modal>
 }
