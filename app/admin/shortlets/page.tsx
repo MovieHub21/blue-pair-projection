@@ -28,7 +28,7 @@ export default function ShortLetManagement() {
 
   const loadShortLets = useCallback(async () => {
     const { data } = await supabase.from('short_lets').select('*').order('price')
-    if (data) setShortLets(data.map(mapShortLet))
+    if (data) setShortLets(data.map(mapShortLet).map(sl => ({ ...sl, image: (SHORTLET_IMAGES[sl.id] || [DEFAULT_IMAGE])[0], images: SHORTLET_IMAGES[sl.id] || [DEFAULT_IMAGE] })))
   }, [])
 
   useEffect(() => {
@@ -55,8 +55,8 @@ export default function ShortLetManagement() {
       price: Number(draft.price) || 0,
       bedrooms: Number(draft.bedrooms),
       amenities: draft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: images[0],
-      images,
+      image: undefined,
+      images: undefined,
       available: true,
       description: draft.description,
     }
