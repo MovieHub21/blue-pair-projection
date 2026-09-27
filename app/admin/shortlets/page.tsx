@@ -60,7 +60,6 @@ export default function ShortLetManagement() {
       bedrooms: sl.bedrooms,
       amenities: sl.amenities,
       image: sl.image,
-      images: undefined,
       available: sl.available,
       description: sl.description,
     })
