@@ -42,9 +42,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const [orderMessage, setOrderMessage] = useState('')
   const outletName = outlet === 'bar' ? 'Annex Bar' : outlet === 'restaurant' ? 'Annex Restaurant' : outlet === 'grilling' ? 'Annex Grilling' : 'Outdoor Eatery'
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!showOrder) return
@@ -60,6 +58,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
   const addToOrder = (item: AnnexMenuItem) => {
     if (!item.available) return
     setCart(current => {
@@ -70,6 +69,7 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   }
   const updateQuantity = (id: string, delta: number) => setCart(current => current.map(x => x.id === id ? { ...x, quantity: Math.max(0, Math.min(50, x.quantity + delta)) } : x).filter(x => x.quantity > 0))
   const cartItem = (id: string) => cart.find(x => x.id === id)
+
   const submitOrder = async () => {
     if (!cart.length) return
     if (!takeout && !location) return setOrderMessage('Choose where you want your order served.')
@@ -97,13 +97,13 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
   const orderControl = (item: AnnexMenuItem) => {
     const inCart = cartItem(item.id)
     return inCart ? (
-      <div className="flex items-center gap-1 rounded-full border border-gold-500/50 bg-gold-400/15 p-1">
-        <button type="button" aria-label={`Remove one ${item.name}`} onClick={() => updateQuantity(item.id, -1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-navy-900/15 bg-white text-sm text-navy-900">−</button>
-        <span className="w-5 text-center text-xs font-semibold">{inCart.quantity}</span>
-        <button type="button" aria-label={`Add one more ${item.name}`} onClick={() => addToOrder(item)} className="flex h-7 w-7 items-center justify-center rounded-full bg-gold-400 text-sm font-semibold text-navy-950">+</button>
+      <div className="flex items-center gap-1 rounded-full border border-gold-500/50 bg-gold-400/15 p-0.5 md:p-1">
+        <button type="button" aria-label={`Remove one ${item.name}`} onClick={() => updateQuantity(item.id, -1)} className="flex h-6 w-6 items-center justify-center rounded-full border border-navy-900/15 bg-white text-sm text-navy-900 md:h-7 md:w-7">−</button>
+        <span className="w-4 text-center text-xs font-semibold md:w-5">{inCart.quantity}</span>
+        <button type="button" aria-label={`Add one more ${item.name}`} onClick={() => addToOrder(item)} className="flex h-6 w-6 items-center justify-center rounded-full bg-gold-400 text-sm font-semibold text-navy-950 md:h-7 md:w-7">+</button>
       </div>
     ) : (
-      <button type="button" onClick={() => addToOrder(item)} className="rounded-full bg-navy-900 px-4 py-2 text-[10px] font-bold uppercase tracking-[.12em] text-white transition hover:bg-navy-800">Add</button>
+      <button type="button" onClick={() => addToOrder(item)} className="rounded-full bg-navy-900 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-white transition hover:bg-navy-800 md:px-4 md:py-2">Add</button>
     )
   }
 
@@ -133,63 +133,150 @@ export default function AnnexMenuExperience({ title, eyebrow, description, heroI
         ] : undefined}
         bottomInset
       />
+
       {mounted && createPortal(
         <>
-          <>
-              <div className="fixed inset-x-0 bottom-0 z-[90] isolate border-t border-white/10 bg-[#060B17]/95 px-4 py-3 shadow-2xl backdrop-blur-xl">
-                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-[.2em] text-white/35">Your order</p>
-                    <p className="truncate font-display text-lg text-white">{cartCount} {cartCount === 1 ? 'item' : 'items'} · {naira(cartTotal)}</p>
+          {/* Fixed bottom checkout bar — compact on mobile */}
+          <div className="fixed inset-x-0 bottom-0 z-[90] isolate border-t border-white/10 bg-[#060B17]/95 px-3 py-2.5 shadow-2xl backdrop-blur-xl md:px-4 md:py-3">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 md:gap-4">
+              <div className="min-w-0">
+                <p className="text-[8px] uppercase tracking-[.2em] text-white/35 md:text-[9px]">Your order</p>
+                <p className="truncate font-display text-base text-white md:text-lg">{cartCount} {cartCount === 1 ? 'item' : 'items'} · {naira(cartTotal)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOrder(true)}
+                disabled={!cart.length}
+                className="shrink-0 rounded-full bg-[#d7b66a] px-5 py-2.5 text-[11px] font-bold text-[#08101d] shadow-lg disabled:cursor-not-allowed disabled:opacity-35 md:px-6 md:py-3 md:text-xs"
+              >
+                Checkout
+              </button>
+            </div>
+          </div>
+
+          {/* Order panel */}
+          {showOrder && (
+            <div className="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-end justify-center overflow-hidden overscroll-none bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
+              <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain bg-[#0A1229] px-4 py-5 text-white shadow-2xl md:rounded-2xl md:p-8">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">{outletName}</span>
+                    <h2 className="mt-1 font-display text-3xl md:mt-2 md:text-4xl">Your order</h2>
                   </div>
-                  <button type="button" onClick={() => setShowOrder(true)} disabled={!cart.length} className="shrink-0 rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] shadow-lg disabled:cursor-not-allowed disabled:opacity-35">
-                    Checkout
+                  <button type="button" onClick={() => setShowOrder(false)} className="mt-1 text-xs text-white/50 md:text-sm">Close</button>
+                </div>
+
+                {/* Cart items */}
+                <div className="mt-5 divide-y divide-white/10 border-y border-white/10 md:mt-7">
+                  {cart.map(item => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 py-3 md:gap-4 md:py-4">
+                      <div>
+                        <p className="font-display text-lg md:text-xl">{item.name}</p>
+                        <p className="mt-0.5 text-xs text-white/40">{naira(item.price)} each</p>
+                      </div>
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <button type="button" onClick={() => updateQuantity(item.id, -1)} className="h-7 w-7 rounded-full border border-white/15 text-sm md:h-8 md:w-8">−</button>
+                        <span className="w-4 text-center text-sm md:w-5">{item.quantity}</span>
+                        <button type="button" onClick={() => updateQuantity(item.id, 1)} className="h-7 w-7 rounded-full border border-white/15 text-sm md:h-8 md:w-8">+</button>
+                      </div>
+                    </div>
+                  ))}
+                  {!cart.length && <p className="py-6 text-sm text-white/40 md:py-8">Your order is empty.</p>}
+                </div>
+
+                {/* Delivery options */}
+                <div className="mt-5 md:mt-7">
+                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">Where should we serve it? <span className="text-red-400">*</span></p>
+                  <div className="mt-2.5 grid gap-1.5 sm:grid-cols-2 md:mt-3 md:gap-2">
+                    {[
+                      ['room', 'Room'], ['short_let', 'Short-let'], ['bar', 'Annex Bar'], ['outdoor_eatery', 'Outdoor Eatery'], ['vip_lounge', 'VIP Lounge'],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => { if (takeout) return; setLocation(value as any); if (value !== 'room' && value !== 'short_let') setBookingId('') }}
+                        disabled={takeout}
+                        className={location === value
+                          ? 'rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-3 text-left md:p-4'
+                          : takeout
+                            ? 'cursor-not-allowed rounded-xl border border-white/5 bg-white/[.02] p-3 text-left opacity-40 md:p-4'
+                            : 'rounded-xl border border-white/10 bg-white/[.03] p-3 text-left md:p-4'}
+                      >
+                        <span className="block text-sm font-semibold">{label}</span>
+                        {(value === 'room' || value === 'short_let')
+                          ? <span className="mt-0.5 block text-xs text-white/35">{activeBookings.filter(b => b.type === value).length ? 'Choose your active booking below' : 'No active booking'}</span>
+                          : <span className="mt-0.5 block text-xs text-white/35">{activeBookings.length ? 'Available during your stay' : 'Venue service'}</span>}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Takeaway option */}
+                  <label className={takeout
+                    ? 'mt-2 flex cursor-pointer items-center gap-3 rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-3 md:mt-3 md:p-4'
+                    : 'mt-2 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[.03] p-3 md:mt-3 md:p-4'}>
+                    <input type="checkbox" checked={takeout} onChange={e => { const checked = e.target.checked; setTakeout(checked); if (checked) { setLocation(''); setBookingId('') } }} className="h-4 w-4 accent-[#d7b66a]" />
+                    <span>
+                      <span className="block text-sm font-semibold">Order as takeaway</span>
+                      <span className="mt-0.5 block text-xs text-white/35">We will arrange delivery to the address you provide. Contact details are required.</span>
+                    </span>
+                  </label>
+
+                  {/* Active bookings list */}
+                  {(location === 'room' || location === 'short_let') && (
+                    <div className="mt-2.5 space-y-1.5 md:mt-3 md:space-y-2">
+                      {activeBookings.filter(b => b.type === location).map(b => (
+                        <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-3 text-left md:p-4' : 'w-full rounded-xl border border-white/10 p-3 text-left md:p-4'}>
+                          <span className="block font-semibold">{b.label}</span>
+                          <span className="mt-0.5 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span>
+                        </button>
+                      ))}
+                      {!activeBookings.some(b => b.type === location) && (
+                        <p className="rounded-xl border border-white/10 p-3 text-xs text-white/40 md:p-4">
+                          You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Takeaway contact & address fields */}
+                  {takeout && (
+                    <>
+                      <div className="mt-3 grid gap-2.5 sm:grid-cols-2 md:mt-4 md:gap-3">
+                        <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white outline-none placeholder:text-white/25 md:p-4" />
+                        <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white outline-none placeholder:text-white/25 md:p-4" />
+                      </div>
+                      <textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} rows={2} placeholder="Delivery address *" className="mt-2.5 w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white outline-none placeholder:text-white/25 md:mt-3 md:p-4" />
+                      <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Special instructions (optional)" className="mt-2.5 w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white outline-none placeholder:text-white/25 md:mt-3 md:p-4" />
+                    </>
+                  )}
+                </div>
+
+                {orderMessage && <p className="mt-3 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d] md:mt-4">{orderMessage}</p>}
+
+                {/* Footer total + place order */}
+                <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/10 pt-4 md:mt-7 md:gap-5 md:pt-5">
+                  <div>
+                    <span className="text-xs text-white/40">Total</span>
+                    <p className="font-display text-xl md:text-2xl">{naira(cartTotal)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={
+                      !cart.length || placing ||
+                      (!takeout && !location) ||
+                      (takeout && (!contactEmail.trim() || !contactPhone.trim() || !deliveryAddress.trim())) ||
+                      ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))
+                    }
+                    onClick={() => void submitOrder()}
+                    className="rounded-full bg-[#d7b66a] px-5 py-2.5 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40 md:px-6 md:py-3"
+                  >
+                    {placing ? 'Placing order…' : 'Place order'}
                   </button>
                 </div>
               </div>
-              {showOrder && (
-                <div className="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-end justify-center overflow-hidden overscroll-none bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6">
-                  <div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain bg-[#0A1229] p-6 text-white shadow-2xl md:rounded-2xl md:p-8">
-                    <div className="flex items-start justify-between gap-5">
-                      <div><span className="text-[10px] uppercase tracking-[.25em] text-[#d7b66a]">{outletName}</span><h2 className="mt-2 font-display text-4xl">Your order</h2></div>
-                      <button type="button" onClick={() => setShowOrder(false)} className="text-sm text-white/50">Close</button>
-                    </div>
-                    <div className="mt-7 divide-y divide-white/10 border-y border-white/10">
-                      {cart.map(item => <div key={item.id} className="flex items-center justify-between gap-4 py-4"><div><p className="font-display text-xl">{item.name}</p><p className="mt-1 text-xs text-white/40">{naira(item.price)} each</p></div><div className="flex items-center gap-3"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="h-8 w-8 rounded-full border border-white/15">−</button><span className="w-5 text-center text-sm">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.id, 1)} className="h-8 w-8 rounded-full border border-white/15">+</button></div></div>)}
-                      {!cart.length && <p className="py-8 text-sm text-white/40">Your order is empty.</p>}
-                    </div>
-                    <div className="mt-7">
-                      <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">Where should we serve it? <span className="text-red-400">*</span></p>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {[
-                          ['room','Room'], ['short_let','Short-let'], ['bar','Annex Bar'], ['outdoor_eatery','Outdoor Eatery'], ['vip_lounge','VIP Lounge'],
-                        ].map(([value,label]) => <button key={value} type="button" onClick={() => { if (takeout) return; setLocation(value as any); if (value !== 'room' && value !== 'short_let') setBookingId('') }} disabled={takeout} className={location === value ? 'rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : takeout ? 'cursor-not-allowed rounded-xl border border-white/5 bg-white/[.02] p-4 text-left opacity-40' : 'rounded-xl border border-white/10 bg-white/[.03] p-4 text-left'}><span className="block text-sm font-semibold">{label}</span>{(value === 'room' || value === 'short_let') ? <span className="mt-1 block text-xs text-white/35">{activeBookings.filter(b => b.type === value).length ? 'Choose your active booking below' : 'No active booking'}</span> : <span className="mt-1 block text-xs text-white/35">{activeBookings.length ? 'Available during your stay' : 'Venue service'}</span>}</button>)}
-                      </div>
-                      <label className={takeout ? 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4' : 'mt-3 flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[.03] p-4'}>
-                    <input type="checkbox" checked={takeout} onChange={e => { const checked = e.target.checked; setTakeout(checked); if (checked) { setLocation(''); setBookingId('') } }} className="h-4 w-4 accent-[#d7b66a]" />
-                    <span><span className="block text-sm font-semibold">Order as takeaway</span><span className="mt-1 block text-xs text-white/35">We will arrange delivery to the address you provide. Contact details are required.</span></span>
-                  </label>
-                  {(location === 'room' || location === 'short_let') && <div className="mt-3 space-y-2">{activeBookings.filter(b => b.type === location).map(b => <button type="button" key={b.id} onClick={() => setBookingId(b.id)} className={bookingId === b.id ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-4 text-left' : 'w-full rounded-xl border border-white/10 p-4 text-left'}><span className="block font-semibold">{b.label}</span><span className="mt-1 block text-[10px] uppercase tracking-[.14em] text-white/35">{b.reference} · Current stay</span></button>)}{!activeBookings.some(b => b.type === location) && <p className="rounded-xl border border-white/10 p-4 text-xs text-white/40">You do not have an active {location === 'room' ? 'room' : 'short-let'} booking available for delivery.</p>}</div>}
-                      <div className="mt-7"> 
-                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]"> Order for takeaway / delivery? </p>
-                      </div>
-                      {takeout && (
-                    <>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} placeholder="Email address *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
-                        <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number *" className="w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
-                      </div>
-                      <textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} rows={3} placeholder="Delivery address *" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
-                      <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Special instructions (optional)" className="mt-3 w-full rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white outline-none placeholder:text-white/25" />
-                    </>
-                  )}
-                    </div>
-                    {orderMessage && <p className="mt-4 rounded-xl border border-[#d7b66a]/20 bg-[#d7b66a]/5 p-3 text-sm text-[#e3c77d]">{orderMessage}</p>}
-                    <div className="mt-7 flex items-center justify-between gap-5 border-t border-white/10 pt-5"><div><span className="text-xs text-white/40">Total</span><p className="font-display text-2xl">{naira(cartTotal)}</p></div><button type="button" disabled={!cart.length || placing || (!takeout && !location) || (takeout && (!contactEmail.trim() || !contactPhone.trim() || !deliveryAddress.trim())) || ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))} onClick={() => void submitOrder()} className="rounded-full bg-[#d7b66a] px-6 py-3 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40">{placing ? 'Placing order…' : 'Place order'}</button></div>
-                  </div>
-                </div>
-              )}
-            </>
+            </div>
+          )}
         </>,
         document.body,
       )}

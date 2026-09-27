@@ -44,27 +44,28 @@ export function MenuHero({ eyebrow, kicker, title, description, image, overlap =
       {image && <img src={image} alt="" fetchPriority="high" onError={hideBrokenImage} className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60" />}
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,11,23,.92)_0%,rgba(6,11,23,.6)_55%,rgba(6,11,23,.25)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-navy-950 to-transparent" />
-      <div className={'mx-auto max-w-7xl px-5 pt-16 md:px-10 md:pt-24 ' + (overlap ? 'pb-40 md:pb-48' : 'pb-16 md:pb-24')}>
-        <div className="mb-5 flex items-center gap-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[.26em] text-gold-400">{eyebrow}</span>
-          <span className="h-px w-12 bg-gold-400/70" />
-          {kicker && <span className="hidden text-[11px] uppercase tracking-[.2em] text-white/50 sm:block">{kicker}</span>}
+      <div className={'mx-auto max-w-7xl px-4 pt-12 md:px-10 md:pt-24 ' + (overlap ? 'pb-36 md:pb-48' : 'pb-12 md:pb-24')}>
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[.26em] text-gold-400 md:text-[11px]">{eyebrow}</span>
+          <span className="h-px w-10 bg-gold-400/70 md:w-12" />
+          {kicker && <span className="hidden text-[10px] uppercase tracking-[.2em] text-white/50 sm:block md:text-[11px]">{kicker}</span>}
         </div>
-        <h1 className="max-w-3xl font-display text-5xl font-semibold leading-[.95] tracking-[-.03em] [text-wrap:balance] md:text-7xl">{title}</h1>
-        <p className="mt-6 max-w-xl text-[15px] leading-7 text-white/80 md:text-base">{description}</p>
-        <div className="mt-9 flex flex-wrap items-center gap-3">
-          <a href="#menu" className="inline-flex items-center gap-2 rounded-full bg-gold-400 px-6 py-3 text-xs font-bold text-navy-950 transition hover:-translate-y-0.5 hover:bg-gold-300">
-            See the menu <ArrowDown size={15} />
+        {/* Smaller title on mobile */}
+        <h1 className="max-w-3xl font-display text-4xl font-semibold leading-[.95] tracking-[-.03em] [text-wrap:balance] md:text-7xl">{title}</h1>
+        <p className="mt-4 max-w-xl text-sm leading-6 text-white/80 md:mt-6 md:text-base md:leading-7">{description}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-9">
+          <a href="#menu" className="inline-flex items-center gap-2 rounded-full bg-gold-400 px-5 py-2.5 text-[11px] font-bold text-navy-950 transition hover:-translate-y-0.5 hover:bg-gold-300 md:px-6 md:py-3 md:text-xs">
+            See the menu <ArrowDown size={14} />
           </a>
           {actions}
-          {meta && <span className="rounded-full border border-white/15 bg-white/5 px-4 py-3 text-xs text-white/70 backdrop-blur-md">{meta}</span>}
+          {meta && <span className="rounded-full border border-white/15 bg-white/5 px-3.5 py-2.5 text-[11px] text-white/70 backdrop-blur-md md:px-4">{meta}</span>}
         </div>
       </div>
     </div>
   )
 }
 
-export const heroGhostButton = 'inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-6 py-3 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/15'
+export const heroGhostButton = 'inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-[11px] font-semibold text-white backdrop-blur-md transition hover:bg-white/15 md:px-6 md:py-3 md:text-xs'
 
 /* ------------------------------------------------------------- Closing */
 
@@ -78,18 +79,18 @@ export function MenuClosing({ eyebrow, title, description, actions, links, botto
   bottomInset?: boolean
 }) {
   return (
-    <div className={'border-t border-navy-900/10 bg-navy-950 px-5 pt-20 text-center text-white md:pt-24 ' + (bottomInset ? 'pb-36 md:pb-40' : 'pb-20 md:pb-24')}>
-      <div className="mx-auto mb-8 h-px w-16 bg-gold-400" />
+    <div className={'border-t border-navy-900/10 bg-navy-950 px-4 pt-14 text-center text-white md:px-5 md:pt-20 ' + (bottomInset ? 'pb-32 md:pb-40' : 'pb-14 md:pb-24')}>
+      <div className="mx-auto mb-7 h-px w-14 bg-gold-400 md:mb-8 md:w-16" />
       {eyebrow && <p className="mb-4 text-[10px] uppercase tracking-[.3em] text-white/45">{eyebrow}</p>}
-      <h2 className="mx-auto max-w-2xl font-display text-4xl leading-tight tracking-[-.02em] md:text-5xl">{title}</h2>
-      <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-white/65 md:text-base">{description}</p>
-      <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+      <h2 className="mx-auto max-w-2xl font-display text-3xl leading-tight tracking-[-.02em] md:text-5xl">{title}</h2>
+      <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-white/65 md:mt-5 md:leading-7">{description}</p>
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
         {actions.map(action => action.primary
-          ? <Link key={action.href} href={action.href} className="inline-flex items-center gap-2 rounded-full bg-gold-400 px-6 py-3 text-xs font-bold text-navy-950 transition hover:-translate-y-0.5 hover:bg-gold-300">{action.label} <ArrowRight size={15} /></Link>
-          : <Link key={action.href} href={action.href} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-3 text-xs font-semibold text-white transition hover:bg-white/10">{action.label}</Link>)}
+          ? <Link key={action.href} href={action.href} className="inline-flex items-center gap-2 rounded-full bg-gold-400 px-5 py-2.5 text-[11px] font-bold text-navy-950 transition hover:-translate-y-0.5 hover:bg-gold-300 md:px-6 md:py-3 md:text-xs">{action.label} <ArrowRight size={14} /></Link>
+          : <Link key={action.href} href={action.href} className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-[11px] font-semibold text-white transition hover:bg-white/10 md:px-6 md:py-3 md:text-xs">{action.label}</Link>)}
       </div>
       {links && links.length > 0 && (
-        <nav aria-label="More places to eat and drink" className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-3 text-[10px] font-semibold uppercase tracking-[.18em] text-gold-400">
+        <nav aria-label="More places to eat and drink" className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-3 text-[10px] font-semibold uppercase tracking-[.18em] text-gold-400 md:mt-10 md:gap-x-6">
           {links.map(link => <Link key={link.href} href={link.href} className="transition hover:text-gold-300">{link.label}</Link>)}
         </nav>
       )}
@@ -103,17 +104,17 @@ function SearchBox({ label, query, onChange, className = '' }: { label: string; 
   return (
     <label className={'relative block ' + className}>
       <span className="sr-only">Search {label}</span>
-      <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-navy-900/40" />
+      <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-navy-900/40 md:left-3.5" />
       <input
         type="search"
         value={query}
         onChange={event => onChange(event.target.value)}
         placeholder="Search"
-        className="h-10 w-full rounded-full border border-navy-900/10 bg-white pl-10 pr-9 text-sm outline-none transition placeholder:text-navy-900/40 focus:border-gold-500 focus:ring-4 focus:ring-gold-400/20 [&::-webkit-search-cancel-button]:hidden"
+        className="h-9 w-full rounded-full border border-navy-900/10 bg-white pl-9 pr-8 text-sm outline-none transition placeholder:text-navy-900/40 focus:border-gold-500 focus:ring-4 focus:ring-gold-400/20 [&::-webkit-search-cancel-button]:hidden md:h-10 md:pl-10"
       />
       {query.trim().length > 0 && (
-        <button type="button" aria-label="Clear search" onClick={() => onChange('')} className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-navy-900/60 hover:bg-navy-900/5">
-          <X size={14} />
+        <button type="button" aria-label="Clear search" onClick={() => onChange('')} className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-navy-900/60 hover:bg-navy-900/5 md:right-2.5">
+          <X size={13} />
         </button>
       )}
     </label>
@@ -169,16 +170,17 @@ export function MenuBrowser<T extends MenuBrowserItem>({ items, nouns = DISH_NOU
   return (
     <>
       {items.length > 0 && (
-        <div className="mx-auto mt-8 max-w-7xl px-5 md:hidden">
+        <div className="mx-auto mt-5 max-w-7xl px-4 md:hidden md:mt-8 md:px-5">
           <SearchBox label={label} query={query} onChange={setQuery} />
         </div>
       )}
 
       {/* Sticky course and search bar */}
-      <div id="menu" className={'z-30 mt-6 md:mt-16 ' + (items.length > 0 ? 'sticky top-[72px] border-y border-navy-900/10 bg-cream-50/95 backdrop-blur-md' : '')}>
+      <div id="menu" className={'z-30 mt-4 md:mt-16 ' + (items.length > 0 ? 'sticky top-[72px] border-y border-navy-900/10 bg-cream-50/95 backdrop-blur-md' : '')}>
         {items.length > 0 && (
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-3 md:flex-row md:items-center md:gap-6 md:px-10">
-            <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Menu sections">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2.5 md:flex-row md:items-center md:gap-6 md:px-10 md:py-3">
+            {/* Scrollable category pills — smaller on mobile */}
+            <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-1 md:gap-2 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Menu sections">
               {[{ name: 'All', count: items.length }, ...categories].map(option => {
                 const active = category === option.name
                 return (
@@ -187,10 +189,10 @@ export function MenuBrowser<T extends MenuBrowserItem>({ items, nouns = DISH_NOU
                     type="button"
                     aria-pressed={active}
                     onClick={() => setCategory(option.name)}
-                    className={'shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold transition ' + (active ? 'bg-navy-900 text-white' : 'border border-navy-900/10 bg-white text-navy-900/70 hover:border-gold-500 hover:text-navy-900')}
+                    className={'shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition md:px-4 md:py-2 md:text-[12px] ' + (active ? 'bg-navy-900 text-white' : 'border border-navy-900/10 bg-white text-navy-900/70 hover:border-gold-500 hover:text-navy-900')}
                   >
                     {option.name}
-                    <span className={'ml-1.5 text-[10px] font-medium ' + (active ? 'text-white/60' : 'text-navy-900/40')}>{option.count}</span>
+                    <span className={'ml-1 text-[9px] font-medium md:ml-1.5 md:text-[10px] ' + (active ? 'text-white/60' : 'text-navy-900/40')}>{option.count}</span>
                   </button>
                 )
               })}
@@ -200,28 +202,28 @@ export function MenuBrowser<T extends MenuBrowserItem>({ items, nouns = DISH_NOU
         )}
       </div>
 
-      <div className="mx-auto max-w-7xl px-5 pb-20 pt-12 md:px-10 md:pb-28 md:pt-16">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-10 md:pb-28 md:pt-16">
         <p role="status" className="sr-only">{searching ? `${countLabel(resultCount, nouns)} found` : ''}</p>
 
         {/* Featured: only when photographs exist */}
         {featured.length > 0 && category === 'All' && !searching && (
-          <div className="mb-16 md:mb-20">
-            <div className="mb-7">
-              <span className="text-[11px] font-semibold uppercase tracking-[.26em] text-gold-600">Featured</span>
-              <h2 className="mt-2 font-display text-3xl leading-tight md:text-4xl">From the {nouns.many === 'drinks' ? 'bar' : 'kitchen'}</h2>
+          <div className="mb-10 md:mb-20">
+            <div className="mb-5 md:mb-7">
+              <span className="text-[10px] font-semibold uppercase tracking-[.26em] text-gold-600 md:text-[11px]">Featured</span>
+              <h2 className="mt-1.5 font-display text-2xl leading-tight md:mt-2 md:text-4xl">From the {nouns.many === 'drinks' ? 'bar' : 'kitchen'}</h2>
             </div>
-            <ul className={'-mx-5 flex scroll-pl-5 snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:gap-5 md:overflow-visible md:px-0 md:pb-0 ' + (featured.length === 1 ? '' : featured.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3')}>
+            <ul className={'-mx-4 flex scroll-pl-4 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:gap-5 md:overflow-visible md:px-0 md:pb-0 ' + (featured.length === 1 ? '' : featured.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3')}>
               {featured.map(item => (
-                <li key={item.id} className={'group relative aspect-[4/5] w-[76%] shrink-0 snap-start overflow-hidden rounded-xl bg-navy-900 sm:w-[46%] md:w-auto ' + (featured.length === 3 ? '' : featured.length === 2 ? 'md:aspect-[4/3]' : 'md:aspect-[21/9]')}>
+                <li key={item.id} className={'group relative aspect-[4/5] w-[72%] shrink-0 snap-start overflow-hidden rounded-xl bg-navy-900 sm:w-[44%] md:w-auto ' + (featured.length === 3 ? '' : featured.length === 2 ? 'md:aspect-[4/3]' : 'md:aspect-[21/9]')}>
                   <img src={item.image} alt={item.name} loading="lazy" decoding="async" onError={hideBrokenImage} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/25 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                    <span className="text-[10px] font-semibold uppercase tracking-[.2em] text-gold-400">{cleanCategory(item)}</span>
-                    <div className="mt-1.5 flex items-end justify-between gap-4">
-                      <h3 className="font-display text-xl leading-snug text-white md:text-2xl">{item.name}</h3>
-                      <span className="shrink-0 font-display text-base text-gold-300 tabular-nums">{naira(item.price)}</span>
+                  <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
+                    <span className="text-[9px] font-semibold uppercase tracking-[.2em] text-gold-400 md:text-[10px]">{cleanCategory(item)}</span>
+                    <div className="mt-1 flex items-end justify-between gap-3 md:mt-1.5 md:gap-4">
+                      <h3 className="font-display text-lg leading-snug text-white md:text-2xl">{item.name}</h3>
+                      <span className="shrink-0 font-display text-sm text-gold-300 tabular-nums md:text-base">{naira(item.price)}</span>
                     </div>
-                    {renderAction && <div className="mt-4 flex justify-end">{renderAction(item)}</div>}
+                    {renderAction && <div className="mt-3 flex justify-end md:mt-4">{renderAction(item)}</div>}
                   </div>
                 </li>
               ))}
@@ -231,25 +233,25 @@ export function MenuBrowser<T extends MenuBrowserItem>({ items, nouns = DISH_NOU
 
         {/* One section at a time */}
         {groups.length > 0 ? (
-          <div className="space-y-14 md:space-y-16">
+          <div className="space-y-10 md:space-y-16">
             {groups.map(group => (
               <section key={group.name} aria-labelledby={`menu-section-${group.name}`} className="before:!hidden">
-                <div className="mb-3 flex items-baseline gap-4 md:mb-4">
-                  <h2 id={`menu-section-${group.name}`} className="font-display text-3xl leading-none md:text-4xl">{group.name}</h2>
+                <div className="mb-2.5 flex items-baseline gap-3 md:mb-4 md:gap-4">
+                  <h2 id={`menu-section-${group.name}`} className="font-display text-2xl leading-none md:text-4xl">{group.name}</h2>
                   <span className="h-px flex-1 bg-gold-500/40" />
-                  <span className="text-[11px] font-medium uppercase tracking-[.18em] text-navy-900/40">{countLabel(group.items.length, nouns)}</span>
+                  <span className="text-[10px] font-medium uppercase tracking-[.18em] text-navy-900/40 md:text-[11px]">{countLabel(group.items.length, nouns)}</span>
                 </div>
-                <ul className="grid gap-x-16 md:grid-cols-2">
+                <ul className="grid gap-x-12 md:grid-cols-2 md:gap-x-16">
                   {group.items.map(item => (
-                    <li key={item.id} className={'flex items-center gap-4 border-b border-navy-900/[.08] py-4 ' + (item.available ? '' : 'opacity-55')}>
-                      {item.image && <img src={item.image} alt="" loading="lazy" decoding="async" width={72} height={72} onError={hideBrokenImage} className="h-16 w-16 shrink-0 rounded-lg object-cover md:h-[72px] md:w-[72px]" />}
+                    <li key={item.id} className={'flex items-center gap-3 border-b border-navy-900/[.08] py-3 md:gap-4 md:py-4 ' + (item.available ? '' : 'opacity-55')}>
+                      {item.image && <img src={item.image} alt="" loading="lazy" decoding="async" width={64} height={64} onError={hideBrokenImage} className="h-14 w-14 shrink-0 rounded-lg object-cover md:h-[72px] md:w-[72px]" />}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-3">
-                          <h3 className="font-display text-[19px] leading-snug md:text-[21px]">{item.name}</h3>
-                          <span aria-hidden className="mb-1.5 hidden min-w-6 flex-1 self-end border-b border-dotted border-navy-900/25 sm:block" />
-                          <span className="ml-auto whitespace-nowrap font-display text-[17px] text-gold-600 tabular-nums sm:ml-0">{naira(item.price)}</span>
+                        <div className="flex items-baseline gap-2 md:gap-3">
+                          <h3 className="font-display text-[17px] leading-snug md:text-[21px]">{item.name}</h3>
+                          <span aria-hidden className="mb-1.5 hidden min-w-4 flex-1 self-end border-b border-dotted border-navy-900/25 sm:block" />
+                          <span className="ml-auto whitespace-nowrap font-display text-[15px] text-gold-600 tabular-nums sm:ml-0 md:text-[17px]">{naira(item.price)}</span>
                         </div>
-                        {!item.available && <p className="mt-1 text-[10px] font-semibold uppercase tracking-[.18em] text-red-700/80">Currently unavailable</p>}
+                        {!item.available && <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.18em] text-red-700/80">Currently unavailable</p>}
                       </div>
                       {renderAction && item.available && <div className="shrink-0">{renderAction(item)}</div>}
                     </li>
@@ -259,16 +261,16 @@ export function MenuBrowser<T extends MenuBrowserItem>({ items, nouns = DISH_NOU
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-navy-900/15 bg-white/60 px-6 py-16 text-center">
-            <h2 className="font-display text-2xl">{searching ? `Nothing matches “${query.trim()}”` : (emptyTitle || `The ${label} menu is being updated`)}</h2>
+          <div className="rounded-xl border border-dashed border-navy-900/15 bg-white/60 px-5 py-12 text-center md:px-6 md:py-16">
+            <h2 className="font-display text-xl md:text-2xl">{searching ? `Nothing matches "${query.trim()}"` : (emptyTitle || `The ${label} menu is being updated`)}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-navy-900/60">
               {searching ? 'Try a different word, or clear the search to see the whole menu.' : 'Please check back soon, or contact us and we will gladly help.'}
             </p>
-            {searching && <button type="button" onClick={() => setQuery('')} className="mt-6 rounded-full bg-navy-900 px-5 py-2.5 text-xs font-semibold text-white">Clear search</button>}
+            {searching && <button type="button" onClick={() => setQuery('')} className="mt-5 rounded-full bg-navy-900 px-5 py-2.5 text-xs font-semibold text-white md:mt-6">Clear search</button>}
           </div>
         )}
 
-        {note && <p className="mt-12 text-xs leading-6 text-navy-900/50">{note}</p>}
+        {note && <p className="mt-10 text-xs leading-6 text-navy-900/50 md:mt-12">{note}</p>}
       </div>
     </>
   )
