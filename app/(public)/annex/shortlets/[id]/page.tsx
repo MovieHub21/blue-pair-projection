@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { buildMetadata } from '../../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../../components/JsonLd'
 import { SITE_URL } from '../../../../../lib/siteConfig'
 import { getShortLets } from '../../../../../lib/data'
-import { naira } from '../../../../../lib/format'
-import { CheckCircle2, BedDouble } from 'lucide-react'
+import { BedDouble, Home } from 'lucide-react'
+import ShortLetGallery from './ShortLetGallery'
+import ShortLetAmenities from './ShortLetAmenities'
 import ShortLetBookingClient from './ShortLetBookingClient'
 
 export async function generateStaticParams() {
@@ -31,36 +33,50 @@ export default async function ShortLetDetailsPage({ params }: { params: { id: st
   const sl = shortLets.find(s => s.id === params.id)
   if (!sl) notFound()
 
-  const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Short-lets',path:'/annex/shortlets'},{name:sl.name,path:`/annex/shortlets/${sl.id}`}]
+  const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Short-lets', path: '/annex/shortlets' }, { name: sl.name, path: `/annex/shortlets/${sl.id}` }]
   const productJsonLd = {
-    '@context': 'https://schema.org', '@type': 'Product', name: sl.name, description: sl.description, image: sl.image,
+    '@context': 'https://schema.org', '@type': 'Product', name: sl.name, description: sl.description, image: sl.images,
     offers: { '@type': 'Offer', price: sl.price, priceCurrency: 'NGN', availability: sl.available ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut' },
   }
 
   return (
-    <div>
+    <div className="bg-cream-50 text-navy-900">
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), productJsonLd]} />
-      <div className="container-w px-6 md:px-10 pt-6">
-        <div className="text-xs text-navy-400 mb-4">Home / Annex / Short-lets / {sl.name}</div>
-        <div className="h-96 rounded-xl2 overflow-hidden"><img src={sl.image} alt={sl.name} className="w-full h-full object-cover" /></div>
+
+      <div className="mx-auto max-w-7xl px-5 pt-5 md:px-10 md:pt-7">
+        <ShortLetGallery images={sl.images} name={sl.name} />
       </div>
-      <section className="section grid lg:grid-cols-[1.6fr,1fr] gap-14 container-w items-start">
+
+      <div className="mx-auto grid max-w-7xl gap-12 px-5 py-10 md:px-10 md:py-14 lg:grid-cols-[1.6fr,1fr] lg:items-start lg:gap-16">
         <div>
-          <span className="eyebrow">{sl.type}</span>
-          <h1 className="text-3xl font-semibold mt-2 mb-4">{sl.name}</h1>
-          <p className="text-navy-500 leading-relaxed max-w-xl">{sl.description}</p>
-          <div className="flex items-center gap-2.5 mt-6 text-sm"><BedDouble size={16} className="text-gold-500" /><b>{sl.bedrooms} bedrooms</b></div>
-          <h4 className="font-semibold mt-8 mb-4">Amenities</h4>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {sl.amenities.map(a => <div key={a} className="flex items-center gap-2.5 text-sm text-navy-700"><CheckCircle2 size={16} className="text-gold-500" />{a}</div>)}
+          <span className="text-[11px] font-semibold uppercase tracking-[.22em] text-gold-600">{sl.type}</span>
+          <h1 className="mt-2 font-display text-3xl leading-tight text-navy-950 md:text-4xl">{sl.name}</h1>
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-navy-900/10 py-5 text-sm text-navy-700">
+            <span className="flex items-center gap-2"><Home size={16} className="text-gold-600" /> Entire home</span>
+            <span className="flex items-center gap-2"><BedDouble size={16} className="text-gold-600" /> {sl.bedrooms} bedroom{sl.bedrooms > 1 ? 's' : ''}</span>
+          </div>
+
+          <p className="mt-6 max-w-2xl text-[15px] leading-7 text-navy-700">{sl.description}</p>
+
+          <div className="mt-10 border-t border-navy-900/10 pt-8">
+            <ShortLetAmenities amenities={sl.amenities} />
           </div>
         </div>
-        <aside className="card p-6">
-          <div className="font-display text-2xl">{naira(sl.price)}<span className="text-xs font-body text-navy-400"> /night</span></div>
-          <span className={'inline-block mt-3 ' + (sl.available ? 'pill-green' : 'pill-red')}>{sl.available ? 'Available' : 'Currently booked'}</span>
-          <ShortLetBookingClient shortLet={{ id: sl.id, name: sl.name, price: sl.price, bedrooms: sl.bedrooms, available: sl.available }} />
+
+        <aside className="lg:sticky lg:top-24">
+          <div className="rounded-2xl border border-navy-900/10 bg-white p-6 shadow-[0_18px_46px_-24px_rgba(6,11,23,.25)]">
+            <ShortLetBookingClient shortLet={{ id: sl.id, name: sl.name, price: sl.price, bedrooms: sl.bedrooms, available: sl.available }} />
+          </div>
         </aside>
-      </section>
+      </div>
+
+      <div className="border-t border-navy-900/10 bg-white">
+        <div className="mx-auto max-w-7xl px-5 py-10 text-center md:px-10">
+          <p className="text-sm text-navy-500">Looking for something else in The Annex?</p>
+          <Link href="/annex/shortlets" className="mt-2 inline-block font-display text-lg text-navy-950 underline underline-offset-4 hover:text-gold-600">Browse all short-let properties</Link>
+        </div>
+      </div>
     </div>
   )
 }

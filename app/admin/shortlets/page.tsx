@@ -19,8 +19,8 @@ export default function ShortLetManagement() {
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<ShortLet | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ShortLet | null>(null)
-  const [draft, setDraft] = useState({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', image: DEFAULT_IMAGE, description: '' })
-  const [editDraft, setEditDraft] = useState({ name: '', type: '', price: '', bedrooms: '', amenities: '', image: '', description: '' })
+  const [draft, setDraft] = useState({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [DEFAULT_IMAGE] as string[], description: '' })
+  const [editDraft, setEditDraft] = useState({ name: '', type: '', price: '', bedrooms: '', amenities: '', images: [] as string[], description: '' })
 
   const loadShortLets = useCallback(async () => {
     const { data } = await supabase.from('short_lets').select('*').order('price')
@@ -43,6 +43,7 @@ export default function ShortLetManagement() {
 
   async function submit() {
     if (!draft.name) return
+    const images = draft.images.length ? draft.images : [DEFAULT_IMAGE]
     const sl: ShortLet = {
       id: `sl_${Date.now()}`,
       name: draft.name,
@@ -50,7 +51,8 @@ export default function ShortLetManagement() {
       price: Number(draft.price) || 0,
       bedrooms: Number(draft.bedrooms),
       amenities: draft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: draft.image || DEFAULT_IMAGE,
+      image: images[0],
+      images,
       available: true,
       description: draft.description,
     }
@@ -62,6 +64,7 @@ export default function ShortLetManagement() {
       bedrooms: sl.bedrooms,
       amenities: sl.amenities,
       image: sl.image,
+      images: sl.images,
       available: sl.available,
       description: sl.description,
     })
@@ -71,7 +74,7 @@ export default function ShortLetManagement() {
     }
     await loadShortLets()
     setShowAdd(false)
-    setDraft({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', image: DEFAULT_IMAGE, description: '' })
+    setDraft({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [DEFAULT_IMAGE], description: '' })
     pushToast('Short-let property added', 'success')
   }
 
@@ -83,20 +86,22 @@ export default function ShortLetManagement() {
       price: String(sl.price),
       bedrooms: String(sl.bedrooms),
       amenities: sl.amenities.join(', '),
-      image: sl.image,
+      images: sl.images.length ? sl.images : (sl.image ? [sl.image] : []),
       description: sl.description,
     })
   }
 
   async function saveEdit() {
     if (!editing) return
+    const images = editDraft.images.length ? editDraft.images : [DEFAULT_IMAGE]
     const patch = {
       name: editDraft.name,
       type: editDraft.type,
       price: Number(editDraft.price),
       bedrooms: Number(editDraft.bedrooms),
       amenities: editDraft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: editDraft.image,
+      image: images[0],
+      images,
       description: editDraft.description,
     }
     const { error } = await supabase.from('short_lets').update(patch).eq('id', editing.id)
@@ -208,13 +213,18 @@ export default function ShortLetManagement() {
             <textarea className="field-input !h-auto py-2.5" rows={3} value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} />
           </div>
           <div className="col-span-2">
-            <label className="field-label">Photo</label>
-            <div className="flex items-center gap-4">
-              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img loading="lazy" decoding="async" src={draft.image} className="w-full h-full object-cover" alt="" />
-              </div>
-              <ImageUploader folder="shortlets/new" label="Upload from device" onUploaded={urls => setDraft({ ...draft, image: urls[0] })} />
+            <label className="field-label">Photos</label>
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
+              {draft.images.map((url, i) => (
+                <div key={url + i} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-cream-100 group">
+                  <img loading="lazy" decoding="async" src={url} className="w-full h-full object-cover" alt="" />
+                  {i === 0 && <span className="absolute top-1 left-1 rounded bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5">Cover</span>}
+                  <button type="button" onClick={() => setDraft({ ...draft, images: draft.images.filter((_, x) => x !== i) })} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center">×</button>
+                </div>
+              ))}
             </div>
+            <ImageUploader folder="shortlets/new" multiple label="Upload photos" onUploaded={urls => setDraft({ ...draft, images: [...draft.images, ...urls] })} />
+            <p className="text-[11px] text-navy-400 mt-1.5">The first photo is used as the cover everywhere this property is shown.</p>
           </div>
         </div>
         <button onClick={() => void submit()} className="btn-primary w-full justify-center mt-6">Add property</button>
@@ -247,13 +257,18 @@ export default function ShortLetManagement() {
             <textarea className="field-input !h-auto py-2.5" rows={3} value={editDraft.description} onChange={e => setEditDraft({ ...editDraft, description: e.target.value })} />
           </div>
           <div className="col-span-2">
-            <label className="field-label">Photo</label>
-            <div className="flex items-center gap-4">
-              <div className="w-28 h-20 rounded-lg overflow-hidden bg-cream-100">
-                <img loading="lazy" decoding="async" src={editDraft.image} className="w-full h-full object-cover" alt="" />
-              </div>
-              <ImageUploader folder={`shortlets/${editing?.id}`} label="Upload from device" onUploaded={urls => setEditDraft({ ...editDraft, image: urls[0] })} />
+            <label className="field-label">Photos</label>
+            <div className="grid grid-cols-3 gap-2.5 mb-3">
+              {editDraft.images.map((url, i) => (
+                <div key={url + i} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-cream-100 group">
+                  <img loading="lazy" decoding="async" src={url} className="w-full h-full object-cover" alt="" />
+                  {i === 0 && <span className="absolute top-1 left-1 rounded bg-black/60 text-white text-[9px] font-semibold px-1.5 py-0.5">Cover</span>}
+                  <button type="button" onClick={() => setEditDraft({ ...editDraft, images: editDraft.images.filter((_, x) => x !== i) })} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center">×</button>
+                </div>
+              ))}
             </div>
+            <ImageUploader folder={`shortlets/${editing?.id}`} multiple label="Upload photos" onUploaded={urls => setEditDraft({ ...editDraft, images: [...editDraft.images, ...urls] })} />
+            <p className="text-[11px] text-navy-400 mt-1.5">The first photo is used as the cover everywhere this property is shown.</p>
           </div>
         </div>
         <button onClick={() => void saveEdit()} className="btn-primary w-full justify-center mt-6">Save changes</button>

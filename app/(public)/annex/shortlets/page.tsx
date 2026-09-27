@@ -2,11 +2,9 @@ import Link from 'next/link'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import PageHero from '../../../../components/layout/PageHero'
-import SectionHeading from '../../../../components/ui/SectionHeading'
 import { getShortLets } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
-import { BedDouble } from 'lucide-react'
+import { BedDouble, Users, ArrowRight } from 'lucide-react'
 
 export const metadata = buildMetadata({
   title: 'Short-let Apartments for Rent in Uromi, Edo State | Blue Pair Hotel Annex',
@@ -15,39 +13,79 @@ export const metadata = buildMetadata({
   path: '/annex/shortlets',
 })
 
-const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'},{name:'Short-lets',path:'/annex/shortlets'}]
+const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Short-lets', path: '/annex/shortlets' }]
 
 export default async function ShortLetsPage() {
   const shortLets = await getShortLets()
-  const heroImage = shortLets[0]?.image || ''
+  const heroImage = shortLets.find(sl => sl.images[1])?.images[1] || shortLets[0]?.image || ''
+
   return (
-    <div>
-      <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image={heroImage} eyebrow="Extended stays" title="Accommodation & Short-lets" crumbs="Home / Annex / Short-lets" height="h-72" />
-      <section className="section">
-        <div className="container-w">
-          <SectionHeading eyebrow="Available properties" title="Annex short-let listings" subtitle="Self-contained apartments and duplexes for stays of a week or longer, in Uromi, Edo State." />
-          <div className="grid md:grid-cols-3 gap-6">
-            {shortLets.map(sl => (
-              <div key={sl.id} className="card overflow-hidden flex flex-col">
-                <div className="h-48 relative">
-                  <img loading="lazy" decoding="async" src={sl.image} alt={sl.name} className="w-full h-full object-cover" />
-                  <span className={'absolute top-3 left-3 ' + (sl.available ? 'pill-green' : 'pill-red') + ' bg-white/95'}>{sl.available ? 'Available' : 'Booked'}</span>
-                </div>
-                <div className="p-5 flex flex-col gap-2.5 flex-1">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-semibold">{sl.name}</h4>
-                    <span className="tag">{sl.type}</span>
-                  </div>
-                  <span className="text-xs text-navy-500 flex items-center gap-1.5"><BedDouble size={13} />{sl.bedrooms} bedroom{sl.bedrooms>1?'s':''}</span>
-                  <div className="font-display text-lg">{naira(sl.price)}<span className="text-xs font-body text-navy-400"> /night</span></div>
-                  <Link href={`/annex/shortlets/${sl.id}`} className="btn-outline btn-sm mt-auto justify-center">View property</Link>
-                </div>
-              </div>
-            ))}
+    <div className="bg-cream-50 text-navy-900">
+      {/* A home to picture yourself in, not a room to book — full-bleed, quiet, no clutter. */}
+      <div className="relative isolate overflow-hidden bg-navy-950 text-white">
+        {heroImage && <img src={heroImage} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-55" />}
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(6,11,23,.5)_0%,rgba(6,11,23,.35)_45%,rgba(6,11,23,.92)_100%)]" />
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-16 md:px-10 md:pb-20 md:pt-24">
+          <span className="text-[11px] font-semibold uppercase tracking-[.26em] text-gold-400">Extended stays · The Annex</span>
+          <h1 className="mt-4 max-w-2xl font-display text-4xl font-medium leading-[1.05] tracking-[-.02em] [text-wrap:balance] md:text-6xl">A home for as long as you need one.</h1>
+          <p className="mt-5 max-w-lg text-sm leading-7 text-white/70 md:text-base">Self-contained apartments and duplexes in Uromi, Edo State — your own kitchen, your own space, and Blue Pair's hospitality close by.</p>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-5 py-14 md:px-10 md:py-20">
+        <div className="mb-9 flex items-end justify-between gap-6">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-[.24em] text-gold-600">Available now</span>
+            <h2 className="mt-2 font-display text-3xl md:text-4xl">{shortLets.length} {shortLets.length === 1 ? 'property' : 'properties'} to choose from</h2>
           </div>
         </div>
-      </section>
+
+        <div className="grid gap-x-6 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
+          {shortLets.map(sl => (
+            <Link key={sl.id} href={`/annex/shortlets/${sl.id}`} className="group block">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-navy-100">
+                <img loading="lazy" decoding="async" src={sl.image} alt={sl.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                <span className={'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold shadow-sm ' + (sl.available ? 'bg-white/95 text-emerald-700' : 'bg-white/95 text-red-600')}>
+                  {sl.available ? 'Available now' : 'Currently booked'}
+                </span>
+                {sl.images.length > 1 && (
+                  <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">{sl.images.length} photos</span>
+                )}
+              </div>
+              <div className="mt-3.5 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="truncate font-display text-lg leading-tight text-navy-950">{sl.name}</h3>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-navy-500">
+                    <BedDouble size={13} /> {sl.bedrooms} bedroom{sl.bedrooms > 1 ? 's' : ''}
+                    <span className="text-navy-300">·</span>
+                    {sl.type}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 font-display text-base text-navy-950">{naira(sl.price)} <span className="font-body text-xs font-normal text-navy-400">/ night</span></p>
+            </Link>
+          ))}
+        </div>
+
+        {shortLets.length === 0 && (
+          <div className="rounded-xl border border-dashed border-navy-900/15 bg-white/60 px-6 py-16 text-center">
+            <h3 className="font-display text-2xl">No properties listed yet</h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-navy-500">Please check back soon, or contact us and we'll gladly help you find a stay.</p>
+          </div>
+        )}
+
+        <div className="mt-16 flex flex-col items-center justify-between gap-5 rounded-2xl border border-navy-900/10 bg-white p-7 text-center sm:flex-row sm:text-left md:p-8">
+          <div>
+            <h3 className="font-display text-xl text-navy-950">Prefer a hotel room instead?</h3>
+            <p className="mt-1 text-sm text-navy-500">Rooms and suites at Blue Pair Signature are available for shorter stays.</p>
+          </div>
+          <Link href="/rooms" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-navy-950 px-6 py-3 text-xs font-bold text-white transition hover:bg-navy-900">
+            View rooms <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+
+      <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
     </div>
   )
 }

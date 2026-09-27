@@ -102,6 +102,7 @@ export interface ShortLet {
   bedrooms: number
   amenities: string[]
   image: string
+  images: string[]
   available: boolean
   description: string
 }
@@ -216,7 +217,7 @@ export const drinks: Drink[] = [
 ]
 
 export const shortLets: ShortLet[] = [
-  { id:'sl1', name:'Annex 2-Bed Apartment', type:'Apartment', price:110000, bedrooms:2, amenities:['Full kitchen','WiFi','Generator backup','Parking'], image:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80', available:true, description:'A self-contained two-bedroom apartment within the Annex, ideal for extended stays and small families.' }, { id:'sl2', name:'Annex Studio Short-let', type:'Studio', price:65000, bedrooms:1, amenities:['Kitchenette','WiFi','Generator backup'], image:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80', available:true, description:'A compact, well-furnished studio suited to solo travellers and short business trips.' }, { id:'sl3', name:'Annex 3-Bed Duplex', type:'Duplex', price:180000, bedrooms:3, amenities:['Full kitchen','WiFi','Private compound','Generator backup','Parking'], image:'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80', available:false, description:'A private duplex with its own compound, best for families or groups travelling together.' },
+  { id:'sl1', name:'Annex 2-Bed Apartment', type:'Apartment', price:110000, bedrooms:2, amenities:['Full kitchen','WiFi','Generator backup','Parking'], image:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80', images:['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80'], available:true, description:'A self-contained two-bedroom apartment within the Annex, ideal for extended stays and small families.' }, { id:'sl2', name:'Annex Studio Short-let', type:'Studio', price:65000, bedrooms:1, amenities:['Kitchenette','WiFi','Generator backup'], image:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80', images:['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80'], available:true, description:'A compact, well-furnished studio suited to solo travellers and short business trips.' }, { id:'sl3', name:'Annex 3-Bed Duplex', type:'Duplex', price:180000, bedrooms:3, amenities:['Full kitchen','WiFi','Private compound','Generator backup','Parking'], image:'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80', images:['https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80'], available:false, description:'A private duplex with its own compound, best for families or groups travelling together.' },
 ]
 
 export const events: EventItem[] = [
