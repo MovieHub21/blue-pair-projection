@@ -1,6 +1,21 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import ContentField from '../../../../components/admin/ContentField'
+
+const CODE_AMENITY_IMAGES: Record<string, string[]> = {
+  gym: ['https://www.bluepairsignature.com/blue-pair-gym.jpeg', 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=900&q=80'],
+  pool: ['/blue-pair-pool.jpeg', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80'],
+  club: ['https://www.bluepairsignature.com/CLUB2.jpg', 'https://images.unsplash.com/photo-1571266028243-d220c9e1345c?auto=format&fit=crop&w=900&q=80'],
+  games: ['https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1615117972428-52295aeb3c99?auto=format&fit=crop&w=900&q=80'],
+  'vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=900&q=80'],
+  'smoking-area': ['https://images.unsplash.com/photo-1521401830884-6c03c1c87ebb?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?auto=format&fit=crop&w=900&q=80'],
+  'annex-bar': ['https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=85'],
+  'annex-grilling': ['https://images.unsplash.com/photo-1598515213692-5f252f9a90a6?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=85'],
+  'annex-restaurant': ['https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1200&q=85'],
+  'annex-outdoor-eatery': ['https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=85'],
+  'annex-vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=85'],
+  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=85'],
+}
 import ImageUploader from '../../../../components/admin/ImageUploader'
 import DeleteConfirmDialog from '../../../../components/ui/DeleteConfirmDialog'
 import { pushToast } from '../../../../components/ui/Toast'
@@ -56,7 +71,8 @@ export default function AmenityManagementPage({ params }: { params: { key: strin
     return <p className="text-sm text-navy-400">{loading ? 'Loading…' : 'This section was not found.'}</p>
   }
 
-  const gallery = amenity.gallery
+  const gallery = CODE_AMENITY_IMAGES[k] || amenity.gallery
+  const heroImage = gallery[0] || amenity.heroImage
 
   return (
     <div>
