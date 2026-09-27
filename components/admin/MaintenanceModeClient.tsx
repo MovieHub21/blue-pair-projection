@@ -87,7 +87,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
         <span className="uppercase tracking-wider font-semibold text-navy-400">{environment}</span>
       </div>
 
-      {!canEdit && <p className="text-[11px] text-navy-400 mt-3">Only a Super Admin can change this setting.</p>}
+      {!canEdit && <p className="text-[11px] text-navy-400 mt-3">Only a Developer or Super Admin can change this setting.</p>}
     </div>
   )
 }
