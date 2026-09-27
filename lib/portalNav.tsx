@@ -26,7 +26,6 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
     { href: '/admin/menu', label: 'Menu Management', icon: <ClipboardList size={16} /> }, 
     { href: '/admin/bar', label: 'Bar Management', icon: <Martini size={16} /> }, 
      { href: '/admin/annex', label: 'Annex Management', icon: <Building2 size={16} /> }, 
-     { href: '/admin/shortlets', label: 'Short-lets', icon: <Building2 size={16} /> }, 
      { href: '/admin/events', label: 'Events', icon: <PartyPopper size={16} /> }, 
      { href: '/admin/billboards', label: 'Billboards', icon: <Image size={16} /> }, 
      { href: '/admin/offers', label: 'Offers & Promos', icon: <Tag size={16} /> },

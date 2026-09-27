@@ -16,11 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant']
 
-/**
- * Loads the staff identity, roles and section permissions together for portal layouts.
- * After the (unavoidable) auth check, the profile, role and permission lookups run in
- * parallel instead of one after another, so the layout waits for one round trip, not three.
- */
+
 export const getStaffPortalContext = cache(async () => {
   const db = createSupabaseServerClient()
   const { data: { user } } = await db.auth.getUser()
