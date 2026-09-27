@@ -1422,6 +1422,7 @@ export type Database = {
         | "restaurant"
         | "bar"
         | "accountant"
+        | "developer"
     }
     CompositeTypes: {
       [_ in never]: never
