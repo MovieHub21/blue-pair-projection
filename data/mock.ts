@@ -68,7 +68,7 @@ export interface StaffMember {
   name: string
   email: string
   phone: string
-  role: 'Super Admin' | 'Manager' | 'Reception' | 'Housekeeping' | 'Maintenance' | 'Restaurant Staff' | 'Bar Staff' | 'Accountant'
+  role: 'Super Admin' | 'Manager' | 'Reception' | 'Housekeeping' | 'Maintenance' | 'Restaurant Staff' | 'Bar Staff' | 'Accountant' | 'Developer'
   department: string
   status: 'active' | 'disabled'
   joined: string
