@@ -37,67 +37,87 @@ export async function GET(request: Request) {
 
     const payload: any = checkout.payload || {}
     const normalized = Array.isArray(payload.items) ? payload.items : []
-    const outlet = String(payload.outlet || 'bar')
-    const orderId = 'annex_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)
-    const orderReference = 'ANX-' + Date.now() + '-' + Math.random().toString(36).slice(2,7).toUpperCase()
+    if (!normalized.length) return errorUrl('empty_order')
 
-    const { error: orderError } = await admin.from('bar_orders').insert({
-      id: orderId,
-      reference: orderReference,
-      customer_id: checkout.customer_id,
-      booking_id: payload.bookingId || null,
-      outlet,
-      payment_reference: String(verification.data.reference || reference),
-      delivery_location: payload.location,
-      delivery_label: payload.deliveryLabel,
-      takeout: payload.takeout === true,
-      contact_email: payload.contactEmail || null,
-      contact_phone: payload.contactPhone || null,
-      delivery_address: payload.deliveryAddress || null,
-      notes: payload.notes || '',
-      subtotal: Number(checkout.total),
-      total: Number(checkout.total),
-      status: 'pending',
-    })
-    if (orderError) throw orderError
+    const groups = new Map<string, any[]>()
+    for (const item of normalized) {
+      const outlet = String(item.outlet || payload.outlet || 'bar')
+      const list = groups.get(outlet) || []
+      list.push(item)
+      groups.set(outlet, list)
+    }
 
-    const { error: itemError } = await admin.from('bar_order_items').insert(normalized.map((item:any,index:number) => ({
-      id: 'aoi_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2,6),
-      order_id: orderId,
-      drink_id: item.itemType === 'drink' ? item.id : null,
-      menu_item_id: item.itemType === 'food' ? item.id : null,
-      item_type: item.itemType === 'drink' ? 'drink' : 'food',
-      drink_name: item.name,
-      unit_price: item.unitPrice,
-      quantity: item.quantity,
-      line_total: item.lineTotal,
-    })))
-    if (itemError) {
-      await admin.from('bar_orders').delete().eq('id', orderId)
-      throw itemError
+    const createdOrders: { id: string; reference: string; outlet: string }[] = []
+    try {
+      for (const [outlet, items] of groups) {
+        const orderId = 'annex_' + Date.now() + '_' + Math.random().toString(36).slice(2,8)
+        const orderReference = 'ANX-' + Date.now() + '-' + Math.random().toString(36).slice(2,7).toUpperCase()
+        const { error: orderError } = await admin.from('bar_orders').insert({
+          id: orderId,
+          reference: orderReference,
+          customer_id: checkout.customer_id,
+          booking_id: payload.bookingId || null,
+          outlet,
+          payment_reference: String(verification.data.reference || reference),
+          delivery_location: payload.location,
+          delivery_label: payload.deliveryLabel,
+          takeout: payload.takeout === true,
+          contact_email: payload.contactEmail || null,
+          contact_phone: payload.contactPhone || null,
+          delivery_address: payload.deliveryAddress || null,
+          notes: payload.notes || '',
+          subtotal: items.reduce((sum:number, item:any) => sum + Number(item.lineTotal || 0), 0),
+          total: items.reduce((sum:number, item:any) => sum + Number(item.lineTotal || 0), 0),
+          status: 'pending',
+        })
+        if (orderError) throw orderError
+
+        const { error: itemError } = await admin.from('bar_order_items').insert(items.map((item:any,index:number) => ({
+          id: 'aoi_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2,6),
+          order_id: orderId,
+          drink_id: item.itemType === 'drink' ? item.id : null,
+          menu_item_id: item.itemType === 'food' ? item.id : null,
+          item_type: item.itemType === 'drink' ? 'drink' : 'food',
+          drink_name: item.name,
+          unit_price: item.unitPrice,
+          quantity: item.quantity,
+          line_total: item.lineTotal,
+        })))
+        if (itemError) throw itemError
+        createdOrders.push({ id: orderId, reference: orderReference, outlet })
+      }
+    } catch (error) {
+      for (const order of createdOrders) await admin.from('bar_orders').delete().eq('id', order.id)
+      throw error
     }
 
     await admin.from('bar_order_checkouts').update({ status: 'paid' }).eq('id', checkout.id)
-    await sendAnnexOrderStatusEmail(admin, orderId, 'pending')
-    await sendAnnexOrderStaffEmails(admin, orderId)
 
-    await notifyStaff(admin, {
-      audiences: [
-        { department: 'annex', href: '/admin/annex' },
-        { department: 'restaurant', href: '/admin/annex' },
-        { department: 'bar', href: '/admin/annex' },
-      ],
-      type: 'annex_order',
-      title: 'New Annex order — ' + orderReference,
-      body: (payload.deliveryLabel || 'Annex') + ' · ₦' + Number(checkout.total).toLocaleString('en-NG') + ' · paid',
-      metadata: { annex_order_id: orderId, reference: orderReference, outlet },
-      includeManagement: true,
-      dedupeKey: 'annex_order_paid:' + orderReference,
-    })
+    for (const order of createdOrders) {
+      await sendAnnexOrderStatusEmail(admin, order.id, 'pending')
+      await sendAnnexOrderStaffEmails(admin, order.id)
+      await notifyStaff(admin, {
+        audiences: [
+          { department: 'annex', href: '/admin/annex' },
+          { department: 'restaurant', href: '/admin/annex' },
+          { department: 'bar', href: '/admin/annex' },
+        ],
+        type: 'annex_order',
+        title: 'New Annex order — ' + order.reference,
+        body: (payload.deliveryLabel || 'Annex') + ' · ' + outletLabel(order.outlet) + ' · ₦' + Number(createdOrders.find(x => x.id === order.id) ? groups.get(order.outlet)?.reduce((sum:number, item:any) => sum + Number(item.lineTotal || 0), 0) : 0).toLocaleString('en-NG') + ' · paid',
+        metadata: { annex_order_id: order.id, reference: order.reference, outlet: order.outlet, checkout_reference: reference },
+        includeManagement: true,
+        dedupeKey: 'annex_order_paid:' + order.reference,
+      })
+    }
 
-    return NextResponse.redirect(base + '/annex/order/success?reference=' + encodeURIComponent(orderReference))
+    return NextResponse.redirect(base + '/annex/order/success?reference=' + encodeURIComponent(reference))
   } catch (error:any) {
     console.error('[annex-order-payment-callback]', error)
     return errorUrl('order_creation_failed')
   }
+}
+
+function outletLabel(outlet: string) {
+  return ({ bar: 'Annex Bar', restaurant: 'Annex Restaurant', grilling: 'Annex Grilling', outdoor_eatery: 'Outdoor Eatery' } as Record<string,string>)[outlet] || 'Annex'
 }
