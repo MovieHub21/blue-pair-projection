@@ -124,6 +124,7 @@ export default function AnnexMenuExperience({
   const [takeout, setTakeout] = useState(false)
   const [bookingId, setBookingId] = useState('')
   const [notes, setNotes] = useState('')
+  const [servicePoint, setServicePoint] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
@@ -216,6 +217,8 @@ export default function AnnexMenuExperience({
     if (takeout && !deliveryAddress.trim()) return setOrderMessage('Enter the delivery address for your takeaway order.')
     if ((location === 'room' || location === 'short_let') && !bookingId)
       return setOrderMessage('Select the current booking for that delivery location.')
+    if (!takeout && ['bar', 'outdoor_eatery', 'vip_lounge'].includes(location) && !servicePoint.trim())
+      return setOrderMessage('Tell us your table number or exact location so the team can find you.')
     setPlacing(true)
     setOrderMessage('')
     try {
@@ -232,6 +235,7 @@ export default function AnnexMenuExperience({
           contactEmail,
           contactPhone,
           deliveryAddress,
+          servicePoint,
         }),
       })
       const result = await response.json()
@@ -553,6 +557,26 @@ export default function AnnexMenuExperience({
                         </button>
                       ))}
                     </div>
+
+                    {/* Exact Annex service point */}
+                    {!takeout && ['bar', 'outdoor_eatery', 'vip_lounge'].includes(location) && (
+                      <div className="mt-3 md:mt-4">
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.2em] text-[#d7b66a]">
+                          Your exact location <span className="text-red-400">*</span>
+                        </label>
+                        <p className="mt-1 text-xs text-white/40">
+                          Tell the team where you are, for example: Table 12, by the pool, corner table, or Seat 3.
+                        </p>
+                        <input
+                          type="text"
+                          value={servicePoint}
+                          onChange={e => setServicePoint(e.target.value.slice(0, 160))}
+                          placeholder="e.g. Table 12 / by the pool / corner table"
+                          maxLength={160}
+                          className="mt-2.5 w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-white outline-none placeholder:text-white/25 md:p-4"
+                        />
+                      </div>
+                    )}
 
                     {/* Takeaway option */}
                     <label
