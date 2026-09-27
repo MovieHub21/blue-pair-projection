@@ -77,7 +77,7 @@ export default async function ShortLetsPage() {
         <div className="mt-16 flex flex-col items-center justify-between gap-5 rounded-2xl border border-navy-900/10 bg-white p-7 text-center sm:flex-row sm:text-left md:p-8">
           <div>
             <h3 className="font-display text-xl text-navy-950">Prefer a hotel room instead?</h3>
-            <p className="mt-1 text-sm text-navy-500">Rooms and suites at Blue Pair Signature are available for shorter stays.</p>
+            <p className="mt-1 text-sm text-navy-500">Rooms and suites at Blue Pair are also available.</p>
           </div>
           <Link href="/rooms" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-navy-950 px-6 py-3 text-xs font-bold text-white transition hover:bg-navy-900">
             View rooms <ArrowRight size={14} />
