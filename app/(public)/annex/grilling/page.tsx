@@ -1,8 +1,8 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getMenuItems, getAmenity } from '../../../../lib/data'
-import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
+import { getAmenity } from '../../../../lib/data'
+import { getAnnexActiveBookings, getAnnexMenuData } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 const ANNEX_GRILLING_IMAGES = [
@@ -18,8 +18,12 @@ export const metadata = buildMetadata({
 })
 
 export default async function GrillingPage() {
-  const [menuItems, amenity, activeBookings] = await Promise.all([getMenuItems(), getAmenity('annex-grilling'), getAnnexActiveBookings()])
-  const items = menuItems.filter(item => item.outlet === 'Annex Grilling')
+  const [amenity, activeBookings, annexMenu] = await Promise.all([
+    getAmenity('annex-grilling'),
+    getAnnexActiveBookings(),
+    getAnnexMenuData(),
+  ])
+  const items = annexMenu.grilling
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Annex Grilling', path: '/annex/grilling' }]
   const restaurantJsonLd = {
     '@context': 'https://schema.org',
@@ -32,7 +36,17 @@ export default async function GrillingPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
-      <AnnexMenuExperience outlet="grilling" mode="food" eyebrow={amenity?.eyebrow || 'Fire & flavour'} title={amenity?.name || 'Annex Grilling'} description={amenity?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.'} heroImage={ANNEX_GRILLING_IMAGES[0]} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience
+        outlet="grilling"
+        mode="food"
+        eyebrow={amenity?.eyebrow || 'Fire & flavour'}
+        title={amenity?.name || 'Annex Grilling'}
+        description={amenity?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.'}
+        heroImage={ANNEX_GRILLING_IMAGES[0]}
+        items={items}
+        annexMenu={annexMenu}
+        activeBookings={activeBookings}
+      />
     </>
   )
 }

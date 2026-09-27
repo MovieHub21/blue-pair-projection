@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     const contactPhone = String(body.contactPhone || '').trim().slice(0,40)
     const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0,500)
 
-    if (!OUTLETS.has(outlet)) return NextResponse.json({ error: 'Invalid Annex outlet.' }, { status: 400 })
+    const ALLOWED_OUTLETS = new Set(['bar','restaurant','grilling','outdoor_eatery','hotel_restaurant','dining','annex'])
+    if (!ALLOWED_OUTLETS.has(outlet)) return NextResponse.json({ error: 'Invalid order outlet.' }, { status: 400 })
     if (takeout && (!contactEmail || !contactPhone || !deliveryAddress)) return NextResponse.json({ error: 'Email, phone number, and delivery address are required for takeaway orders.' }, { status: 400 })
     if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one item.' }, { status: 400 })
     if (!takeout && !LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
@@ -37,34 +38,49 @@ export async function POST(request: Request) {
     const normalized: any[] = []
     let subtotal = 0
 
-    if (outlet === 'bar') {
-      const { data: drinks, error } = await admin.from('drinks').select('id,name,price,available,bar').in('id', ids).eq('bar','Annex Bar')
-      if (error) throw error
-      const map = new Map((drinks || []).map((item:any) => [item.id, item]))
-      for (const requested of requestedItems) {
-        const item = map.get(String(requested.id || ''))
-        if (!item || item.available === false) return NextResponse.json({ error: String(requested.name || 'This drink') + ' is no longer available.' }, { status: 400 })
-        const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
-        const unitPrice = Number(item.price)
-        const lineTotal = unitPrice * quantity
-        normalized.push({ id: item.id, itemType: 'drink', name: item.name, unitPrice, quantity, lineTotal })
-        subtotal += lineTotal
+    // Fetch matching drinks and menu items in parallel so customers can mix items from any outlet
+    const [drinksRes, menuRes] = await Promise.all([
+      admin.from('drinks').select('id,name,price,available,bar').in('id', ids),
+      admin.from('menu_items').select('id,name,price,available,outlet').in('id', ids),
+    ])
+    if (drinksRes.error) throw drinksRes.error
+    if (menuRes.error) throw menuRes.error
+
+    const drinksMap = new Map((drinksRes.data || []).map((d: any) => [d.id, d]))
+    const menuMap = new Map((menuRes.data || []).map((m: any) => [m.id, m]))
+
+    let hasDrink = false
+    let hasFood = false
+
+    for (const requested of requestedItems) {
+      const id = String(requested.id || '')
+      const drink = drinksMap.get(id)
+      const food = menuMap.get(id)
+      const item = drink || food
+      if (!item || item.available === false) {
+        return NextResponse.json({ error: String(requested.name || 'An item') + ' is no longer available.' }, { status: 400 })
       }
-    } else {
-      const outletName = outlet === 'restaurant' ? 'Annex Restaurant' : outlet === 'grilling' ? 'Annex Grilling' : 'Outdoor Bar & Eatery'
-      const { data: menuItems, error } = await admin.from('menu_items').select('id,name,price,available,outlet').in('id', ids).eq('outlet', outletName)
-      if (error) throw error
-      const map = new Map((menuItems || []).map((item:any) => [item.id, item]))
-      for (const requested of requestedItems) {
-        const item = map.get(String(requested.id || ''))
-        if (!item || item.available === false) return NextResponse.json({ error: String(requested.name || 'This item') + ' is no longer available.' }, { status: 400 })
-        const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
-        const unitPrice = Number(item.price)
-        const lineTotal = unitPrice * quantity
-        normalized.push({ id: item.id, itemType: 'food', name: item.name, unitPrice, quantity, lineTotal })
-        subtotal += lineTotal
-      }
+      const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
+      const unitPrice = Number(item.price)
+      const lineTotal = unitPrice * quantity
+      if (drink) hasDrink = true
+      if (food) hasFood = true
+      normalized.push({
+        id: item.id,
+        itemType: drink ? 'drink' : 'food',
+        name: item.name,
+        unitPrice,
+        quantity,
+        lineTotal,
+      })
+      subtotal += lineTotal
     }
+
+    let dbOutlet: 'bar' | 'restaurant' | 'grilling' | 'outdoor_eatery' = 'restaurant'
+    if (outlet === 'bar' || (!hasFood && hasDrink)) dbOutlet = 'bar'
+    else if (outlet === 'grilling') dbOutlet = 'grilling'
+    else if (outlet === 'outdoor_eatery') dbOutlet = 'outdoor_eatery'
+    else dbOutlet = 'restaurant'
 
     let resolvedBookingId: string | null = null
     let deliveryLabel = takeout ? 'Takeaway / Delivery' : location === 'bar' ? 'Annex Bar' : location === 'outdoor_eatery' ? 'Outdoor Eatery' : location === 'vip_lounge' ? 'VIP Lounge' : ''
@@ -88,7 +104,7 @@ export async function POST(request: Request) {
     }
 
     const checkoutReference = 'ANXPAY-' + Date.now() + '-' + Math.random().toString(36).slice(2,8).toUpperCase()
-    const payload = { items: normalized, outlet, location: takeout ? 'takeout' : location, bookingId: resolvedBookingId, takeout, deliveryLabel, notes, contactEmail, contactPhone, deliveryAddress }
+    const payload = { items: normalized, outlet: dbOutlet, location: takeout ? 'outdoor_eatery' : location, bookingId: resolvedBookingId, takeout, deliveryLabel, notes, contactEmail, contactPhone, deliveryAddress }
     const { error: checkoutError } = await admin.from('bar_order_checkouts').insert({
       id: 'aoc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
       customer_id: customer.id,

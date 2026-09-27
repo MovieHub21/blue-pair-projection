@@ -1,8 +1,8 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getAmenity, getMenuItems } from '../../../../lib/data'
-import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
+import { getAmenity } from '../../../../lib/data'
+import { getAnnexActiveBookings, getAnnexMenuData } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 const ANNEX_OUTDOOR_IMAGES = [
@@ -18,8 +18,12 @@ export const metadata = buildMetadata({
 })
 
 export default async function OutdoorEateryPage() {
-  const [amenity, menuItems, activeBookings] = await Promise.all([getAmenity('annex-outdoor-eatery'), getMenuItems(), getAnnexActiveBookings()])
-  const items = menuItems.filter(item => item.outlet === 'Outdoor Bar & Eatery' || item.outlet === 'Annex Outdoor Eatery')
+  const [amenity, activeBookings, annexMenu] = await Promise.all([
+    getAmenity('annex-outdoor-eatery'),
+    getAnnexActiveBookings(),
+    getAnnexMenuData(),
+  ])
+  const items = annexMenu.outdoor_eatery
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Outdoor Eatery', path: '/annex/outdoor-eatery' }]
   const restaurantJsonLd = {
     '@context': 'https://schema.org',
@@ -32,7 +36,17 @@ export default async function OutdoorEateryPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
-      <AnnexMenuExperience outlet="outdoor_eatery" mode="food" eyebrow={amenity?.eyebrow || 'Open-air dining'} title={amenity?.name || 'Outdoor Eatery'} description={amenity?.description || 'An open-air Annex dining space for relaxed meals and an easygoing night out.'} heroImage={ANNEX_OUTDOOR_IMAGES[0]} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience
+        outlet="outdoor_eatery"
+        mode="food"
+        eyebrow={amenity?.eyebrow || 'Open-air dining'}
+        title={amenity?.name || 'Outdoor Eatery'}
+        description={amenity?.description || 'An open-air Annex dining space for relaxed meals and an easygoing night out.'}
+        heroImage={ANNEX_OUTDOOR_IMAGES[0]}
+        items={items}
+        annexMenu={annexMenu}
+        activeBookings={activeBookings}
+      />
     </>
   )
 }

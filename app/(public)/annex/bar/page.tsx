@@ -1,8 +1,8 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getDrinks, getAmenity } from '../../../../lib/data'
-import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
+import { getAmenity } from '../../../../lib/data'
+import { getAnnexActiveBookings, getAnnexMenuData } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 const ANNEX_BAR_IMAGES = [
@@ -18,8 +18,12 @@ export const metadata = buildMetadata({
 })
 
 export default async function AnnexBarPage() {
-  const [drinks, amenity, activeBookings] = await Promise.all([getDrinks(), getAmenity('annex-bar'), getAnnexActiveBookings()])
-  const items = drinks.filter(d => d.bar === 'Annex Bar')
+  const [amenity, activeBookings, annexMenu] = await Promise.all([
+    getAmenity('annex-bar'),
+    getAnnexActiveBookings(),
+    getAnnexMenuData(),
+  ])
+  const items = annexMenu.bar
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Annex Bar', path: '/annex/bar' }]
   const barJsonLd = {
     '@context': 'https://schema.org',
@@ -31,7 +35,17 @@ export default async function AnnexBarPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), barJsonLd]} />
-      <AnnexMenuExperience outlet="bar" mode="bar" eyebrow={amenity?.eyebrow || 'Drinks & nightlife'} title={amenity?.name || 'Annex Bar'} description={amenity?.description || 'A relaxed Annex bar for drinks, conversation and late-evening atmosphere.'} heroImage={ANNEX_BAR_IMAGES[0]} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience
+        outlet="bar"
+        mode="bar"
+        eyebrow={amenity?.eyebrow || 'Drinks & nightlife'}
+        title={amenity?.name || 'Annex Bar'}
+        description={amenity?.description || 'A relaxed Annex bar for drinks, conversation and late-evening atmosphere.'}
+        heroImage={ANNEX_BAR_IMAGES[0]}
+        items={items}
+        annexMenu={annexMenu}
+        activeBookings={activeBookings}
+      />
     </>
   )
 }

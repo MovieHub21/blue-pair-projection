@@ -1,7 +1,37 @@
 import { getMyCustomer } from './account'
 import { createSupabaseAdminClient } from './supabase/admin'
+import { getMenuItems, getDrinks } from './data'
 
 export type AnnexActiveBooking = { id: string; type: 'room' | 'short_let'; label: string; reference: string }
+export type AnnexOutletKey = 'restaurant' | 'bar' | 'grilling' | 'outdoor_eatery'
+
+export type AnnexOrderItem = {
+  id: string
+  name: string
+  category: string
+  price: number
+  available: boolean
+  image?: string
+  outlet: string
+  itemType: 'food' | 'drink'
+}
+
+export type AnnexMenuData = {
+  restaurant: AnnexOrderItem[]
+  bar: AnnexOrderItem[]
+  grilling: AnnexOrderItem[]
+  outdoor_eatery: AnnexOrderItem[]
+}
+
+export async function getAnnexMenuData(): Promise<AnnexMenuData> {
+  const [menuItems, drinks] = await Promise.all([getMenuItems(), getDrinks()])
+  return {
+    restaurant: menuItems.filter(item => item.outlet === 'Annex Restaurant').map(item => ({ ...item, outlet: 'Annex Restaurant', itemType: 'food' })),
+    bar: drinks.filter(d => d.bar === 'Annex Bar').map(d => ({ ...d, outlet: 'Annex Bar', itemType: 'drink' })),
+    grilling: menuItems.filter(item => item.outlet === 'Annex Grilling').map(item => ({ ...item, outlet: 'Annex Grilling', itemType: 'food' })),
+    outdoor_eatery: menuItems.filter(item => item.outlet === 'Outdoor Bar & Eatery' || item.outlet === 'Annex Outdoor Eatery').map(item => ({ ...item, outlet: 'Outdoor Eatery', itemType: 'food' })),
+  }
+}
 
 export async function getAnnexActiveBookings(): Promise<AnnexActiveBooking[]> {
   const customer = await getMyCustomer()

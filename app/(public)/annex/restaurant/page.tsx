@@ -1,8 +1,8 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getMenuItems, getAmenity } from '../../../../lib/data'
-import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
+import { getAmenity } from '../../../../lib/data'
+import { getAnnexActiveBookings, getAnnexMenuData } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 const ANNEX_RESTAURANT_IMAGES = [
@@ -18,8 +18,12 @@ export const metadata = buildMetadata({
 })
 
 export default async function AnnexRestaurantPage() {
-  const [menuItems, amenity, activeBookings] = await Promise.all([getMenuItems(), getAmenity('annex-restaurant'), getAnnexActiveBookings()])
-  const items = menuItems.filter(item => item.outlet === 'Annex Restaurant')
+  const [amenity, activeBookings, annexMenu] = await Promise.all([
+    getAmenity('annex-restaurant'),
+    getAnnexActiveBookings(),
+    getAnnexMenuData(),
+  ])
+  const items = annexMenu.restaurant
   const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Annex Restaurant', path: '/annex/restaurant' }]
   const restaurantJsonLd = {
     '@context': 'https://schema.org',
@@ -32,7 +36,17 @@ export default async function AnnexRestaurantPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
-      <AnnexMenuExperience outlet="restaurant" mode="food" eyebrow={amenity?.eyebrow || 'Dining'} title={amenity?.name || 'Annex Restaurant'} description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.'} heroImage={ANNEX_RESTAURANT_IMAGES[0]} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience
+        outlet="restaurant"
+        mode="food"
+        eyebrow={amenity?.eyebrow || 'Dining'}
+        title={amenity?.name || 'Annex Restaurant'}
+        description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.'}
+        heroImage={ANNEX_RESTAURANT_IMAGES[0]}
+        items={items}
+        annexMenu={annexMenu}
+        activeBookings={activeBookings}
+      />
     </>
   )
 }
