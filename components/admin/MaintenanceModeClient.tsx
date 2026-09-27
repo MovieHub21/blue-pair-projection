@@ -64,7 +64,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
           <div>
             <h3 className="font-semibold">Website maintenance mode</h3>
             <p className="text-xs text-navy-400 mt-1 max-w-xl">
-              Temporarily show the Blue Pair maintenance screen to public visitors while staff and Super Admins can continue working.
+              Temporarily show the Blue Pair maintenance screen to public visitors while the developer and other authorized staff can continue working.
             </p>
           </div>
         </div>
