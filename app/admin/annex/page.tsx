@@ -5,7 +5,6 @@ import { Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import Modal from '../../../components/ui/Modal'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
 import ImageUploader from '../../../components/admin/ImageUploader'
-import { deleteImage } from '../../../lib/upload'
 import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { mapAmenity, mapDrink, mapMenuItem, mapShortLet } from '../../../lib/mappers'
@@ -37,6 +36,12 @@ type BookingRow = {
   payment_status: string
   status: string
   customers?: { name?: string; email?: string } | null
+}
+
+const SHORTLET_IMAGES: Record<string, string[]> = {
+  sl1: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=900&q=80'],
+  sl2: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80'],
+  sl3: ['https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=900&q=80', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80'],
 }
 
 const OUTLETS = [
@@ -157,11 +162,6 @@ export default function AnnexManagement() {
     }, { onConflict: 'key' })
     setSavingContent(false)
     if (error) return pushToast('Failed to save Annex content: ' + error.message, 'error')
-    const oldAmenity = amenities.find(item => item.key === amenityDraft.key)
-    if (oldAmenity?.heroImage && oldAmenity.heroImage !== amenityDraft.heroImage) { try { await deleteImage(oldAmenity.heroImage) } catch { pushToast('Content saved, but the old hero image could not be deleted from Storage.', 'error') } }
-    const oldGallery = oldAmenity?.gallery ?? []
-    const removedGallery = oldGallery.filter(url => !amenityDraft.gallery.includes(url))
-    for (const url of removedGallery) { try { await deleteImage(url) } catch { pushToast('Content saved, but one old gallery image could not be deleted from Storage.', 'error'); break } }
     await load()
     pushToast('Annex content saved', 'success')
   }
@@ -234,13 +234,12 @@ export default function AnnexManagement() {
       name: shortLetDraft.name.trim(), type: shortLetDraft.type.trim(), price: Number(shortLetDraft.price) || 0,
       bedrooms: Number(shortLetDraft.bedrooms) || 1,
       amenities: shortLetDraft.amenities.split(',').map(x => x.trim()).filter(Boolean),
-      image: shortLetDraft.image, description: shortLetDraft.description,
+      description: shortLetDraft.description,
     }
     const result = editingShortLet
       ? await supabase.from('short_lets').update(patch).eq('id', editingShortLet.id)
       : await supabase.from('short_lets').insert({ id: 'sl_' + Date.now(), ...patch, available: true })
     if (result.error) return pushToast('Failed to save short-let: ' + result.error.message, 'error')
-    if (editingShortLet) { const old = shortLets.find(item => item.id === editingShortLet.id)?.image; if (old && old !== patch.image) { try { await deleteImage(old) } catch { pushToast('Short-let saved, but the old image could not be deleted from Storage.', 'error') } } }
     setEditingShortLet(null); setShowAddShortLet(false); await load(); pushToast('Short-let saved', 'success')
   }
 
@@ -259,7 +258,6 @@ export default function AnnexManagement() {
     if (!deleteShortLet) return
     const { error } = await supabase.from('short_lets').delete().eq('id', deleteShortLet.id)
     if (error) return pushToast('Failed to delete property: ' + error.message, 'error')
-    try { await deleteImage(deleteShortLet.image) } catch { pushToast('Short-let deleted, but its image could not be removed from Storage.', 'error') }
     setDeleteShortLet(null); await load(); pushToast('Short-let deleted', 'success')
   }
 
@@ -379,7 +377,7 @@ function ShortLetModal({open,draft,onChange,onClose,onSave}:{open:boolean;draft:
     <input type="number" className="field-input" placeholder="Price / night" value={draft.price} onChange={e=>onChange({...draft,price:e.target.value})}/>
     <input className="field-input" placeholder="Amenities, comma separated" value={draft.amenities} onChange={e=>onChange({...draft,amenities:e.target.value})}/>
     <textarea rows={4} className="field-input !h-auto py-2.5" placeholder="Description" value={draft.description} onChange={e=>onChange({...draft,description:e.target.value})}/>
-    <div><label className="field-label">Image URL</label><input className="field-input" value={draft.image} onChange={e=>onChange({...draft,image:e.target.value})}/><ImageUploader folder="annex/shortlets" label="Upload image" onUploaded={urls=>onChange({...draft,image:urls[0]||''})}/></div>
+    <div className="rounded-lg border border-black/10 bg-cream-50 p-3 text-xs text-navy-500">Photography is managed in the <code>SHORTLET_IMAGES</code> constant at the top of this page. Multiple images are supported.</div>
     <button className="btn-primary w-full justify-center" onClick={onSave}>Save property</button>
   </div></Modal>
 }
