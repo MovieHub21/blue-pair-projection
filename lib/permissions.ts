@@ -5,7 +5,7 @@ import { ALWAYS_ALLOWED_SECTIONS } from './permissionSections'
 
 export type AppRole =
   | 'super_admin' | 'manager' | 'reception' | 'housekeeping'
-  | 'maintenance' | 'restaurant' | 'bar' | 'accountant'
+  | 'maintenance' | 'restaurant' | 'bar' | 'accountant' | 'developer'
 
 /** The signed-in staff member's roles + a lookup of which sections they can access. Request-memoized. */
 export const getMyPermissions = cache(async () => {
