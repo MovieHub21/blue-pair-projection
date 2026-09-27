@@ -15,6 +15,7 @@ type BarOrder = {
   contact_phone?: string | null
   delivery_address?: string | null
   notes?: string | null
+  service_point?: string | null
   total: number
   status: string
   created_at: string
@@ -82,6 +83,7 @@ export default function AnnexOrdersPanel({
         order.contact_email,
         order.contact_phone,
         order.delivery_address,
+        order.service_point,
         itemNames,
       ].filter(Boolean).join(' ').toLowerCase().includes(query)
     })
@@ -199,6 +201,7 @@ export default function AnnexOrdersPanel({
                         <p className="text-[10px] font-bold uppercase tracking-[.14em] text-navy-400">Delivery</p>
                         <p className="mt-1 font-semibold text-navy-950">{order.takeout ? 'Takeaway / Delivery' : order.delivery_label}</p>
                         {!order.takeout && <p className="mt-1 text-xs text-navy-500">{order.delivery_location.replaceAll('_', ' ')}</p>}
+                        {!order.takeout && order.service_point && <p className="mt-2 rounded-lg border border-gold-500/20 bg-gold-50 px-2.5 py-2 text-xs font-semibold text-navy-800">Exact location: {order.service_point}</p>}
                       </div>
                     </div>
                   </div>
