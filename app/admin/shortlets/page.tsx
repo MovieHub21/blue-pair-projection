@@ -5,18 +5,21 @@ import { naira } from '../../../lib/format'
 import EditablePrice from '../../../components/admin/EditablePrice'
 import Modal from '../../../components/ui/Modal'
 import DeleteConfirmDialog from '../../../components/ui/DeleteConfirmDialog'
+import ImageUploader from '../../../components/admin/ImageUploader'
 import { Plus } from 'lucide-react'
 import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { mapShortLet } from '../../../lib/mappers'
 import type { ShortLet } from '../../../data/mock'
 
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80'
+
 export default function ShortLetManagement() {
   const [shortLets, setShortLets] = useState<ShortLet[]>([])
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<ShortLet | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ShortLet | null>(null)
-  const [draft, setDraft] = useState({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [] as string[], description: '' })
+  const [draft, setDraft] = useState({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [DEFAULT_IMAGE] as string[], description: '' })
   const [editDraft, setEditDraft] = useState({ name: '', type: '', price: '', bedrooms: '', amenities: '', images: [] as string[], description: '' })
 
   const loadShortLets = useCallback(async () => {
@@ -40,6 +43,7 @@ export default function ShortLetManagement() {
 
   async function submit() {
     if (!draft.name) return
+    const images = draft.images.length ? draft.images : [DEFAULT_IMAGE]
     const sl: ShortLet = {
       id: `sl_${Date.now()}`,
       name: draft.name,
@@ -47,8 +51,8 @@ export default function ShortLetManagement() {
       price: Number(draft.price) || 0,
       bedrooms: Number(draft.bedrooms),
       amenities: draft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      image: '',
-      images: [],
+      image: images[0],
+      images,
       available: true,
       description: draft.description,
     }
@@ -60,6 +64,7 @@ export default function ShortLetManagement() {
       bedrooms: sl.bedrooms,
       amenities: sl.amenities,
       image: sl.image,
+      images: sl.images,
       available: sl.available,
       description: sl.description,
     })
@@ -69,7 +74,7 @@ export default function ShortLetManagement() {
     }
     await loadShortLets()
     setShowAdd(false)
-    setDraft({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [], description: '' })
+    setDraft({ name: '', type: 'Apartment', price: '', bedrooms: '1', amenities: '', images: [DEFAULT_IMAGE], description: '' })
     pushToast('Short-let property added', 'success')
   }
 
@@ -88,13 +93,15 @@ export default function ShortLetManagement() {
 
   async function saveEdit() {
     if (!editing) return
+    const images = editDraft.images.length ? editDraft.images : [DEFAULT_IMAGE]
     const patch = {
       name: editDraft.name,
       type: editDraft.type,
       price: Number(editDraft.price),
       bedrooms: Number(editDraft.bedrooms),
       amenities: editDraft.amenities.split(',').map(a => a.trim()).filter(Boolean),
-      // Photography is code-owned; only property data is saved here.
+      image: images[0],
+      images,
       description: editDraft.description,
     }
     const { error } = await supabase.from('short_lets').update(patch).eq('id', editing.id)
@@ -216,7 +223,8 @@ export default function ShortLetManagement() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-navy-400 mt-1.5">Short-let photography is code-managed. Add or replace the image paths in <code>lib/staticImages.ts</code>. Multiple images are supported.</p>
+            <ImageUploader folder="shortlets/new" multiple label="Upload photos" onUploaded={urls => setDraft({ ...draft, images: [...draft.images, ...urls] })} />
+            <p className="text-[11px] text-navy-400 mt-1.5">The first photo is used as the cover everywhere this property is shown.</p>
           </div>
         </div>
         <button onClick={() => void submit()} className="btn-primary w-full justify-center mt-6">Add property</button>
@@ -259,7 +267,8 @@ export default function ShortLetManagement() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-navy-400 mt-1.5">Short-let photography is code-managed. Add or replace the image paths in <code>lib/staticImages.ts</code>. Multiple images are supported.</p>
+            <ImageUploader folder={`shortlets/${editing?.id}`} multiple label="Upload photos" onUploaded={urls => setEditDraft({ ...editDraft, images: [...editDraft.images, ...urls] })} />
+            <p className="text-[11px] text-navy-400 mt-1.5">The first photo is used as the cover everywhere this property is shown.</p>
           </div>
         </div>
         <button onClick={() => void saveEdit()} className="btn-primary w-full justify-center mt-6">Save changes</button>
