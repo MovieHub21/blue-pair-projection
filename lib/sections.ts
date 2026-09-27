@@ -28,6 +28,7 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/admin/reception', 'reception'],
   ['/admin/housekeeping', 'housekeeping'],
   ['/admin/maintenance', 'maintenance'],
+  ['/admin/developer', 'developer'],
 ]
 
 export function sectionForPath(pathname: string): string | null {
@@ -38,7 +39,7 @@ export function sectionForPath(pathname: string): string | null {
 }
 
 export const APP_ROLES = [
-  'super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant',
+  'super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant', 'developer',
 ] as const
 export type AppRoleKey = typeof APP_ROLES[number]
 
