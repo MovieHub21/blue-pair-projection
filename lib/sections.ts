@@ -46,7 +46,7 @@ export type AppRoleKey = typeof APP_ROLES[number]
 export const ROLE_LABELS: Record<AppRoleKey, string> = {
   super_admin: 'Super Admin', manager: 'Manager', reception: 'Reception',
   housekeeping: 'Housekeeping', maintenance: 'Maintenance', restaurant: 'Restaurant Staff',
-  bar: 'Bar Staff', accountant: 'Accountant',
+  bar: 'Bar Staff', accountant: 'Accountant', developer: 'Developer',
 }
 
 export function roleKeyFromLabel(label: string): AppRoleKey {
