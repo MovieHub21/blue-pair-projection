@@ -13,11 +13,18 @@ export const metadata = buildMetadata({
   path: '/annex/shortlets',
 })
 
+const SHORTLET_IMAGES: Record<string, string[]> = {
+  sl1: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1200&q=85'],
+  sl2: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=85'],
+  sl3: ['https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85'],
+}
+const DEFAULT_SHORTLET_IMAGES = SHORTLET_IMAGES.sl2
+
 const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Short-lets', path: '/annex/shortlets' }]
 
 export default async function ShortLetsPage() {
   const shortLets = await getShortLets()
-  const heroImage = shortLets.find(sl => sl.images[1])?.images[1] || shortLets[0]?.image || ''
+  const heroImage = shortLets.map(sl => ({ sl, images: SHORTLET_IMAGES[sl.id] || DEFAULT_SHORTLET_IMAGES })).find(x => x.images[1])?.images[1] || DEFAULT_SHORTLET_IMAGES[1]
 
   return (
     <div className="bg-cream-50 text-navy-900">
@@ -41,15 +48,15 @@ export default async function ShortLetsPage() {
         </div>
 
         <div className="grid gap-x-6 gap-y-11 sm:grid-cols-2 lg:grid-cols-3">
-          {shortLets.map(sl => (
+          {shortLets.map(sl => { const codeImages = SHORTLET_IMAGES[sl.id] || DEFAULT_SHORTLET_IMAGES; return (
             <Link key={sl.id} href={`/annex/shortlets/${sl.id}`} className="group block">
               <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-navy-100">
-                <img loading="lazy" decoding="async" src={sl.image} alt={sl.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                <img loading="lazy" decoding="async" src={codeImages[0]} alt={sl.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                 <span className={'absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold shadow-sm ' + (sl.available ? 'bg-white/95 text-emerald-700' : 'bg-white/95 text-red-600')}>
                   {sl.available ? 'Available now' : 'Currently booked'}
                 </span>
-                {sl.images.length > 1 && (
-                  <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">{sl.images.length} photos</span>
+                {codeImages.length > 1 && (
+                  <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">{codeImages.length} photos</span>
                 )}
               </div>
               <div className="mt-3.5 flex items-start justify-between gap-3">
@@ -64,7 +71,7 @@ export default async function ShortLetsPage() {
               </div>
               <p className="mt-2 font-display text-base text-navy-950">{naira(sl.price)} <span className="font-body text-xs font-normal text-navy-400">/ night</span></p>
             </Link>
-          ))}
+          )})}
         </div>
 
         {shortLets.length === 0 && (
