@@ -12,9 +12,10 @@ const ROLE_LABELS: Record<string, string> = {
   restaurant: 'Restaurant',
   bar: 'Bar',
   accountant: 'Accountant',
+  developer: 'Developer',
 }
 
-const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant']
+const PRIORITY = ['super_admin', 'manager', 'reception', 'housekeeping', 'maintenance', 'restaurant', 'bar', 'accountant', 'developer']
 
 
 export const getStaffPortalContext = cache(async () => {
