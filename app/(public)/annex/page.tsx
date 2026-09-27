@@ -7,6 +7,15 @@ import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
 import { ArrowRight } from 'lucide-react'
 
+const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
+  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=85'],
+  'annex-bar': ['https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=85'],
+  'annex-grilling': ['https://images.unsplash.com/photo-1598515213692-5f252f9a90a6?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=85'],
+  'annex-restaurant': ['https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1200&q=85'],
+  'annex-outdoor-eatery': ['https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=85'],
+  'annex-vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=85'],
+}
+
 export const metadata = buildMetadata({
   title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Hotel',
   description: 'Explore the Blue Pair Hotel Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
@@ -27,7 +36,7 @@ const annexOutlets = [
 export default async function AnnexPage() {
   const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getShortLets()])
   const amenityMap = new Map(amenities.map(a => [a.key, a]))
-  const heroImage = amenityMap.get('annex-home')?.heroImage || amenities.find(a => a.key !== 'annex-home')?.heroImage || shortLets[0]?.image || ''
+  const heroImage = ANNEX_CONTENT_IMAGES['annex-home']?.[0] || shortLets[0]?.image || ''
 
   return (
     <div>
