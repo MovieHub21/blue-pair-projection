@@ -162,7 +162,7 @@ export async function middleware(request: NextRequest) {
   })
 
   const environment = getEnvironment()
-  const maintenanceOn = needsStaff ? false : await isMaintenanceMode(supabase, environment)
+  const maintenanceOn = needsStaff ? false : await isMaintenanceMode(supabase, 'production')
 
   if (maintenanceOn && !needsStaff) {
     const { data: { user } } = await supabase.auth.getUser()
