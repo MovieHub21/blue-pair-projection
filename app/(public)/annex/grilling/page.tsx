@@ -5,6 +5,11 @@ import { getMenuItems, getAmenity } from '../../../../lib/data'
 import { getAnnexActiveBookings } from '../../../../lib/annexOrders'
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
+const ANNEX_GRILLING_IMAGES = [
+  'https://images.unsplash.com/photo-1598515213692-5f252f9a90a6?auto=format&fit=crop&w=1600&q=85',
+  'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=85',
+]
+
 export const metadata = buildMetadata({
   title: 'Grill Menu & Prices in Uromi, Edo State | Blue Pair Hotel Annex',
   description: 'Explore grilled food at the Blue Pair Hotel Annex in Uromi, Edo State, with a browsable grill menu and prices.',
@@ -27,7 +32,7 @@ export default async function GrillingPage() {
   return (
     <>
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), restaurantJsonLd]} />
-      <AnnexMenuExperience outlet="grilling" mode="food" eyebrow={amenity?.eyebrow || 'Fire & flavour'} title={amenity?.name || 'Annex Grilling'} description={amenity?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.'} heroImage={amenity?.heroImage || ''} items={items} activeBookings={activeBookings} />
+      <AnnexMenuExperience outlet="grilling" mode="food" eyebrow={amenity?.eyebrow || 'Fire & flavour'} title={amenity?.name || 'Annex Grilling'} description={amenity?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.'} heroImage={ANNEX_GRILLING_IMAGES[0]} items={items} activeBookings={activeBookings} />
     </>
   )
 }
