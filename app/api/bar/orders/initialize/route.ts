@@ -23,12 +23,14 @@ export async function POST(request: Request) {
     const contactEmail = String(body.contactEmail || '').trim().slice(0,160)
     const contactPhone = String(body.contactPhone || '').trim().slice(0,40)
     const deliveryAddress = String(body.deliveryAddress || '').trim().slice(0,500)
+    const servicePoint = String(body.servicePoint || '').trim().slice(0,160)
 
     const ALLOWED_OUTLETS = new Set(['bar','restaurant','grilling','outdoor_eatery','hotel_restaurant','dining','annex'])
     if (!ALLOWED_OUTLETS.has(outlet)) return NextResponse.json({ error: 'Invalid order outlet.' }, { status: 400 })
     if (takeout && (!contactEmail || !contactPhone || !deliveryAddress)) return NextResponse.json({ error: 'Email, phone number, and delivery address are required for takeaway orders.' }, { status: 400 })
     if (!requestedItems.length) return NextResponse.json({ error: 'Choose at least one item.' }, { status: 400 })
     if (!takeout && !LOCATIONS.has(location)) return NextResponse.json({ error: 'Choose where the order should be served.' }, { status: 400 })
+    if (!takeout && ['bar', 'outdoor_eatery', 'vip_lounge'].includes(location) && !servicePoint) return NextResponse.json({ error: 'Enter your table number or exact location.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
     const { data: customer } = await admin.from('customers').select('id,name,email,user_id').eq('user_id', user.id).maybeSingle()
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
     }
 
     const checkoutReference = 'ANXPAY-' + Date.now() + '-' + Math.random().toString(36).slice(2,8).toUpperCase()
-    const payload = { items: normalized, outlet: dbOutlet, location: takeout ? 'outdoor_eatery' : location, bookingId: resolvedBookingId, takeout, deliveryLabel, notes, contactEmail, contactPhone, deliveryAddress }
+    const payload = { items: normalized, outlet: dbOutlet, location: takeout ? 'outdoor_eatery' : location, bookingId: resolvedBookingId, takeout, deliveryLabel, notes, servicePoint, contactEmail, contactPhone, deliveryAddress }
     const { error: checkoutError } = await admin.from('bar_order_checkouts').insert({
       id: 'aoc_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
       customer_id: customer.id,
