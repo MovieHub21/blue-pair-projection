@@ -1,93 +1,79 @@
-import Link from 'next/link'
-import { getPublishedAmenities, getShortLets } from '../../../lib/data'
 import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
-import PageHero from '../../../components/layout/PageHero'
-import SectionHeading from '../../../components/ui/SectionHeading'
-import { ArrowRight } from 'lucide-react'
+import { getDrinks, getMenuItems, getPublishedAmenities } from '../../../lib/data'
+import { getAnnexActiveBookings } from '../../../lib/annexOrders'
+import AnnexUnifiedExperience, { type AnnexSection } from '../../../components/annex/AnnexUnifiedExperience'
 
-const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
-  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=85'],
-  'annex-bar': ['https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=85'],
-  'annex-grilling': ['https://images.unsplash.com/photo-1598515213692-5f252f9a90a6?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=85'],
-  'annex-restaurant': ['https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?auto=format&fit=crop&w=1200&q=85'],
-  'annex-outdoor-eatery': ['https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=85'],
-  'annex-vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=85'],
+const FALLBACK_HEROES = {
+  restaurant: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85',
+  grilling: 'https://images.unsplash.com/photo-1598515213692-5f252f9a90a6?auto=format&fit=crop&w=1600&q=85',
+  outdoor_eatery: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1600&q=85',
+  bar: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85',
 }
 
 export const metadata = buildMetadata({
-  title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Hotel',
-  description: 'Explore the Blue Pair Hotel Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
-  keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state, apartment for rent uromi',
+  title: 'The Annex — Restaurant, Grill, Bar & Outdoor Dining in Uromi',
+  description: 'Explore and order from the Blue Pair Hotel Annex Restaurant, Grilling, Outdoor Eatery and Bar in one place, with one easy checkout.',
+  keywords: 'blue pair annex, annex restaurant uromi, annex bar uromi, grilling uromi, outdoor eatery uromi',
   path: '/annex',
 })
 
-const breadcrumbs = [{name:'Home',path:'/'},{name:'The Annex',path:'/annex'}]
-
-const annexOutlets = [
-  { key: 'annex-bar', path: '/annex/bar', name: 'Annex Bar', description: 'Drinks, cocktails and a relaxed evening atmosphere.' },
-  { key: 'annex-grilling', path: '/annex/grilling', name: 'Annex Grilling', description: 'Freshly grilled chicken, fish, suya and other open-fire favourites.' },
-  { key: 'annex-outdoor-eatery', path: '/annex/outdoor-eatery', name: 'Outdoor Eatery', description: 'Open-air dining, live music weekends and relaxed courtyard seating.' },
-  { key: 'annex-restaurant', path: '/annex/restaurant', name: 'Annex Restaurant', description: 'Homestyle Nigerian dishes served at the Annex Restaurant.' },
-  { key: 'annex-vip-lounge', path: '/annex/vip-lounge', name: 'VIP Lounge', description: 'A private, intimate lounge for small celebrations and relaxed evenings.' },
-]
-
 export default async function AnnexPage() {
-  const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getShortLets()])
-  const amenityMap = new Map(amenities.map(a => [a.key, a]))
-  const heroImage = ANNEX_CONTENT_IMAGES['annex-home']?.[0] || shortLets[0]?.image || ''
+  const [menuItems, drinks, amenities, activeBookings] = await Promise.all([
+    getMenuItems(),
+    getDrinks(),
+    getPublishedAmenities('annex-'),
+    getAnnexActiveBookings(),
+  ])
 
+  const amenityMap = new Map(amenities.map(item => [item.key, item]))
+  const getHero = (key: keyof typeof FALLBACK_HEROES) => amenityMap.get('annex-' + key)?.heroImage || FALLBACK_HEROES[key]
+
+  const sections: AnnexSection[] = [
+    {
+      key: 'restaurant',
+      label: 'Restaurant',
+      eyebrow: amenityMap.get('annex-restaurant')?.eyebrow || 'Dining',
+      title: amenityMap.get('annex-restaurant')?.name || 'Annex Restaurant',
+      description: amenityMap.get('annex-restaurant')?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.',
+      heroImage: getHero('restaurant'),
+      items: menuItems.filter(item => item.outlet === 'Annex Restaurant').map(item => ({ ...item, outlet: 'restaurant' as const })),
+    },
+    {
+      key: 'grilling',
+      label: 'Grilling',
+      eyebrow: amenityMap.get('annex-grilling')?.eyebrow || 'Fire & flavour',
+      title: amenityMap.get('annex-grilling')?.name || 'Annex Grilling',
+      description: amenityMap.get('annex-grilling')?.description || 'Freshly prepared food from the Annex kitchen, served with the atmosphere of an open grill.',
+      heroImage: getHero('grilling'),
+      items: menuItems.filter(item => item.outlet === 'Annex Grilling').map(item => ({ ...item, outlet: 'grilling' as const })),
+    },
+    {
+      key: 'outdoor_eatery',
+      label: 'Outdoor Eatery',
+      eyebrow: amenityMap.get('annex-outdoor-eatery')?.eyebrow || 'Open-air dining',
+      title: amenityMap.get('annex-outdoor-eatery')?.name || 'Outdoor Eatery',
+      description: amenityMap.get('annex-outdoor-eatery')?.description || 'An open-air Annex dining space for relaxed meals and an easygoing night out.',
+      heroImage: getHero('outdoor_eatery'),
+      items: menuItems.filter(item => item.outlet === 'Outdoor Bar & Eatery' || item.outlet === 'Annex Outdoor Eatery').map(item => ({ ...item, outlet: 'outdoor_eatery' as const })),
+    },
+    {
+      key: 'bar',
+      label: 'Bar · Drinks',
+      eyebrow: amenityMap.get('annex-bar')?.eyebrow || 'Drinks & nightlife',
+      title: amenityMap.get('annex-bar')?.name || 'Annex Bar',
+      description: amenityMap.get('annex-bar')?.description || 'A relaxed Annex bar for drinks, conversation and late-evening atmosphere.',
+      heroImage: getHero('bar'),
+      items: drinks.filter(item => item.bar === 'Annex Bar').map(item => ({ ...item, outlet: 'bar' as const })),
+    },
+  ]
+
+  const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }]
   return (
-    <div>
+    <>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image={heroImage}
-        eyebrow="A world of its own" title="The Annex" crumbs="Home / The Annex" height="h-80" />
-      <section className="section">
-        <div className="container-w">
-          <SectionHeading eyebrow="The Annex" title="Everything the Annex has to offer"
-            subtitle="Explore the Annex outlets, dining, drinks, leisure and short-let accommodation. " />
-
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
-
-            {annexOutlets.map(outlet => {
-              const amenity = amenityMap.get(outlet.key)
-              return (
-                <Link key={outlet.key} href={outlet.path} className="card overflow-hidden group">
-                  <div className="h-40 overflow-hidden">
-                    {amenity?.heroImage ? (
-                      <img loading="lazy" decoding="async" src={amenity.heroImage} alt={amenity.name || outlet.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full bg-cream-100" />
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h4 className="font-semibold">{amenity?.name || outlet.name}</h4>
-                    <p className="text-xs text-navy-500 mt-1">{amenity?.description || outlet.description}</p>
-                    <span className="text-xs font-semibold text-navy-900 mt-3 flex items-center gap-1">Explore <ArrowRight size={12} /></span>
-                  </div>
-                </Link>
-              )
-            })}
-
-            <Link href="/annex/shortlets" className="card overflow-hidden group">
-              <div className="h-40 overflow-hidden">
-                {shortLets[0]?.image ? (
-                  <img loading="lazy" decoding="async" src={shortLets[0].image} alt="Annex short-let accommodation" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="w-full h-full bg-cream-100" />
-                )}
-              </div>
-              <div className="p-5">
-                <h4 className="font-semibold">Accommodation & Short-lets</h4>
-                <p className="text-xs text-navy-500 mt-1">Self-contained short-let apartments and duplexes for extended stays in Uromi.</p>
-                <span className="text-xs font-semibold text-navy-900 mt-3 flex items-center gap-1">Explore <ArrowRight size={12} /></span>
-              </div>
-            </Link>
-
-          </div>
-        </div>
-      </section>
-    </div>
+      <AnnexUnifiedExperience sections={sections} activeBookings={activeBookings} />
+    </>
   )
 }
