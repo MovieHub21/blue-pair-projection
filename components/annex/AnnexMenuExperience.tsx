@@ -302,68 +302,101 @@ export default function AnnexMenuExperience({
         meta={countLabel(displayedItems.length, nouns)}
       />
 
-      {/* ── Outlet Selector: Overlaps hero, allows switching between Restaurant, Bar, Grilling, Outdoor Eatery ── */}
       <div className="relative z-10 mx-auto -mt-24 max-w-7xl px-4 md:-mt-32 md:px-10">
-        <div
-          className="flex min-w-0 gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="group"
-          aria-label="Select Annex outlet"
-        >
-          {ANNEX_OUTLET_LIST.map(optKey => {
-            const opt = ANNEX_OUTLETS_CONFIG[optKey]
-            const active = optKey === currentOutlet
-            const itemsInOutlet = annexMenu ? annexMenu[optKey] || [] : optKey === outlet ? items : []
-            const cartItemsFromOutlet = cart
-              .filter(c => c.outletKey === optKey || (annexMenu && annexMenu[optKey]?.some(m => m.id === c.id)))
-              .reduce((s, c) => s + c.quantity, 0)
+  <div
+    className="annex-outlet-scroll flex gap-2.5 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:pb-0"
+    style={{
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none',
+    }}
+    role="group"
+    aria-label="Select Annex outlet"
+  >
+    {ANNEX_OUTLET_LIST.map(optKey => {
+      const opt = ANNEX_OUTLETS_CONFIG[optKey]
+      const active = optKey === currentOutlet
+      const itemsInOutlet = annexMenu ? annexMenu[optKey] || [] : optKey === outlet ? items : []
+      const cartItemsFromOutlet = cart
+        .filter(c => c.outletKey === optKey || (annexMenu && annexMenu[optKey]?.some(m => m.id === c.id)))
+        .reduce((s, c) => s + c.quantity, 0)
 
-            return (
-              <button
-                key={optKey}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setCurrentOutlet(optKey)}
-                className={
-                  'group relative shrink-0 overflow-hidden rounded-full border px-4 py-2.5 text-left transition duration-300 md:px-5 md:py-3 ' +
-                  (active
-                    ? 'border-gold-400 bg-navy-800 text-white shadow-[0_24px_60px_-24px_rgba(6,11,23,.7)]'
-                    : 'border-navy-900/10 bg-white text-navy-900 shadow-[0_18px_40px_-26px_rgba(6,11,23,.35)] hover:-translate-y-0.5 hover:border-gold-400')
-                }
-              >
-                <span
-                  className={
-                    'absolute inset-x-3 bottom-0 h-[2px] rounded-full transition ' +
-                    (active ? 'bg-gold-400' : 'bg-transparent group-hover:bg-gold-400/60')
-                  }
-                />
-                <span
-                  className={
-                    'whitespace-nowrap text-xs font-semibold md:text-sm ' +
-                    (active ? 'text-white' : 'text-navy-900/75')
-                  }
-                >
-                  {opt.label.replace('Annex ', '')}
-                </span>
-                {cartItemsFromOutlet > 0 && (
-                  <span className="ml-1 rounded-full bg-gold-400 px-2 py-0.5 text-[9px] font-bold text-navy-950">
-                    {cartItemsFromOutlet}
-                  </span>
-                )}
-                <span
-                  className={
-                    'ml-1.5 text-[9px] uppercase tracking-[.16em] ' +
-                    (active ? 'text-gold-400' : 'text-navy-900/40')
-                  }
-                >
-                  {itemsInOutlet.length
-                    ? countLabel(itemsInOutlet.length, opt.mode === 'bar' ? DRINK_NOUNS : DISH_NOUNS)
-                    : ''}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      return (
+        <button
+          key={optKey}
+          type="button"
+          aria-pressed={active}
+          onClick={() => setCurrentOutlet(optKey)}
+          className={
+            'group relative min-w-[280px] shrink-0 overflow-hidden rounded-xl border p-4 text-left transition duration-300 md:min-w-0 md:shrink md:p-5 ' +
+            (active
+              ? 'border-gold-400 bg-navy-800 text-white shadow-[0_24px_60px_-24px_rgba(6,11,23,.7)]'
+              : 'border-navy-900/10 bg-white text-navy-900 shadow-[0_18px_40px_-26px_rgba(6,11,23,.35)] hover:-translate-y-0.5 hover:border-gold-400')
+          }
+        >
+          <span
+            className={
+              'absolute inset-x-0 top-0 h-[3px] transition ' +
+              (active ? 'bg-gold-400' : 'bg-transparent group-hover:bg-gold-400/60')
+            }
+          />
+
+          <div className="flex items-center justify-between">
+            <span
+              className={
+                'text-[10px] font-semibold uppercase tracking-[.24em] ' +
+                (active ? 'text-gold-400' : 'text-gold-600')
+              }
+            >
+              {opt.tag}
+            </span>
+
+            {cartItemsFromOutlet > 0 && (
+              <span className="rounded-full bg-gold-400 px-2 py-0.5 text-[10px] font-bold text-navy-950">
+                {cartItemsFromOutlet} in cart
+              </span>
+            )}
+          </div>
+
+          <span className="mt-1.5 block font-display text-lg font-semibold leading-tight md:text-xl">
+            {opt.label}
+          </span>
+
+          <span
+            className={
+              'mt-1 block text-xs leading-5 ' +
+              (active ? 'text-white/70' : 'text-navy-900/60')
+            }
+          >
+            {opt.blurb}
+          </span>
+
+          <span
+            className={
+              'mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.16em] ' +
+              (active ? 'text-white/90' : 'text-navy-900/70')
+            }
+          >
+            {itemsInOutlet.length
+              ? countLabel(
+                  itemsInOutlet.length,
+                  opt.mode === 'bar' ? DRINK_NOUNS : DISH_NOUNS
+                )
+              : ''}
+
+            <span
+              className={
+                'h-px w-5 ' +
+                (active ? 'bg-gold-400' : 'bg-navy-900/25')
+              }
+            />
+
+            {active ? 'Viewing' : 'View'}
+          </span>
+        </button>
+      )
+    })}
+  </div>
+</div>
 
       {/* Menu browser keyed by current outlet so search & filters refresh gracefully */}
       <MenuBrowser
