@@ -17,9 +17,15 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
   const [enabled, setEnabled] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
-  const environment = getEnvironment()
+  const [environment, setEnvironment] = useState('')
 
   useEffect(() => {
+    setEnvironment(getEnvironment())
+  }, [])
+
+  useEffect(() => {
+    if (!environment) return
+
     let active = true
     supabase
       .from('site_settings')
@@ -36,7 +42,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
   }, [environment])
 
   async function toggle() {
-    if (!canEdit || saving) return
+    if (!canEdit || saving || !environment) return
     const next = !enabled
     setSaving(true)
     const { data, error } = await supabase
@@ -73,7 +79,7 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
         <button
           type="button"
           onClick={toggle}
-          disabled={!canEdit || !loaded || saving}
+          disabled={!canEdit || !loaded || saving || !environment}
           aria-label="Toggle website maintenance mode"
           className={'relative w-12 h-7 rounded-full transition-colors shrink-0 disabled:opacity-50 ' + (enabled ? 'bg-amber-500' : 'bg-black/15')}
         >
@@ -86,7 +92,9 @@ export default function MaintenanceModeClient({ canEdit }: { canEdit: boolean })
           <ShieldCheck size={14} className={enabled ? 'text-amber-600' : 'text-emerald-600'} />
           {enabled ? 'Visitors are seeing the maintenance screen' : 'Website is live'}
         </span>
-        <span className="uppercase tracking-wider font-semibold text-navy-400">{environment}</span>
+        <span className="uppercase tracking-wider font-semibold text-navy-400">
+          {environment || '...'}
+        </span>
       </div>
 
       {!canEdit && <p className="text-[11px] text-navy-400 mt-3">Only a Developer or Super Admin can change this setting.</p>}
