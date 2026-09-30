@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     }
 
     console.log('[guest-transactional-email]', requestId, 'sending', { event, recipient, reference, roomName })
-    const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
+    const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text, ...(event === 'payment_successful' && booking?.id ? { idempotencyKey: `booking-payment-confirmation:${booking.id}` } : {}) })
     console.log('[guest-transactional-email]', requestId, 'sent', { event, recipient, providerId: result.id ?? null })
     return NextResponse.json({ ok: true, id: result.id ?? null, event, recipient })
   } catch (error: any) {
