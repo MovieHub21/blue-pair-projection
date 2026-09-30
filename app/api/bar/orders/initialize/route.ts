@@ -5,7 +5,7 @@ import { SITE_URL } from '../../../../../lib/siteConfig'
 
 const LOCATIONS = new Set(['room','short_let','bar','outdoor_eatery','vip_lounge'])
 const OUTLETS = new Set(['bar','restaurant','grilling','outdoor_eatery'])
-function isActiveBooking(booking: any, today: string) { return ['confirmed','checked_in'].includes(String(booking.status)) && booking.payment_status === 'paid' && booking.check_in <= today && booking.check_out > today }
+function isActiveBooking(booking: any, today: string) { return String(booking.status) === 'checked_in' ? booking.check_out > today : String(booking.status) === 'confirmed' && booking.payment_status === 'paid' && booking.check_in <= today && booking.check_out > today }
 
 export async function POST(request: Request) {
   try {
