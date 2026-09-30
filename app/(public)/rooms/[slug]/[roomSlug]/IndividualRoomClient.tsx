@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { ArrowRight, CheckCircle2, Loader2, Users, BedDouble, Ruler, Clock3 } from 'lucide-react'
 import { naira, todayISO, addDaysISO } from '../../../../../lib/format'
 import { useAuth } from '../../../../../lib/useAuth'
@@ -20,7 +20,7 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
 }
 
 export default function IndividualRoomClient({ type, unit }: { type: RoomType; unit: Unit }) {
- const router=useRouter(); const params=useSearchParams(); const auth=useAuth(); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(1,params.get('checkin')||todayISO())); const [status,setStatus]=useState<GuestStatus|null>(null); const [checking,setChecking]=useState(true); const [error,setError]=useState<string|null>(null)
+ const params=useSearchParams(); const auth=useAuth(); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(1,params.get('checkin')||todayISO())); const [guests,setGuests]=useState(()=>Math.min(Math.max(1,Number(params.get('guests')||1)),type.guests)); const [status,setStatus]=useState<GuestStatus|null>(null); const [checking,setChecking]=useState(true); const [error,setError]=useState<string|null>(null)
  const name=unit.name||`Room ${unit.room_number}`; const gallery=useMemo(()=>Array.from(new Set((type.images||[]).filter(Boolean))),[type.images]); const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=type.price*nights; const tax=Math.round(total*.075)
  useEffect(()=>{if(!checkIn||!checkOut||checkIn>=checkOut){setChecking(false);setStatus(null);return}let cancelled=false;const load=async()=>{if(!cancelled){setChecking(true);setStatus(null)}try{const response=await fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(type.id)}&_=${Date.now()}`,{cache:'no-store'});const data=response.ok?await response.json():null;if(cancelled)return;const current=data?.rooms?.find((r:any)=>r.id===unit.id);setStatus(current?.guest_status||null)}catch{if(!cancelled)setError('Unable to check this room right now.')}finally{if(!cancelled)setChecking(false)}};void load();const stopListening=onAvailabilityChange(()=>void load());return()=>{cancelled=true;stopListening()}},[checkIn,checkOut,type.id,unit.id])
  const updateDates=(ci:string,co:string)=>{
@@ -29,6 +29,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
   const url=new URL(window.location.href)
   url.searchParams.set('checkin',ci)
   url.searchParams.set('checkout',co)
+  url.searchParams.set('guests',String(guests))
   window.history.replaceState(window.history.state,'',url.toString())
 }
  const bookable=!checking&&status==='available'
@@ -53,6 +54,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
           {type.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} 
           className="text-gold-500"/>{a}</div>)}</div></div><aside className="card p-6 h-fit sticky top-24 min-w-0 max-w-full">
            
+            <label className="field-label flex items-center gap-1.5"><Users size={13}/>Guests</label><select value={guests} onChange={e=>{const value=Number(e.target.value);setGuests(value);const url=new URL(window.location.href);url.searchParams.set('guests',String(value));window.history.replaceState(window.history.state,'',url.toString())}} className="field-input mb-5">{Array.from({length:type.guests},(_,i)=>i+1).map(n=><option key={n} value={n}>{n} guest{n===1?'':'s'}</option>)}</select>
             <div className="text-xs text-navy-400 mb-2">Room rate</div><b className="font-display text-3xl">{naira(type.price)}
               </b><span className="text-xs text-navy-400"> / night</span><div className="h-px bg-black/10 my-5"/>
              
@@ -60,8 +62,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
                 {naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span>
                 <b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4">
                
-                <span>Total</span><b>{naira(total+tax)}</b></div>{bookable&&<Link href={`/booking?room=${type.slug}&unit=$
-                {unit.id}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}`} 
+                <span>Total</span><b>{naira(total+tax)}</b></div>{bookable&&<Link href={`/booking?room=${type.slug}&unit=${encodeURIComponent(unit.id)}&checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&guests=${guests}`} 
                 className="btn-primary w-full justify-center mt-5">Book & pay 
                 
                 <ArrowRight size={15}/></Link>}
