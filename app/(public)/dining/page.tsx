@@ -2,6 +2,7 @@ import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
 import { getMenuItems } from '../../../lib/data'
+import { getAnnexActiveBookings } from '../../../lib/annexOrders'
 import DiningClient from './DiningClient'
 import type { MenuItem } from '../../../data/mock'
 
@@ -44,7 +45,7 @@ function menuJsonLd(outlet: MenuItem['outlet'], items: MenuItem[]) {
 }
 
 export default async function DiningPage() {
-  const menuItems = await getMenuItems()
+  const [menuItems, activeBookings] = await Promise.all([getMenuItems(), getAnnexActiveBookings()])
   const restaurantMenu = menuJsonLd('Blue Pair Restaurant', menuItems)
   const outdoorMenu = menuJsonLd('Outdoor Bar & Eatery', menuItems)
 
@@ -55,7 +56,7 @@ export default async function DiningPage() {
         { ...restaurantJsonLd, ...(restaurantMenu ? { hasMenu: restaurantMenu } : {}) },
         ...(outdoorMenu ? [{ '@context': 'https://schema.org', '@type': 'Restaurant', '@id': `${SITE_URL}/dining#outdoor-bar-eatery`, name: 'Outdoor Bar & Eatery', url: `${SITE_URL}/dining`, hasMenu: outdoorMenu }] : []),
       ]} />
-      <DiningClient menuItems={menuItems} />
+      <DiningClient menuItems={menuItems} activeBookings={activeBookings} />
     </div>
   )
 }
