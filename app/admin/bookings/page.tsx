@@ -212,7 +212,8 @@ export default function BookingManagement() {
     await supabase.from('bookings').update({ status: 'checked_in', room_id: room.id, checked_in_at: new Date().toISOString() }).eq('id', id)
     await supabase.from('rooms').update({ status: 'occupied' }).eq('id', room.id)
     await loadData()
-    pushToast(`Guest checked in to Room ${room.roomNumber}.`, 'success')
+    const emailSent = await sendGuestTransactionalEmail('checkin_welcome', { bookingId: id })
+    pushToast(emailSent ? `Guest checked in to Room ${room.roomNumber}. Welcome email sent.` : `Guest checked in to Room ${room.roomNumber}. Welcome email could not be sent.`, emailSent ? 'success' : 'error')
   }
 
   async function checkOut(id: string) {
