@@ -43,9 +43,7 @@ export async function getAnnexActiveBookings(): Promise<AnnexActiveBooking[]> {
     .select('id,reference,check_in,check_out,status,payment_status,room_id,short_let_id')
     .eq('customer_id', customer.id)
     .in('status', ['confirmed','checked_in'])
-    .eq('payment_status', 'paid')
-    .lte('check_in', today)
-    .gt('check_out', today)
+    .or(`and(status.eq.checked_in,check_out.gt.${today}),and(status.eq.confirmed,payment_status.eq.paid,check_in.lte.${today},check_out.gt.${today})`)
     .order('check_in', { ascending: false })
 
   const roomIds = (bookings ?? []).map(b => b.room_id).filter(Boolean)
