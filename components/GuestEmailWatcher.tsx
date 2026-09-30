@@ -32,9 +32,7 @@ export default function GuestEmailWatcher() {
         const current = payload.new as Record<string, any>
         if (!old || !current) return
 
-        if (old.payment_status !== 'paid' && current.payment_status === 'paid') {
-          void sendGuestTransactionalEmail('payment_successful', { bookingId: current.id })
-        } else if (String(old.payment_status) !== 'failed' && String(current.payment_status) === 'failed') {
+        if (String(old.payment_status) !== 'failed' && String(current.payment_status) === 'failed') {
           void sendGuestTransactionalEmail('payment_failed', { bookingId: current.id })
         } else if (old.status !== 'cancelled' && current.status === 'cancelled') {
           void sendGuestTransactionalEmail('booking_cancelled', { bookingId: current.id })
