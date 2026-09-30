@@ -51,9 +51,9 @@ export async function POST(request: Request) {
       const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
       await sendResendEmail({
         to: conversation.guest_email,
-        subject: `New message from Blue Pair Hotel: ${conversation.subject}`,
-        text: `Blue Pair Hotel has sent you a new message in your guest portal.\n\nSubject: ${conversation.subject}\n\nSign in to your guest portal to view the message and reply: ${guestUrl}`,
-        html: `<h2>You have a new message</h2><p>Blue Pair Hotel has sent you a new message in your guest portal.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${guestUrl}">View the message and reply</a></p>`,
+        subject: `New message from Blue Pair Signature: ${conversation.subject}`,
+        text: `Blue Pair Signature has sent you a new message in your guest portal.\n\nSubject: ${conversation.subject}\n\nSign in to your guest portal to view the message and reply: ${guestUrl}`,
+        html: `<h2>You have a new message</h2><p>Blue Pair Signature has sent you a new message in your guest portal.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${guestUrl}">View the message and reply</a></p>`,
       })
     }
 
