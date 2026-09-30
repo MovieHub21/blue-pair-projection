@@ -53,8 +53,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
     await sendResendEmail({
       to: companyEmail,
       subject: `New guest reply: ${conversation.subject}`,
-      text: `${conversation.guest_name} has sent a new reply in an existing Blue Pair Hotel conversation.\n\nSubject: ${conversation.subject}\n\nOpen the conversation in the staff portal: ${conversationUrl}`,
-      html: `<h2>New guest reply</h2><p><strong>${conversation.guest_name}</strong> has sent a new reply in an existing Blue Pair Hotel conversation.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
+      text: `${conversation.guest_name} has sent a new reply in an existing Blue Pair Signature conversation.\n\nSubject: ${conversation.subject}\n\nOpen the conversation in the staff portal: ${conversationUrl}`,
+      html: `<h2>New guest reply</h2><p><strong>${conversation.guest_name}</strong> has sent a new reply in an existing Blue Pair Signature conversation.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
     })
     return NextResponse.json({ success: true })
   } catch (error: any) {
