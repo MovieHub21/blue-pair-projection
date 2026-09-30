@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { MenuItem } from '../../../data/mock'
 import { naira } from '../../../lib/format'
 import { MenuBrowser, MenuClosing, MenuHero, countLabel, heroGhostButton, DISH_NOUNS } from '../../../components/menu/MenuKit'
+import type { AnnexActiveBooking } from '../../../lib/annexOrders'
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1800&q=80'
 
@@ -19,7 +20,7 @@ type CartEntry = { id: string; name: string; price: number; quantity: number; ve
 
 const STORAGE_KEY = 'bluepair_dining_cart'
 
-export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
+export default function DiningClient({ menuItems, activeBookings = [] }: { menuItems: MenuItem[]; activeBookings?: AnnexActiveBooking[] }) {
   const [outlet, setOutlet] = useState<Outlet>('Blue Pair Restaurant')
   const [cart, setCart] = useState<CartEntry[]>([])
   const [showOrder, setShowOrder] = useState(false)
@@ -111,6 +112,8 @@ export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
     if (takeout && !deliveryAddress.trim()) return setOrderMessage('Enter the delivery address for your takeaway order.')
     if ((location === 'room' || location === 'short_let') && !bookingId)
       return setOrderMessage('Select the current booking for that delivery location.')
+    if ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))
+      return setOrderMessage('Select one of your active bookings for delivery.')
     setPlacing(true)
     setOrderMessage('')
     try {
@@ -414,11 +417,35 @@ export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
                       </span>
                     </label>
 
-                    {/* Booking picker note */}
+                    {/* Active bookings */}
                     {(location === 'room' || location === 'short_let') && (
-                      <p className="mt-2.5 rounded-xl border border-white/10 p-3 text-xs text-white/40 md:p-4">
-                        Room / short-let delivery is linked to your active booking. Please sign in on the guest portal to order with delivery.
-                      </p>
+                      <div className="mt-2.5 space-y-2 md:mt-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-white/45">
+                          Your active {location === 'room' ? 'room' : 'short-let'} bookings
+                        </p>
+                        {activeBookings
+                          .filter(b => b.type === location)
+                          .map(booking => (
+                            <button
+                              key={booking.id}
+                              type="button"
+                              onClick={() => setBookingId(booking.id)}
+                              className={
+                                bookingId === booking.id
+                                  ? 'w-full rounded-xl border border-[#d7b66a] bg-[#d7b66a]/10 p-3 text-left md:p-4'
+                                  : 'w-full rounded-xl border border-white/10 bg-white/[.03] p-3 text-left md:p-4'
+                              }
+                            >
+                              <span className="block text-sm font-semibold">{booking.label}</span>
+                              <span className="mt-0.5 block text-xs text-white/35">Ref: {booking.reference}</span>
+                            </button>
+                          ))}
+                        {!activeBookings.some(b => b.type === location) && (
+                          <p className="rounded-xl border border-white/10 p-3 text-xs text-white/40 md:p-4">
+                            No active {location === 'room' ? 'room' : 'short-let'} booking is available for delivery.
+                          </p>
+                        )}
+                      </div>
                     )}
 
                     {/* Takeaway fields */}
@@ -476,7 +503,8 @@ export default function DiningClient({ menuItems }: { menuItems: MenuItem[] }) {
                         !cart.length ||
                         placing ||
                         (!takeout && !location) ||
-                        (takeout && (!contactEmail.trim() || !contactPhone.trim() || !deliveryAddress.trim()))
+                        (takeout && (!contactEmail.trim() || !contactPhone.trim() || !deliveryAddress.trim())) ||
+                        ((location === 'room' || location === 'short_let') && !activeBookings.some(b => b.id === bookingId))
                       }
                       onClick={() => void submitOrder()}
                       className="rounded-full bg-[#d7b66a] px-5 py-2.5 text-xs font-bold text-[#08101d] disabled:cursor-not-allowed disabled:opacity-40 md:px-6 md:py-3"
