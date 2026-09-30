@@ -7,7 +7,7 @@ function layout(title: string, body: string) { return `<!doctype html><html><bod
   sans-serif;color:#101a35"><div style="max-width:620px;margin:32px auto;background:#fff;border:1px solid #e8e3d8">
   <div style="background:#0b1633;padding:28px 32px;color:#fff"><h1 style="margin:0;font-size:25px;font-weight:600">
   ${escapeHtml(title)}</h1></div><div style="padding:32px">${body}</div><div style="padding:20px 32px;border-top:1px solid #eee;color:#777f91;font-size:12px">
-  Blue Pair Hotel · Uromi, Edo State</div>
+  Blue Pair Signature · Uromi, Edo State</div>
   </div></body></html>` }
 function details(input: { reference?: string; roomName?: string; checkIn?: string; checkOut?: string; total?: number; 
   payment?: string }) { return `<div style="background:#f8f6f0;border:1px solid #e9e4d8;padding:20px;margin:24px 0">
@@ -22,19 +22,19 @@ function details(input: { reference?: string; roomName?: string; checkIn?: strin
               </td></tr>` : ''}${input.payment ? `<tr><td style="padding:6px 0;color:#777f91">Payment</td><td style="padding:6px 0;text-align:right">
                 ${escapeHtml(input.payment)}</td></tr>` : ''}</table></div>` }
 function basic(name: string, title: string, message: string, extra = '', outro = 'We look forward to welcoming you.') 
-{ const safeName = escapeHtml(name || 'Guest'); return { subject: `${title} | Blue Pair Hotel`, text: `Hello ${name || 
-  'Guest'},\n\n${message}\n\n${outro}\n\nBlue Pair Hotel, Uromi.`, html: layout(title, `<p style="font-size:16px">Hello 
+{ const safeName = escapeHtml(name || 'Guest'); return { subject: `${title} | Blue Pair Signature`, text: `Hello ${name || 
+  'Guest'},\n\n${message}\n\n${outro}\n\nBlue Pair Signature, Uromi.`, html: layout(title, `<p style="font-size:16px">Hello 
     ${safeName},</p><p style="color:#566079;line-height:1.7">${escapeHtml(message)}</p>${extra}<p style="margin-top:28px;color:#566079">${escapeHtml(outro)}</p>`) } }
 
 export function bookingConfirmationEmail(input: { guestName:string; email:string; reference:string; roomName:string; 
   checkIn:string; checkOut:string; adults:number; children:number; total:number; paymentStatus:string }) 
-{ const extra = details(input); return { subject: `Booking received — ${input.reference} | Blue Pair Hotel`, text: 
+{ const extra = details(input); return { subject: `Booking received — ${input.reference} | Blue Pair Signature`, text: 
 `Hello ${input.guestName || 'Guest'},\n\nYour booking request has been received.\nReference: 
 ${input.reference}\nRoom: ${input.roomName}\nCheck-in: ${input.checkIn}\nCheck-out:
 ${input.checkOut}\nGuests: ${input.adults} adults${input.children ? `, ${input.children} children` : ''}\nTotal: 
-${money(input.total)}\nPayment: ${input.paymentStatus}\n\nBlue Pair Hotel, Uromi.`, html: layout('Booking received',
+${money(input.total)}\nPayment: ${input.paymentStatus}\n\nBlue Pair Signature, Uromi.`, html: layout('Booking received',
    `<p style="font-size:16px">Hello ${escapeHtml(input.guestName || 'Guest')},</p><p style="color:#566079;line-height:1.7">
-   Thank you for choosing Blue Pair Hotel. We have received your booking request.</p>${extra}<p style="color:#566079;line-height:1.7">
+   Thank you for choosing Blue Pair Signature. We have received your booking request.</p>${extra}<p style="color:#566079;line-height:1.7">
    Payment is currently pending. Our front desk will follow up to confirm your reservation.</p>`) } }
 
    export function paymentSuccessfulEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;paymentReference?:string}) 
@@ -47,7 +47,7 @@ ${money(input.total)}\nPayment: ${input.paymentStatus}\n\nBlue Pair Hotel, Uromi
 
   export function bookingCancelledEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;reason?:string}) 
 { return basic(input.guestName, 'Booking cancelled', `Your booking ${input.reference} has been cancelled.${input.reason ? ` ${input.reason}` : ''}`,
-   details(input), 'Thank you for considering Blue Pair Hotel. We appreciate your time and hope to assist you again whenever you need us.') }
+   details(input), 'Thank you for considering Blue Pair Signature. We appreciate your time and hope to assist you again whenever you need us.') }
 
    export function bookingModifiedEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;total:number;changes?:string}) 
 { return basic(input.guestName, 'Booking updated', `Your booking ${input.reference} has been updated.${input.changes ? ` Changes: ${input.changes}` : ''}`, details(input)) }
@@ -57,10 +57,10 @@ export function preArrivalEmail(input:{guestName:string;reference:string;roomNam
   Your check-in date is ${input.checkIn}. Please have your booking reference available at reception.`, details(input)) }
 
   export function checkInReminderEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) 
-{ return basic(input.guestName, 'Check-in reminder', `This is a reminder that your Blue Pair Hotel stay begins on ${input.checkIn}.`, details(input)) }
+{ return basic(input.guestName, 'Check-in reminder', `This is a reminder that your Blue Pair Signature stay begins on ${input.checkIn}.`, details(input)) }
 
 export function checkInWelcomeEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string})
- { return basic(input.guestName, 'Welcome to Blue Pair Hotel', `Welcome. Your booking ${input.reference} 
+ { return basic(input.guestName, 'Welcome to Blue Pair Signature', `Welcome. Your booking ${input.reference} 
   has been checked in. We hope you enjoy your stay.`, details(input)) }
 
   export function checkoutReminderEmail(input:{guestName:string;reference:string;roomName:string;checkOut:string}) 
@@ -68,12 +68,12 @@ export function checkInWelcomeEmail(input:{guestName:string;reference:string;roo
   Please complete checkout with reception before leaving and ensure personal belongings are collected.`, details(input)) }
 
   export function checkoutThankYouEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) 
-{ return basic(input.guestName, 'Thank you for staying with us', `Thank you for staying at Blue Pair Hotel. 
+{ return basic(input.guestName, 'Thank you for staying with us', `Thank you for staying at Blue Pair Signature. 
   Your booking ${input.reference} has been checked out successfully.`, details(input), 
-  'Thank you for choosing Blue Pair Hotel. We wish to have the pleasure of hosting you again.') }
+  'Thank you for choosing Blue Pair Signature. We wish to have the pleasure of hosting you again.') }
 
   export function reviewRequestEmail(input:{guestName:string;reference:string;reviewUrl?:string}) 
-{ return basic(input.guestName, 'How was your stay?', `We would love to hear about your experience at Blue Pair Hotel.
+{ return basic(input.guestName, 'How was your stay?', `We would love to hear about your experience at Blue Pair Signature.
    Your feedback helps us improve future stays.`, input.reviewUrl ? `<p><a href="${escapeHtml(input.reviewUrl)}" 
    style="display:inline-block;background:#0b1633;color:#fff;padding:12px 18px;text-decoration:none">Share your feedback</a></p>` : '') }
 
@@ -104,7 +104,7 @@ export function reservationReadyEmail(input:{guestName:string;reference:string;r
   The room is not secured until payment is completed.</p>`
   return { subject: 'Your Blue Pair room is ready to secure', text: `Hello ${input.guestName || 
     'Guest'},\n\nYour reserved Room ${input.roomNumber} is now available. You can now choose your preferred stay dates and continue to payment.
-     The room is not secured until payment is completed.\n\nReference: ${input.reference}\nOpen ${input.paymentUrl} to continue.\n\nBlue Pair Hotel, Uromi.`, 
+     The room is not secured until payment is completed.\n\nReference: ${input.reference}\nOpen ${input.paymentUrl} to continue.\n\nBlue Pair Signature, Uromi.`, 
      html: layout('Your room is ready to secure', `<p style="font-size:16px">Hello ${escapeHtml(input.guestName || 'Guest')},</p>
      <p style="color:#566079;line-height:1.7">Your reserved room is now ready for you to secure.</p>${extra}<p style="margin-top:28px;color:#566079">
      Once you select your dates, complete payment to secure the room.</p>`) }
@@ -145,8 +145,8 @@ export function annexOrderStatusEmail(input: {
   </table></div>`
   const itemText = input.items.map(item => `${item.quantity} × ${item.name} — ${money(item.lineTotal)}`).join('\n')
   return {
-    subject: `${current.subject} — ${input.reference} | Blue Pair Hotel`,
-    text: `Hello ${input.guestName || 'Guest'},\n\n${current.message}\n\nOrder: ${input.reference}\nFrom: ${outletName}\nService: ${service}\nStatus: ${current.title}\n\nItems:\n${itemText}\n\nTotal paid: ${money(input.total)}\n\nBlue Pair Hotel, Uromi.`,
+    subject: `${current.subject} — ${input.reference} | Blue Pair Signature`,
+    text: `Hello ${input.guestName || 'Guest'},\n\n${current.message}\n\nOrder: ${input.reference}\nFrom: ${outletName}\nService: ${service}\nStatus: ${current.title}\n\nItems:\n${itemText}\n\nTotal paid: ${money(input.total)}\n\nBlue Pair Signature, Uromi.`,
     html: layout(current.title, `<p style="font-size:16px">Hello ${escapeHtml(input.guestName || 'Guest')},</p><p style="color:#566079;line-height:1.7">${escapeHtml(current.message)}</p>${detailsHtml}<p style="margin-top:28px;color:#566079;line-height:1.7">Your order status will continue to update in your guest dashboard.</p>`)
   }
 }
