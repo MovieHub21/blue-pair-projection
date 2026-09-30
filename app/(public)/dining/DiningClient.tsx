@@ -196,7 +196,7 @@ export default function DiningClient({ menuItems, activeBookings = [] }: { menuI
 
       {/* Where would you like to dine? Overlaps the hero. */}
       <div className="relative z-10 mx-auto -mt-24 max-w-7xl px-4 md:-mt-32 md:px-10">
-        <div className="grid gap-2.5 md:grid-cols-2 md:gap-5" role="group" aria-label="Choose where you would like to dine">
+        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory md:gap-5" role="group" aria-label="Choose where you would like to dine">
           {VENUES.map(option => {
             const active = option.outlet === outlet
             const venueCartCount = cart
@@ -210,7 +210,7 @@ export default function DiningClient({ menuItems, activeBookings = [] }: { menuI
                 aria-pressed={active}
                 onClick={() => switchVenue(option.outlet)}
                 className={
-                  'group relative overflow-hidden rounded-xl border p-4 text-left transition duration-300 md:p-7 ' +
+                  'group relative min-w-[82vw] shrink-0 snap-start overflow-hidden rounded-xl border p-4 text-left transition duration-300 md:min-w-[calc(50%-0.625rem)] md:p-7 ' +
                   (active
                     ? 'border-gold-400 bg-navy-800 text-white shadow-[0_24px_60px_-24px_rgba(6,11,23,.7)]'
                     : 'border-navy-900/10 bg-white text-navy-900 shadow-[0_18px_40px_-26px_rgba(6,11,23,.35)] hover:-translate-y-0.5 hover:border-gold-400')
