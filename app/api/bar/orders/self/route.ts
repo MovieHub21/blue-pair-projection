@@ -92,7 +92,7 @@ export async function PATCH(request: Request) {
         .eq('customer_id', customer.id)
         .maybeSingle()
       const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
-      if (!booking || !['confirmed','checked_in'].includes(String(booking.status)) || booking.payment_status !== 'paid' || booking.check_in > today || booking.check_out <= today) {
+      if (!booking || (String(booking.status) === 'checked_in' ? booking.check_out <= today : String(booking.status) !== 'confirmed' || booking.payment_status !== 'paid' || booking.check_in > today || booking.check_out <= today)) {
         return NextResponse.json({ error: 'That booking is not currently available for delivery.' }, { status: 409 })
       }
       patch.booking_id = booking.id
