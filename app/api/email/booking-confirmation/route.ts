@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       subject: email.subject,
       html: email.html,
       text: email.text,
+      idempotencyKey: `booking-confirmation:${String(body.reference)}`,
     })
 
     return NextResponse.json({ ok: true, id: result.id ?? null })
