@@ -107,21 +107,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Legacy staff portal paths on the main domain now live under the admin route tree.
-  // Send them to the admin subdomain so there is no dead /reception, /housekeeping or
-  // /maintenance route left on the public host.
+  
   if (isMainProductionHost && /^\/(reception|housekeeping|maintenance)(\/|$)/.test(originalPathname)) {
     const url = request.nextUrl.clone()
     url.hostname = ADMIN_HOST
     return NextResponse.redirect(url)
   }
 
-  // The admin subdomain is a clean front door to the existing /admin route tree.
-  // Examples:
-  //   admin.bluepairsignature.com/            -> /admin/dashboard
-  //   admin.bluepairsignature.com/bookings    -> /admin/bookings
-  //   admin.bluepairsignature.com/rooms       -> /admin/rooms
-  // The real pathname is rewritten internally, so no second Vercel project is needed.
+  
   let pathname = originalPathname
   let shouldRewriteToAdmin = false
 
