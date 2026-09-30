@@ -42,6 +42,8 @@ h1, h2, h3, h4 { @apply font-display; }
   .pill-gold { @apply pill bg-gold-50 text-gold-600; }
   .field-label { @apply text-xs font-semibold text-navy-800 mb-1.5 block; transition: color 180ms ease; }
   .field-input { @apply w-full h-11 rounded-lg border border-navy-900/10 px-3.5 text-sm bg-white/95 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-gold-400 transition-shadow; transition: border-color 180ms ease, box-shadow 220ms ease, background-color 180ms ease; }
+  /* iOS Safari date inputs have intrinsic sizing that can exceed narrow grid columns. */
+  input[type="date"] { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
   .field-input:hover { border-color: rgb(7 21 54 / .2); }
   .field-input:focus { background-color: #fff; box-shadow: 0 0 0 4px rgb(199 154 62 / .09), 0 8px 22px rgb(7 21 54 / .06); }
   .field-input:focus + .field-label, .field-label:has(+ .field-input) { color: #9b762f; }
