@@ -36,10 +36,10 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
 
  const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
 
- return <div className="container-w px-6 md:px-10 py-8">
+ return <div className="container-w w-full min-w-0 max-w-7xl overflow-x-clip px-4 sm:px-6 md:px-10 py-8">
   <div className="text-xs text-navy-400 mb-5">Home / Rooms & Suites / {room.name}</div>
-  <div className="grid lg:grid-cols-[1.35fr,.65fr] gap-10 items-start">
-   <div>
+  <div className="grid w-full min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,.65fr)] gap-6 lg:gap-10 items-start">
+   <div className="w-full min-w-0">
     <ImageCarousel images={room.images} alt={room.name} className="h-[420px] rounded-2xl" autoPlay interval={5500} transition="fade" showArrows={false} showDots />
     <h1 className="text-3xl md:text-4xl font-semibold mt-8">{room.name}</h1>
     <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
@@ -359,7 +359,7 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
 </div> 
 </div> 
 </div>
-   <aside className="card p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>
+   <aside className="card w-full min-w-0 p-4 sm:p-6 sticky top-24"><div className="flex items-baseline gap-2"><b className="font-display text-2xl">{naira(room.price)}</b><span className="text-xs text-navy-400">/ night</span></div><div className="h-px bg-black/10 my-5"/><label className="field-label">Check-in</label><input type="date" min={todayISO()} value={checkIn} onChange={e=>{setCheckIn(e.target.value);if(e.target.value>=checkOut)setCheckOut(addDaysISO(1,e.target.value))}} className="field-input mb-4"/><label className="field-label">Check-out</label><input type="date" min={addDaysISO(1,checkIn)} value={checkOut} onChange={e=>setCheckOut(e.target.value)} className="field-input mb-4"/><div className="flex justify-between text-sm"><span>{naira(room.price)} × {nights} nights</span><b>{naira(total)}</b></div><div className="flex justify-between text-sm mt-2"><span>Taxes & fees</span><b>{naira(tax)}</b></div><div className="flex justify-between font-semibold border-t border-black/10 mt-4 pt-4"><span>Total</span><b>{naira(total+tax)}</b></div>
     <div className="mt-5 rounded-xl bg-navy-50 border border-black/5 text-navy-600 text-sm p-4">Select a physical room above to see its specific details and the correct booking or reservation action.</div>
    </aside>
   </div>
