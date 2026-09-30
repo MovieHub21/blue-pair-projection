@@ -12,7 +12,7 @@ function requiredEnv(name: string) {
 function addBrandLogo(html: string) {
   const configuredSite = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '')
   const logoUrl = configuredSite ? `${configuredSite}/icon-192.png` : FALLBACK_LOGO_URL
-  const logo = `<div style="text-align:center;padding:0 0 20px"><img src="${logoUrl}" width="76" height="76" alt="Blue Pair Hotel" style="display:inline-block;width:76px;height:76px;border-radius:16px;object-fit:cover;border:0" /></div>`
+  const logo = `<div style="text-align:center;padding:0 0 20px"><img src="${logoUrl}" width="76" height="76" alt="Blue Pair Signature" style="display:inline-block;width:76px;height:76px;border-radius:16px;object-fit:cover;border:0" /></div>`
   return html.replace(/(<body[^>]*>)/i, `$1${logo}`)
 }
 
