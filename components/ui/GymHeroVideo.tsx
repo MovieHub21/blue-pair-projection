@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-type Quality = '1080p' | '720p' | '480p' | '360p'
+type Quality = '720p' | '240p'
 
 const SOURCES: Record<Quality, string> = {
-  '1080p': '/gym/gym-1080.mp4',
   '720p': '/gym/gym-720.mp4',
-  '480p': '/gym/gym-480.mp4',
-  '360p': '/gym/gym-360.mp4',
+  '240p': '/gym/gym-240.mp4',
 }
 
 function qualityForConnection(): Quality {
@@ -24,24 +22,19 @@ function qualityForConnection(): Quality {
     }
   ).connection
 
-  if (connection?.saveData) return '360p'
+  if (connection?.saveData) return '240p'
 
   const downlink = connection?.downlink
 
   if (typeof downlink === 'number') {
-    if (downlink >= 8) return '1080p'
-    if (downlink >= 4) return '720p'
-    if (downlink >= 1.5) return '480p'
-    return '360p'
+    return downlink >= 2.5 ? '720p' : '240p'
   }
 
   switch (connection?.effectiveType) {
     case '4g':
       return '720p'
-    case '3g':
-      return '480p'
     default:
-      return '360p'
+      return '240p'
   }
 }
 
