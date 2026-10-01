@@ -7,7 +7,7 @@ export default function PageHero({
   title,
   crumbs,
   children,
-  height = 'h-64 md:h-72',
+  height = 'h-64 md:h-80',
 }: {
   image: string
   video?: ReactNode
