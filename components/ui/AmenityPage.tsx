@@ -18,6 +18,7 @@ export interface AmenityConfig {
   pricingNote?: string
   ctaLabel?: string
   extra?: ReactNode
+  heroVideo?: ReactNode
   breadcrumbs?: BreadcrumbItem[]
 }
 
@@ -33,6 +34,7 @@ export default function AmenityPage({ config }: { config: AmenityConfig }) {
       eyebrow={config.eyebrow}
       title={config.name}
       crumbs={`Home / ${config.name}`}
+      video={config.heroVideo}
     />
 
     {/* Amenity Main Area */}
