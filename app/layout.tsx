@@ -12,9 +12,9 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   keywords: [
-    'Blue Pair Signature Crown Hotel & Suites', 'Blue Pair Signature Crown', 'hotels in uromi', 'hotels in uromi edo state',
-    'best hotel in uromi', 'best hotel in uromi edo state', 'best hotels in uromi', 'biggest hotel in uromi nigeria',
-    'cheap hotels in uromi', 'hotel in uromi', 'hotels in uromi edo state nigeria', 'hotels in uromi nigeria',
+    'Blue Pair Signature Crown Hotel & Suites', 'Blue Pair Signature Crown', 'hotels in uromi',
+     'best hotel in uromi edo state', 'best hotels in uromi', 'biggest hotel in uromi nigeria',
+    'cheap hotels in uromi', 'hotels in uromi edo state nigeria', 'hotels in uromi nigeria',
     'hotel in Nigeria', 'hotel in Edo State', 'hotel with swimming pool in uromi', 'hotel with gym in uromi',
     'hotel with pool and gym in uromi', 'hotel rooms and suites uromi', 'hotel booking uromi',
     'hotel accommodation uromi', 'hotel near Ekpoma', 'hotel near Auchi', 'hotel near Benin City',
@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   category: 'hotel',
   formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Hotels in Uromi | Blue Pair Hotel', template: '%s | Blue Pair Hotel' },
+  title: { default: 'Hotels in Uromi | Blue Pair Signature', template: '%s | Blue Pair Hotel' },
   description: 'Blue Pair Signature Crown Hotel & Suites is a premium hotel in Uromi, Edo State, Nigeria, offering rooms and suites, an indoor swimming pool, fitness gym, dining, VIP lounge, events and short-let accommodation. Book your stay online.',
   openGraph: {
     siteName: SITE_NAME,
-    title: 'Hotels in Uromi | Blue Pair Hotel',
+    title: 'Hotels in Uromi | Blue Pair Signature',
     description: 'Premium rooms, suites, dining, leisure, events and guest services in Uromi, Edo State, Nigeria.',
     images: [{ url: DEFAULT_OG_IMAGE }],
     locale: 'en_NG',
