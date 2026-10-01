@@ -15,7 +15,7 @@ export default async function GymPage() {
     name: 'Fitness Gym', eyebrow: 'Stay on routine', mini: 'AN EXPERIENCE FOR THE SENSES',
 
     heroImage: 'https://www.bluepairsignature.com/images/blue-pair-gym.jpeg',
-    heroVideo: <GymHeroVideo />,
+    heroVideo: <GymHeroVideo poster="https://www.bluepairsignature.com/blue-pair-gym.jpeg" />,
 
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',
     gallery: [
