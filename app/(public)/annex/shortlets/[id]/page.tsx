@@ -62,9 +62,7 @@ export default async function ShortLetDetailsPage({ params }: { params: { id: st
       <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), productJsonLd]} />
 
       <div className="container-w min-w-0 max-w-full overflow-x-hidden px-4 py-8 sm:px-6 md:px-10">
-        <Link href="/annex/shortlets" className="text-xs text-navy-400 hover:text-navy-700">
-          ← Back to Short-lets
-        </Link>
+       
 
         <div className="grid min-w-0 max-w-full gap-8 mt-5 lg:grid-cols-[1.35fr,.65fr]">
           <div className="min-w-0 max-w-full">

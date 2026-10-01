@@ -9,7 +9,7 @@ export default function ShortLetGallery({ images, name }: { images: string[]; na
     <ImageCarousel
       images={images}
       alt={name}
-      className="h-[360px] sm:h-[420px] md:h-[500px] rounded-[1.25rem] md:rounded-[1.5rem] border border-gold-500/15 bg-navy-950 shadow-pop"
+      className="h-[360px] sm:h-[420px] md:h-[500px] rounded-[0.5rem] md:rounded-[0.3rem] border border-gold-500/15 bg-navy-950 shadow-pop"
       autoPlay
       interval={6000}
       transition="fade"
