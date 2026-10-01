@@ -1,5 +1,6 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
+import GymHeroVideo from '../../../components/ui/GymHeroVideo'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
@@ -12,7 +13,10 @@ export const metadata = buildMetadata({
 export default async function GymPage() {
   const config = await resolveAmenityConfig('gym', {
     name: 'Fitness Gym', eyebrow: 'Stay on routine', mini: 'AN EXPERIENCE FOR THE SENSES',
-    heroImage: 'https://www.bluepairsignature.com/images/blue-pair-gym.jpeg',
+
+    heroImage: 'https://www.bluepairsignature.com/blue-pair-gym.jpeg',
+    heroVideo: <GymHeroVideo />,
+
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',
     gallery: [
       'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=900&q=80',
