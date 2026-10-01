@@ -14,7 +14,7 @@ export default async function GymPage() {
   const config = await resolveAmenityConfig('gym', {
     name: 'Fitness Gym', eyebrow: 'Stay on routine', mini: 'AN EXPERIENCE FOR THE SENSES',
 
-    heroImage: 'https://www.bluepairsignature.com/blue-pair-gym.jpeg',
+    heroImage: 'https://www.bluepairsignature.com/images/blue-pair-gym.jpeg',
     heroVideo: <GymHeroVideo />,
 
     description: 'A full-equipment fitness studio overlooking the pool deck, with personal trainers available on request.',

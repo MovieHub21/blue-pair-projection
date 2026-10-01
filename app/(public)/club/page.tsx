@@ -21,12 +21,12 @@ export default async function ClubPage() {
   }))
   const config = await resolveAmenityConfig('club', {
     name: 'Club', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
-    heroImage: 'https://www.bluepairsignature.com/CLUB2.jpg',
+    heroImage: 'https://www.bluepairsignature.com/images/CLUB2.jpg',
     description: 'Edo State\u2019s after-dark address — resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [
       'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=900&q=80',
       'https://images.unsplash.com/photo-1571266028243-d220c9e1345c?auto=format&fit=crop&w=900&q=80',
-      'https://www.bluepairsignature.com/CLUB2.jpg',
+      'https://www.bluepairsignature.com/images/CLUB2.jpg',
     ],
     hours: 'Thursday – Sunday, 9:00 PM – 4:00 AM',
     facilities: ['Resident & guest DJs', 'Bottle service', 'VIP table booths', 'Outdoor terrace', 'Dedicated security & valet', 'Live performances on weekends'],

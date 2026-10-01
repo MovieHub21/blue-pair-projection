@@ -13,7 +13,7 @@ export default function GymHeroVideo({
     const video = videoRef.current
     if (!video) return
 
-    video.src = '/gym/gym.mp4'
+    video.src = 'GYMRUN.mp4'
     video.load()
   }, [])
 
