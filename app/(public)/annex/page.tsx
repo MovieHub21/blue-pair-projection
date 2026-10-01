@@ -8,7 +8,7 @@ import SectionHeading from '../../../components/ui/SectionHeading'
 import { ArrowRight } from 'lucide-react'
 
 const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
-  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85'],
+  'annex-home': ['https://bluepairsignature.com/images/annex.jpg'],
   'annex-dining': ['https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85'],
   'annex-vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=85'],
 }
@@ -16,7 +16,7 @@ const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
 export const metadata = buildMetadata({
   title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Hotel',
   description: 'Explore the Blue Pair Hotel Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
-  keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state, apartment for rent uromi',
+  keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state, apartment for rent uromi, annex in uromi',
   path: '/annex',
 })
 
