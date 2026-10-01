@@ -9,7 +9,7 @@ const COMPANY_NAME = 'Blue Pair Signature Crown Hotel & Suites'
 
 const explore = [
   { href: '/dining', label: 'Dining' }, 
-  { href: '/vip-lounge', label: 'VIP Lounge' }, 
+  { href: '/vip-lounge', label: 'VIP Bar' }, 
   { href: '/pool', label: 'Indoor Pool' },
   { href: '/gym', label: 'Gym' }, 
   { href: '/club', label: 'Club' }, 
