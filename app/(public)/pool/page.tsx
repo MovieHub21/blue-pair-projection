@@ -15,8 +15,8 @@ export default async function PoolPage() {
     heroImage: '/blue-pair-pool.jpeg',
     description: 'A temperature-controlled indoor pool section and poolside service from the Outdoor Bar & Eatery.',
     gallery: [
-      '/images/blue-pair-pool.jpeg',
-      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=80',
+      'https://bluepairsignature.com/images/blue-pair-pool.jpeg',
+      'https://bluepairsignature.com/images/pool2.JPG',
       'https://images.unsplash.com/photo-1600965962361-9035dbfd1c50?auto=format&fit=crop&w=900&q=80',
     ],
     hours: 'Daily, 6:00 AM – 9:00 PM',

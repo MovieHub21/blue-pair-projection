@@ -24,8 +24,8 @@ export default async function ClubPage() {
     heroImage: 'https://www.bluepairsignature.com/images/CLUB2.jpg',
     description: 'Edo State\u2019s after-dark address — resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [
-      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1571266028243-d220c9e1345c?auto=format&fit=crop&w=900&q=80',
+      'https://www.bluepairsignature.com/images/club2.png',
+      'https://www.bluepairsignature.com/images/club3.png',
       'https://www.bluepairsignature.com/images/CLUB2.jpg',
     ],
     hours: 'Thursday – Sunday, 9:00 PM – 4:00 AM',
