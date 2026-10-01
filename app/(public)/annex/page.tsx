@@ -8,7 +8,7 @@ import SectionHeading from '../../../components/ui/SectionHeading'
 import { ArrowRight } from 'lucide-react'
 
 const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
-  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1200&q=85'],
+  'annex-home': ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=85'],
   'annex-dining': ['https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1600&q=85'],
   'annex-vip-lounge': ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85', 'https://images.unsplash.com/photo-1544148103-0773bf10d330?auto=format&fit=crop&w=1200&q=85'],
 }
@@ -28,14 +28,14 @@ const annexOutlets = [
     path: '/annex/dining',
     name: 'Annex Dining & Drinks',
     description: 'Homestyle restaurant dining, dedicated bar drinks, open-fire grills, and outdoor al fresco seating in one unified menu.',
-    fallbackImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85',
+    fallbackImage: '',
   },
   {
     key: 'annex-vip-lounge',
     path: '/annex/vip-lounge',
     name: 'VIP Lounge',
     description: 'A private, intimate lounge for small celebrations, VIP gatherings and relaxed evenings.',
-    fallbackImage: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
+    fallbackImage: '/images/annexvip.jpg',
   },
 ]
 
