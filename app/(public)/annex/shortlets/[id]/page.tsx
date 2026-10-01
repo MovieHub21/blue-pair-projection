@@ -10,13 +10,6 @@ import ShortLetGallery from './ShortLetGallery'
 import ShortLetAmenities from './ShortLetAmenities'
 import ShortLetBookingClient from './ShortLetBookingClient'
 
-const SHORTLET_IMAGES: Record<string, string[]> = {
-  sl1: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1200&q=85'],
-  sl2: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=85'],
-  sl3: ['https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=85'],
-}
-const DEFAULT_SHORTLET_IMAGES = SHORTLET_IMAGES.sl2
-const codeImagesFor = (id: string) => SHORTLET_IMAGES[id] || DEFAULT_SHORTLET_IMAGES
 
 export async function generateStaticParams() {
   const shortLets = await getShortLets()
@@ -32,7 +25,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description: `${sl.description} ${sl.bedrooms} bedrooms, from ₦${sl.price.toLocaleString()} per night at the Blue Pair Hotel Annex, Uromi, Edo State.`,
     keywords: `${sl.name.toLowerCase()}, short let uromi, ${sl.type.toLowerCase()} for rent edo state`,
     path: `/annex/shortlets/${sl.id}`,
-    image: codeImagesFor(sl.id)[0],
+    image: sl.images?.[0] || sl.image,
   })
 }
 
@@ -40,8 +33,7 @@ export default async function ShortLetDetailsPage({ params }: { params: { id: st
   const shortLets = await getShortLets()
   const sl = shortLets.find(s => s.id === params.id)
   if (!sl) notFound()
-  const codeImages = codeImagesFor(sl.id)
-  const image = codeImages[0]
+  const codeImages = sl.images?.length ? sl.images : (sl.image ? [sl.image] : [])
 
 const breadcrumbs = [{ name: 'Home', path: '/' }, { name: 'The Annex', path: '/annex' }, { name: 'Short-lets', path: '/annex/shortlets' }, { name: sl.name, path: `/annex/shortlets/${sl.id}` }]
   const productJsonLd = {
