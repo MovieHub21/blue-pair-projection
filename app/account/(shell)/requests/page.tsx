@@ -6,8 +6,8 @@ const ANNEX_MENU_OUTLETS = new Set(['Annex Restaurant', 'Annex Grilling', 'Outdo
 
 export default async function SpecialRequestsPage() {
   const [requests, customer, bookings, menuItems, drinks] = await Promise.all([getMyGuestRequests(), getMyCustomer(), getMyBookings(), getMenuItems(), getDrinks()])
-  const activeStay = bookings.find(b => b.status === 'checked_in' && (b.roomId || b.shortLetId))
-  const isAnnexStay = Boolean(activeStay?.shortLetId)
+  const activeStay = bookings.find(b => b.status === 'checked_in' && (b.roomId || b.shortLet?.id))
+  const isAnnexStay = Boolean(activeStay?.shortLet?.id)
   const stayLabel = isAnnexStay
     ? activeStay?.shortLet?.name ?? 'Annex short-let'
     : activeStay?.roomNumber ? `Room ${activeStay.roomNumber}` : undefined
