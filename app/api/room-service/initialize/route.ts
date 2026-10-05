@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { SITE_URL } from '../../../../lib/siteConfig'
 
+const ANNEX_MENU_OUTLETS = new Set(['Annex Restaurant', 'Annex Grilling', 'Outdoor Bar & Eatery', 'Annex Outdoor Eatery'])
+
 function makeReference() {
   return `RS-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`
 }
@@ -23,19 +25,31 @@ export async function POST(request: Request) {
     if (!customer) return NextResponse.json({ error: 'Guest profile not found.' }, { status: 404 })
     if (!customer.email) return NextResponse.json({ error: 'Your guest account needs an email address before payment.' }, { status: 400 })
 
-    const { data: bookings } = await admin.from('bookings').select('reference,room_id,status').eq('customer_id', customer.id).eq('status', 'checked_in').order('check_in', { ascending: false }).limit(1)
+    const { data: bookings } = await admin.from('bookings').select('reference,room_id,short_let_id,status').eq('customer_id', customer.id).eq('status', 'checked_in').order('check_in', { ascending: false }).limit(1)
     const booking = bookings?.[0]
-    if (!booking?.room_id) return NextResponse.json({ error: 'Room service is available after you are checked in.' }, { status: 400 })
+    if (!booking?.room_id && !booking?.short_let_id) return NextResponse.json({ error: 'Room service is available after you are checked in.' }, { status: 400 })
 
-    const { data: room } = await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()
-    if (!room?.room_number) return NextResponse.json({ error: 'Your checked-in room could not be found.' }, { status: 400 })
+    const isAnnexStay = Boolean(booking.short_let_id)
+    let stayLabel = ''
+    if (isAnnexStay) {
+      const { data: property } = await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle()
+      if (!property?.name) return NextResponse.json({ error: 'Your Annex short-let could not be found.' }, { status: 400 })
+      stayLabel = property.name
+    } else {
+      const { data: room } = await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()
+      if (!room?.room_number) return NextResponse.json({ error: 'Your checked-in room could not be found.' }, { status: 400 })
+      stayLabel = room.room_number
+    }
 
     const names = requestedItems.map((item: any) => String(item.name || '').trim()).filter(Boolean)
     if (!names.length) return NextResponse.json({ error: 'Choose valid menu items.' }, { status: 400 })
 
+    // Re-check the catalogue server-side so a crafted request cannot order from the other building.
+    const foodQuery = admin.from('menu_items').select('name,price,available,outlet').in('name', names)
+    const drinkQuery = admin.from('drinks').select('name,price,available,bar').in('name', names)
     const [{ data: foods }, { data: drinks }] = await Promise.all([
-      admin.from('menu_items').select('name,price,available,outlet').in('name', names),
-      admin.from('drinks').select('name,price,available').in('name', names),
+      isAnnexStay ? foodQuery.in('outlet', Array.from(ANNEX_MENU_OUTLETS)) : foodQuery.not('outlet', 'in', '("Annex Restaurant","Annex Grilling","Outdoor Bar & Eatery","Annex Outdoor Eatery")'),
+      isAnnexStay ? drinkQuery.eq('bar', 'Annex Bar') : drinkQuery.neq('bar', 'Annex Bar'),
     ])
 
     const foodMap = new Map((foods ?? []).map((item: any) => [item.name, item]))
@@ -47,7 +61,7 @@ export async function POST(request: Request) {
       const name = String(requested.name || '').trim()
       const quantity = Math.max(1, Math.min(50, Math.floor(Number(requested.quantity) || 1)))
       const item = foodMap.get(name) || drinkMap.get(name)
-      if (!item || item.available === false) return NextResponse.json({ error: `${name} is no longer available.` }, { status: 400 })
+      if (!item || item.available === false) return NextResponse.json({ error: `${name} is not available for your current stay.` }, { status: 400 })
       const unitPrice = Number(item.price)
       if (!Number.isFinite(unitPrice) || unitPrice < 0) return NextResponse.json({ error: `Invalid price for ${name}.` }, { status: 400 })
       const kind = foodMap.has(name) ? 'Food' : 'Drink'
@@ -63,31 +77,15 @@ export async function POST(request: Request) {
     const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
 
     const { error: orderError } = await admin.from('room_service_orders').insert({
-      id: orderId,
-      reference,
-      customer_id: customer.id,
-      booking_ref: booking.reference,
-      room: room.room_number,
-      guest_name: customer.name || 'Guest',
-      items: normalized,
-      notes,
-      total,
-      payment_reference: paymentReference,
-      payment_status: 'pending',
-      status: 'pending',
+      id: orderId, reference, customer_id: customer.id, booking_ref: booking.reference, room: stayLabel,
+      guest_name: customer.name || 'Guest', items: normalized, notes, total, payment_reference: paymentReference,
+      payment_status: 'pending', status: 'pending',
     })
     if (orderError) throw orderError
 
     const { error: paymentError } = await admin.from('payments').insert({
-      id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      reference: paymentReference,
-      booking_ref: reference,
-      customer_id: customer.id,
-      customer: customer.name,
-      amount: total,
-      method: 'Paystack',
-      status: 'pending',
-      date: paidOn,
+      id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, reference: paymentReference, booking_ref: reference,
+      customer_id: customer.id, customer: customer.name, amount: total, method: 'Paystack', status: 'pending', date: paidOn,
     })
     if (paymentError) throw paymentError
 
@@ -95,21 +93,12 @@ export async function POST(request: Request) {
     if (!secret) throw new Error('Paystack is not configured.')
     const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/api/room-service/callback`
     const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: customer.email,
-        amount: String(Math.round(total * 100)),
-        currency: 'NGN',
-        reference: paymentReference,
-        callback_url: callbackUrl,
-        metadata: { room_service_order_id: orderId, room_service_reference: reference, booking_reference: booking.reference, customer_id: customer.id },
-      }),
+      method: 'POST', headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: customer.email, amount: String(Math.round(total * 100)), currency: 'NGN', reference: paymentReference, callback_url: callbackUrl, metadata: { room_service_order_id: orderId, room_service_reference: reference, booking_reference: booking.reference, customer_id: customer.id } }),
       cache: 'no-store',
     })
     const result = await paystackResponse.json()
     if (!paystackResponse.ok || !result?.status || !result?.data?.authorization_url) throw new Error(result?.message || 'Paystack could not initialize the payment.')
-
     return NextResponse.json({ authorizationUrl: result.data.authorization_url, reference, total, orderId })
   } catch (error: any) {
     console.error('[room-service-initialize]', error)
