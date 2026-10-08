@@ -14,9 +14,10 @@ export async function GET() {
     supabase.from('notifications')
     .select('id,job_id,type,title,message,read,created_at')
     .eq('user_id', user.id)
+    .eq('type', 'background_job_failed')
     .order('created_at', { ascending: false })
     .limit(30),
-    supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+    supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('type', 'background_job_failed').eq('read', false),
   ])
   if (error) return NextResponse.json({ error: 'Unable to load notifications.' }, { status: 500 })
   if (countError) return NextResponse.json({ error: 'Unable to load notifications.' }, { status: 500 })

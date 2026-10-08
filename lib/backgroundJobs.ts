@@ -1,11 +1,12 @@
 import { createSupabaseAdminClient } from './supabase/admin'
 
-export type BackgroundJobType = 'contact_message_email'
+export type BackgroundJobType = 'contact_message_email' | 'email_delivery'
+export type BackgroundEmailPayload = { to: string; subject: string; html: string; text?: string; idempotency_key?: string; include_account_cta?: boolean }
 
 type EnqueueBackgroundJobInput = {
   type: BackgroundJobType
   userId: string | null
-  payload: { conversation_id: string }
+  payload: { conversation_id: string; message_id?: string } | BackgroundEmailPayload
   idempotencyKey: string
   maxAttempts?: number
 }
@@ -26,4 +27,14 @@ export async function enqueueBackgroundJob(input: EnqueueBackgroundJobInput): Pr
     throw new Error('Unable to queue this request.')
   }
   return { id: data }
+}
+
+export function enqueueBackgroundEmail(input: BackgroundEmailPayload & { queueKey: string }): Promise<{ id: string }> {
+  const { queueKey, ...email } = input
+  return enqueueBackgroundJob({
+    type: 'email_delivery',
+    userId: null,
+    payload: { ...email, idempotency_key: email.idempotency_key || queueKey },
+    idempotencyKey: queueKey,
+  })
 }

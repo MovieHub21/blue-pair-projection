@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { sendResendEmail } from '../../../lib/email/resend'
 import { SITE_EMAIL } from '../../../lib/siteConfig'
 import { createSupabasePublicClient } from '../../../lib/supabase/server'
 import { readSanitizedJson } from '../../../lib/security/input'
+import { enqueueBackgroundEmail } from '../../../lib/backgroundJobs'
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char] as string))
@@ -23,11 +23,12 @@ export async function POST(request: Request) {
     const { data: content } = await db.from('site_content').select('key,value').in('key', ['hotel_email'])
     const configuredEmail = (content ?? []).find((row: any) => row.key === 'hotel_email')?.value || SITE_EMAIL
 
-    await sendResendEmail({
+    await enqueueBackgroundEmail({
       to: configuredEmail,
       subject: `Website enquiry: ${subject}`,
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${message}`,
       html: `<h2>New website enquiry</h2><p><strong>Name:</strong> ${escapeHtml(name)}</p><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Subject:</strong> ${escapeHtml(subject)}</p><p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>`,
+      queueKey: `website-enquiry:${crypto.randomUUID()}`,
     })
 
     return NextResponse.json({ success: true })

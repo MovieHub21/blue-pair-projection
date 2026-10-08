@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { sendResendEmail } from '../../../../lib/email/resend'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 import { bookingConfirmationEmail, paymentSuccessfulEmail, paymentFailedEmail, bookingCancelledEmail, bookingModifiedEmail, preArrivalEmail, checkInReminderEmail, checkInWelcomeEmail, checkoutReminderEmail, checkoutThankYouEmail, reviewRequestEmail, serviceRequestReceivedEmail, serviceRequestStatusEmail, supportTicketEmail } from '../../../../lib/email/templates'
 
 type EventName = 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified' | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder' | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status' | 'support_acknowledged' | 'support_status'
@@ -85,10 +85,13 @@ export async function POST(request: Request) {
       default: return NextResponse.json({ error: 'Unsupported email event' }, { status: 400 })
     }
 
-    console.log('[guest-transactional-email]', requestId, 'sending', { event, recipient, reference, roomName })
-    const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text, ...(event === 'payment_successful' && booking?.id ? { idempotencyKey: `booking-payment-confirmation:${booking.id}` } : event === 'booking_confirmation' && reference ? { idempotencyKey: `booking-confirmation:${reference}` } : event === 'checkin_welcome' && booking?.id ? { idempotencyKey: `booking-checkin-welcome:${booking.id}` } : {}) })
-    console.log('[guest-transactional-email]', requestId, 'sent', { event, recipient, providerId: result.id ?? null })
-    return NextResponse.json({ ok: true, id: result.id ?? null, event, recipient })
+    const providerKey = event === 'payment_successful' && booking?.id ? `booking-payment-confirmation:${booking.id}` : event === 'booking_confirmation' && reference ? `booking-confirmation:${reference}` : event === 'checkin_welcome' && booking?.id ? `booking-checkin-welcome:${booking.id}` : event === 'checkout_thank_you' && booking?.id ? `booking-checkout-thank-you:${booking.id}` : undefined
+    const queueKey = event === 'checkout_thank_you' && booking?.id
+      ? `checkout-thank-you:${booking.id}`
+      : providerKey || `guest-transactional:${requestId}`
+    const result = await enqueueBackgroundEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text, queueKey, ...(providerKey ? { idempotency_key: providerKey } : {}) })
+    console.log('[guest-transactional-email]', requestId, 'queued', { event, recipient, jobId: result.id })
+    return NextResponse.json({ ok: true, jobId: result.id, event, recipient })
   } catch (error: any) {
     console.error('[guest-transactional-email]', requestId, 'failed', { message: error?.message, stack: error?.stack })
     return NextResponse.json({ error: 'Unable to send guest email' }, { status: 500 })

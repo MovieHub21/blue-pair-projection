@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../lib/supabase/admin'
-import { sendResendEmail } from '../../../lib/email/resend'
 import { eventReservationGuestEmail, eventReservationReceptionEmail } from '../../../lib/email/templates'
 import { readSanitizedJson } from '../../../lib/security/input'
 import { notifyEventReservation } from '../../../lib/staffEvents'
+import { enqueueBackgroundEmail } from '../../../lib/backgroundJobs'
 
 export async function POST(request: Request) {
   try {
@@ -15,8 +15,16 @@ export async function POST(request: Request) {
     await notifyEventReservation(admin,{reservationId:reservation.id,guestName,eventTitle:event.title,guestCount})
     const {data:receptionStaff}=await admin.from('staff').select('email').eq('role','Reception').eq('status','active').not('email','is',null); let receptionEmails=[...new Set((receptionStaff??[]).map((s:any)=>s.email).filter(Boolean))]
     if(receptionEmails.length===0){const {data:siteEmail}=await admin.from('site_content').select('value').eq('key','hotel_email').maybeSingle(); if(siteEmail?.value)receptionEmails=[siteEmail.value]}
-    await sendResendEmail({to:guestEmail,...eventReservationGuestEmail({guestName,reservationId:reservation.id,eventTitle:event.title,eventDate:event.date,guestCount,status:'pending'})})
-    const receptionContent=eventReservationReceptionEmail({guestName,guestEmail,guestPhone,reservationId:reservation.id,eventTitle:event.title,eventDate:event.date,guestCount,notes}); for(const to of receptionEmails)await sendResendEmail({to,...receptionContent})
+    const guestEmailContent=eventReservationGuestEmail({guestName,reservationId:reservation.id,eventTitle:event.title,eventDate:event.date,guestCount,status:'pending'})
+    const receptionContent=eventReservationReceptionEmail({guestName,guestEmail,guestPhone,reservationId:reservation.id,eventTitle:event.title,eventDate:event.date,guestCount,notes})
+    try {
+      await Promise.all([
+        enqueueBackgroundEmail({to:guestEmail,...guestEmailContent,queueKey:`event-reservation:${reservation.id}:guest`}),
+        ...receptionEmails.map((to:string,index:number)=>enqueueBackgroundEmail({to,...receptionContent,queueKey:`event-reservation:${reservation.id}:staff:${index}`})),
+      ])
+    } catch (queueError) {
+      console.error('[event-reservation] notification emails were not fully queued', { reservationId: reservation.id, error: queueError })
+    }
     return NextResponse.json({ok:true,reservationId:reservation.id,message:'Your reservation request has been sent to our reception team. We will email you when your spot is reserved.'})
   }catch(error:any){console.error('[event-reservation]',error);if(error?.message==='REQUEST_BODY_TOO_LARGE')return NextResponse.json({error:'Request is too large.'},{status:413});return NextResponse.json({error:'Unable to submit reservation.'},{status:500})}
 }

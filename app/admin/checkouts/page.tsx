@@ -7,6 +7,7 @@ import { pushToast } from '../../../components/ui/Toast'
 import { supabase } from '../../../lib/supabase/client'
 import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '../../../lib/mappers'
 import type { Booking, Customer, Room, RoomType } from '../../../data/mock'
+import { Loader2 } from 'lucide-react'
 
 export default function CheckOutManagement() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -65,7 +66,10 @@ export default function CheckOutManagement() {
         return
       }
       await loadData()
-      pushToast('Guest checked out. The room is marked Cleaning Required for the actual checkout date.', 'success')
+      pushToast(data.guestEmailQueued
+        ? 'Guest checked out. Guest and housekeeping emails are queued.'
+        : `Guest checked out, but the guest email was not queued: ${data.guestEmailQueueError || 'email unavailable.'}`,
+      data.guestEmailQueued ? 'success' : 'error')
     } catch (err: any) {
       pushToast(err?.message || 'Could not check out guest.', 'error')
     } finally {
@@ -107,8 +111,9 @@ export default function CheckOutManagement() {
                 onClick={() => void checkout(b.id)}
                 className="btn-primary btn-sm disabled:opacity-50"
               >
-                {isProcessing ? 'Checking out…' : 'Check out guest'}
+                {isProcessing ? <><Loader2 size={14} className="animate-spin" /> Checking out…</> : 'Check out guest'}
               </button>
+              {isProcessing && <span className="text-xs text-navy-400 sm:basis-full" role="status">Saving checkout and queuing notifications…</span>}
             </div>
           )
         })}

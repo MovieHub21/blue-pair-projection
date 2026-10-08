@@ -116,7 +116,7 @@ export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
           {/* IMAGE */}
           <div className="relative min-h-[380px] lg:min-h-[520px] rounded-2xl overflow-hidden">
             <img
-              src="https://bluepairsignature.com/blue-pair-image.jpeg"
+              src="https://bluepairsignature.com/images/blue-pair-image.jpeg"
               alt="Guest experience at Blue Pair Hotel"
               className="absolute inset-0 w-full h-full object-cover"
             />

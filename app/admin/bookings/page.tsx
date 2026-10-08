@@ -55,6 +55,7 @@ export default function BookingManagement() {
   const [confirmingPayment, setConfirmingPayment] = useState<Booking | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
   const [savingPayment, setSavingPayment] = useState(false)
+  const [processingBookingId, setProcessingBookingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const filtersRef = useRef({ paymentFilter, search: debouncedQ, limit: visibleCount })
@@ -209,26 +210,44 @@ export default function BookingManagement() {
     if (!booking) return
     const room = booking.roomId ? rooms.find(r => r.id === booking.roomId) : freeRoom(booking.roomTypeId)
     if (!room || room.status !== 'available') return
-    await supabase.from('bookings').update({ status: 'checked_in', room_id: room.id, checked_in_at: new Date().toISOString() }).eq('id', id)
-    await supabase.from('rooms').update({ status: 'occupied' }).eq('id', room.id)
-    await loadData()
-    const emailSent = await sendGuestTransactionalEmail('checkin_welcome', { bookingId: id })
-    pushToast(emailSent ? `Guest checked in to Room ${room.roomNumber}. Welcome email sent.` : `Guest checked in to Room ${room.roomNumber}. Welcome email could not be sent.`, emailSent ? 'success' : 'error')
+    setProcessingBookingId(id)
+    try {
+      const { error: bookingError } = await supabase.from('bookings').update({ status: 'checked_in', room_id: room.id, checked_in_at: new Date().toISOString() }).eq('id', id)
+      if (bookingError) throw bookingError
+      const { error: roomError } = await supabase.from('rooms').update({ status: 'occupied' }).eq('id', room.id)
+      if (roomError) throw roomError
+      const emailQueued = await sendGuestTransactionalEmail('checkin_welcome', { bookingId: id })
+      await loadData()
+      pushToast(emailQueued
+        ? `Guest checked in to Room ${room.roomNumber}. Welcome email queued.`
+        : `Guest checked in to Room ${room.roomNumber}, but the welcome email could not be queued.`, emailQueued ? 'success' : 'error')
+    } catch (err: any) {
+      pushToast(err?.message || 'Could not check in guest.', 'error')
+    } finally {
+      setProcessingBookingId(null)
+    }
   }
 
   async function checkOut(id: string) {
-    const response = await fetch('/api/admin/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId: id }),
-    })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      pushToast(data.error || 'Could not check out guest.', 'error')
-      return
+    setProcessingBookingId(id)
+    try {
+      const response = await fetch('/api/admin/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: id }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Could not check out guest.')
+      await loadData()
+      pushToast(data.guestEmailQueued
+        ? (data.alreadyCheckedOut ? 'Checkout email queued for the guest.' : 'Guest checked out. Guest and housekeeping emails are queued.')
+        : `Guest checked out, but the guest email was not queued: ${data.guestEmailQueueError || 'email unavailable.'}`,
+      data.guestEmailQueued ? 'success' : 'error')
+    } catch (err: any) {
+      pushToast(err?.message || 'Could not check out guest.', 'error')
+    } finally {
+      setProcessingBookingId(null)
     }
-    await loadData()
-    pushToast('Guest checked out. The room is marked Cleaning Required for the actual checkout date.', 'success')
   }
 
   async function cancelBooking(id: string) {
@@ -295,8 +314,9 @@ export default function BookingManagement() {
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => openBooking(b)} className="text-xs font-semibold text-navy-900">View</button>
                     {b.paymentStatus !== 'paid' && b.status !== 'cancelled' && <button onClick={() => { setConfirmingPayment(b); setPaymentMethod(null); setError(null) }} className="text-xs font-semibold text-gold-700">Payment</button>}
-                    {!(b as any).shortLetId && b.status === 'confirmed' && <button onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700">Check-in</button>}
-                    {!(b as any).shortLetId && b.status === 'checked_in' && <button onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700">Check-out</button>}
+                    {!(b as any).shortLetId && b.status === 'confirmed' && <button disabled={!!processingBookingId} onClick={() => void checkIn(b.id)} className="text-xs font-semibold text-emerald-700 disabled:opacity-60">{processingBookingId === b.id ? <span className="inline-flex items-center gap-1"><Loader2 size={13} className="animate-spin" /> Checking in…</span> : 'Check-in'}</button>}
+                    {!(b as any).shortLetId && b.status === 'checked_in' && <button disabled={!!processingBookingId} onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700 disabled:opacity-60">{processingBookingId === b.id ? <span className="inline-flex items-center gap-1"><Loader2 size={13} className="animate-spin" /> Checking out…</span> : 'Check-out'}</button>}
+                    {!(b as any).shortLetId && b.status === 'checked_out' && <button disabled={!!processingBookingId} onClick={() => void checkOut(b.id)} className="text-xs font-semibold text-blue-700 disabled:opacity-60">{processingBookingId === b.id ? <span className="inline-flex items-center gap-1"><Loader2 size={13} className="animate-spin" /> Queueing…</span> : 'Queue checkout email'}</button>}
                     {['pending','confirmed'].includes(b.status) && <button onClick={() => void cancelBooking(b.id)} className="text-xs font-semibold text-red-600">Cancel</button>}
                   </div>
                 </td>

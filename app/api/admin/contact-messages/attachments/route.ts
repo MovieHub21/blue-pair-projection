@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
-import { sendResendEmail } from '../../../../../lib/email/resend'
-import { SITE_URL } from '../../../../../lib/siteConfig'
-import { contactMessageEmail } from '@/supabase/functions/_shared/contactMessageEmail'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment } from '../../../../../lib/contactAttachments'
+import { enqueueBackgroundJob } from '../../../../../lib/backgroundJobs'
 
 const STAFF_ROLES = new Set(['super_admin', 'manager', 'reception'])
 
@@ -34,26 +32,16 @@ export async function POST(request: Request) {
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved.' }, { status: 409 })
 
     const attachment = file ? await uploadContactAttachment(file, conversation.id, 'staff') : null
-    const { data: savedMessage, error: insertError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('id').single()
+    const { data: savedMessage, error: insertError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('*').single()
     if (insertError) throw insertError
     await admin.from('contact_conversations').update({ status: 'waiting_for_guest' }).eq('id', conversation.id)
 
-    if (conversation.guest_email) {
-      const email = contactMessageEmail({
-        recipientName: conversation.guest_name,
-        recipientType: 'guest',
-        guestNeedsAccount: !conversation.user_id,
-        conversationUrl: conversation.user_id
-          ? `${SITE_URL}/account/messages?conversation=${conversation.id}`
-          : `${SITE_URL}/account/register?redirect=${encodeURIComponent(`/account/messages?conversation=${conversation.id}`)}`,
-      })
-      await sendResendEmail({
-        to: conversation.guest_email,
-        ...email,
-        idempotencyKey: `contact-message:${savedMessage.id}:guest`,
-      })
+    try {
+      await enqueueBackgroundJob({ type: 'contact_message_email', userId: user.id, payload: { conversation_id: conversation.id, message_id: savedMessage.id }, idempotencyKey: `contact-message:${savedMessage.id}`, maxAttempts: 5 })
+    } catch (queueError) {
+      console.error('[admin-contact-attachment] guest email notification was not queued', { messageId: savedMessage.id, error: queueError })
     }
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: savedMessage })
   } catch (error: any) {
     console.error('[admin-contact-attachment]', error)
     return NextResponse.json({ error: error?.message || 'Unable to send the attachment.' }, { status: 500 })

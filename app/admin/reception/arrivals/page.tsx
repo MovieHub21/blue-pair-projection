@@ -7,6 +7,8 @@ import { pushToast } from '@/components/ui/Toast'
 import { supabase } from '@/lib/supabase/client'
 import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '@/lib/mappers'
 import type { Booking, Customer, Room, RoomType } from '@/data/mock'
+import { Loader2 } from 'lucide-react'
+import { sendGuestTransactionalEmail } from '@/components/GuestEmailWatcher'
 
 export default function Arrivals() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -63,8 +65,11 @@ export default function Arrivals() {
         .eq('id', roomId)
       if (rError) throw rError
 
+      const emailQueued = await sendGuestTransactionalEmail('checkin_welcome', { bookingId })
       await loadData()
-      pushToast('Guest checked in successfully', 'success')
+      pushToast(emailQueued
+        ? 'Guest checked in. Welcome email queued.'
+        : 'Guest checked in, but the welcome email could not be queued.', emailQueued ? 'success' : 'error')
     } catch (err: any) {
       pushToast(err?.message || 'Failed to check in guest', 'error')
     } finally {
@@ -109,8 +114,9 @@ export default function Arrivals() {
                       onClick={() => room && void checkIn(b.id, room.id)}
                       className={'btn-sm ' + (room && !isProcessing ? 'btn-primary' : 'btn-outline opacity-50 cursor-not-allowed')}
                     >
-                      {isProcessing ? 'Checking in…' : 'Check in'}
+                      {isProcessing ? <><Loader2 size={14} className="animate-spin" /> Updating guest…</> : 'Check in'}
                     </button>
+                    {isProcessing && <span className="block mt-2 text-xs text-navy-400" role="status">Saving room assignment and preparing the welcome email…</span>}
                   </td>
                 </tr>
               )

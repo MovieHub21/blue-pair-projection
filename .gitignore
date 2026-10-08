@@ -4,6 +4,13 @@ logs
 npm-debug.log*
 yarn-debug.log*
 supabase
+!supabase/
+supabase/*
+!supabase/migrations/
+supabase/migrations/*
+!supabase/migrations/20261008100000_background_email_delivery.sql
+!supabase/migrations/20261008180000_background_job_failure_notifications_only.sql
+!supabase/migrations/20261008200000_contact_email_one_per_turn.sql
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*

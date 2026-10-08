@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }).select('*').single()
     if (conversationError) throw conversationError
 
-    const { error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user?.id ?? null, message })
+    const { data: savedMessage, error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user?.id ?? null, message }).select('id').single()
     if (messageError) throw messageError
 
     await notifyContactMessage(admin, { conversationId: conversation.id, guestName: name, subject, isReply: false })
@@ -62,9 +62,9 @@ export async function POST(request: Request) {
       job = await enqueueBackgroundJob({
         type: 'contact_message_email',
         userId: user?.id ?? null,
-        payload: { conversation_id: conversation.id },
-        idempotencyKey: `contact-message:${conversation.id}`,
-        maxAttempts: 3,
+        payload: { conversation_id: conversation.id, message_id: savedMessage.id },
+        idempotencyKey: `contact-message:${savedMessage.id}`,
+        maxAttempts: 5,
       })
     } catch {
       // Keep the durable conversation and tell the caller that email delivery was not queued.

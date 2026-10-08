@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server'
-import { sendResendEmail } from '../../../../../lib/email/resend'
-import { SITE_URL } from '../../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment, withContactAttachmentUrls } from '../../../../../lib/contactAttachments'
 import { notifyContactMessage } from '../../../../../lib/staffEvents'
-import { contactMessageEmail } from '@/supabase/functions/_shared/contactMessageEmail'
-import { resolveContactMessageStaffRecipients } from '@/lib/contactMessageStaffRecipients'
+import { enqueueBackgroundJob } from '../../../../../lib/backgroundJobs'
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const server = createSupabaseServerClient()
@@ -41,36 +38,22 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved. Start a new message if you need further help.' }, { status: 409 })
 
     const attachment = file ? await uploadContactAttachment(file, conversation.id, 'guest') : null
-    const { data: savedMessage, error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('id').single()
+    const { data: savedMessage, error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('*').single()
     if (error) throw error
 
     await notifyContactMessage(admin, { conversationId: conversation.id, guestName: conversation.guest_name, subject: conversation.subject, isReply: true })
-    const recipients = await resolveContactMessageStaffRecipients(admin)
-    if (!recipients.length) throw new Error('No staff member currently has access to Guest Messages')
-
-    const staffEmail = contactMessageEmail({
-      recipientName: 'Team',
-      recipientType: 'staff',
-      conversationUrl: `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`,
-    })
-    const guestEmail = contactMessageEmail({
-      recipientName: conversation.guest_name,
-      recipientType: 'guest',
-      conversationUrl: `${SITE_URL}/account/messages?conversation=${conversation.id}`,
-    })
-    await Promise.all([
-      ...recipients.map(recipient => sendResendEmail({
-        to: recipient.email,
-        ...staffEmail,
-        idempotencyKey: `contact-message:${savedMessage.id}:staff:${recipient.userId}`,
-      })),
-      sendResendEmail({
-        to: conversation.guest_email,
-        ...guestEmail,
-        idempotencyKey: `contact-message:${savedMessage.id}:guest`,
-      }),
-    ])
-    return NextResponse.json({ success: true })
+    try {
+      await enqueueBackgroundJob({
+        type: 'contact_message_email',
+        userId: user.id,
+        payload: { conversation_id: conversation.id, message_id: savedMessage.id },
+        idempotencyKey: `contact-message:${savedMessage.id}`,
+        maxAttempts: 5,
+      })
+    } catch (queueError) {
+      console.error('[contact-conversation-guest-reply] email notification was not queued', { messageId: savedMessage.id, error: queueError })
+    }
+    return NextResponse.json({ success: true, message: savedMessage })
   } catch (error: any) {
     console.error('[contact-conversation-guest-reply]', error)
     return NextResponse.json({ error: error?.message || 'Unable to send your reply.' }, { status: 500 })

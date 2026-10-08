@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Loader2, CheckCircle2, MessageSquare, UserRound } from 'lucide-react'
 import { useAuth } from '../../../lib/useAuth'
@@ -11,6 +11,7 @@ export default function ContactForm() {
   const { loading: authLoading, userId, email: accountEmail, profile } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', category: 'General enquiry', message: '' })
   const [sending, setSending] = useState(false)
+  const submitLock = useRef(false)
   const [sent, setSent] = useState(false)
   const [conversationId, setConversationId] = useState('')
   const [guestAccountRequired, setGuestAccountRequired] = useState(false)
@@ -28,6 +29,8 @@ export default function ContactForm() {
 
   async function submit(event: FormEvent) {
     event.preventDefault()
+    if (submitLock.current) return
+    submitLock.current = true
     setSending(true); setError(''); setSent(false)
     try {
       const response = await fetch('/api/contact/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
@@ -39,7 +42,7 @@ export default function ContactForm() {
       setForm(current => ({ ...current, subject: '', category: 'General enquiry', message: '' }))
     } catch (e: any) {
       setError(e?.message || 'Unable to send your message.')
-    } finally { setSending(false) }
+    } finally { submitLock.current = false; setSending(false) }
   }
 
   const registerUrl = conversationId

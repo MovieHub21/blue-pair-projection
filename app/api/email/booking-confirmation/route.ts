@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
-import { sendResendEmail } from '../../../../lib/email/resend'
 import { bookingConfirmationEmail } from '../../../../lib/email/templates'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 
 export async function POST(request: Request) {
   try {
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
       paymentStatus: String(body.paymentStatus ?? 'pending'),
     })
 
-    const result = await sendResendEmail({
+    const result = await enqueueBackgroundEmail({
       to: guestEmail,
       subject: email.subject,
       html: email.html,
       text: email.text,
-      idempotencyKey: `booking-confirmation:${String(body.reference)}`,
+      queueKey: `booking-confirmation:${String(body.reference)}`,
     })
 
     return NextResponse.json({ ok: true, id: result.id ?? null })

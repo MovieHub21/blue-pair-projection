@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { sendResendEmail } from '../../../../lib/email/resend'
 import { eventReservationStatusEmail } from '../../../../lib/email/templates'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 
 const STAFF_ROLES = new Set(['super_admin','manager','reception'])
 export async function GET() {
@@ -15,6 +15,9 @@ export async function PATCH(request:Request){
     const admin=createSupabaseAdminClient(); const {data:reservation}=await admin.from('event_reservations').select('*, events(title,date,price,image,capacity)').eq('id',reservationId).maybeSingle(); if(!reservation)return NextResponse.json({error:'Reservation not found.'},{status:404})
     if(status==='reserved' && reservation.status!=='reserved') { const {data:reservedRows}=await admin.from('event_reservations').select('guest_count').eq('event_id',reservation.event_id).eq('status','reserved').neq('id',reservation.id); const already=(reservedRows??[]).reduce((sum:any,row:any)=>sum+Number(row.guest_count||0),0); if(already+Number(reservation.guest_count)>Number(reservation.events?.capacity||0)) return NextResponse.json({error:`There is not enough remaining capacity for ${reservation.guest_count} guest(s).`},{status:409}) }
     const {error}=await admin.from('event_reservations').update({status,staff_note:String(staffNote||'').trim()||null,reserved_by:status==='reserved'?user.id:reservation.reserved_by}).eq('id',reservationId); if(error)throw error
-    const content=eventReservationStatusEmail({guestName:reservation.guest_name,reservationId:reservation.id,eventTitle:reservation.events?.title||'Event',eventDate:reservation.events?.date||'',guestCount:reservation.guest_count,status,staffNote:String(staffNote||'').trim()}); await sendResendEmail({to:reservation.guest_email,...content}); return NextResponse.json({ok:true})
+    const content=eventReservationStatusEmail({guestName:reservation.guest_name,reservationId:reservation.id,eventTitle:reservation.events?.title||'Event',eventDate:reservation.events?.date||'',guestCount:reservation.guest_count,status,staffNote:String(staffNote||'').trim()});
+    try { await enqueueBackgroundEmail({to:reservation.guest_email,...content,queueKey:`event-reservation:${reservation.id}:status:${status}:${Date.now()}`}) }
+    catch(queueError) { console.error('[admin-event-reservation] guest status email was not queued',{reservationId,error:queueError}) }
+    return NextResponse.json({ok:true})
   } catch(error:any){console.error('[admin-event-reservation]',error);return NextResponse.json({error:error?.message||'Unable to update reservation.'},{status:500})}
 }

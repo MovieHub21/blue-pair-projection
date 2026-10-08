@@ -1,13 +1,13 @@
 
 export const SITE_NAME = 'Blue Pair Signature Crown Hotel & Suites'
 export const SITE_URL = 'https://bluepairsignature.com'
-export const SITE_HERO_IMAGE = 'https://bluepairsignature.com/blue-pair-hero.jpeg'
+export const SITE_HERO_IMAGE = 'https://bluepairsignature.com/images/blue-pair-hero.jpeg'
 export const DEFAULT_OG_IMAGE = SITE_HERO_IMAGE
 
 
 export const SITE_HERO_VIDEO_URL = 'https://vimeo.com/1206966618'
-export const SITE_PHONE = '+234-901-234-5678'
-export const SITE_PHONE_DISPLAY = '+234 901 234 5678'
+export const SITE_PHONE = '+234 916 937 4811'
+export const SITE_PHONE_DISPLAY = '+234 916 937 4811'
 export const SITE_EMAIL = 'reservations@bluepairhotel.com'
 
 export const SITE_ADDRESS = {

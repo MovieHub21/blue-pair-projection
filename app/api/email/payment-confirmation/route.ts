@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { sendResendEmail } from '../../../../lib/email/resend'
 import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!booking) return NextResponse.json({ error: 'Booking could not be found.' }, { status: 404 })
     const { data: room } = await admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle()
     const email = paymentSuccessfulEmail({ guestName: customer.name || 'Guest', reference: booking.reference, roomName: room?.name || 'Room', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount), paymentReference: String(reference) })
-    await sendResendEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, includeAccountCta: false, idempotencyKey: `booking-payment-confirmation:${booking.id}` })
+    await enqueueBackgroundEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, include_account_cta: false, queueKey: `booking-payment-confirmation:${booking.id}` })
     await admin.from('guest_notifications').insert({ user_id: user.id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: String(reference), status: 'confirmed' } })
     return NextResponse.json({ ok: true, alreadySent: false })
   } catch (error: any) { console.error('[payment-confirmation-email]', error); return NextResponse.json({ error: error?.message || 'Unable to send payment confirmation email.' }, { status: 500 }) }

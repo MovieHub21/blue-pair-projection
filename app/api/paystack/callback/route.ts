@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { sendResendEmail } from '../../../../lib/email/resend'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
 import { SITE_URL } from '../../../../lib/siteConfig'
 import { isRoomServiceReference } from '../../../../lib/roomServicePayments'
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
         if (customer.email) {
           try {
             const email = paymentSuccessfulEmail({ guestName: customer.name || 'Guest', reference: booking.reference, roomName: shortLet?.name || roomType?.name || 'Short-let', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount), paymentReference: reference })
-            await sendResendEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, includeAccountCta: false, idempotencyKey: `booking-payment-confirmation:${booking.id}` })
+            await enqueueBackgroundEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, include_account_cta: false, queueKey: `booking-payment-confirmation:${booking.id}` })
           } catch (emailError) { console.error('[paystack-callback] confirmation email failed', emailError) }
         }
         await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: reference, status: 'confirmed' } })
