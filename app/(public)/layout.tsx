@@ -18,10 +18,10 @@ export default async function PublicRouteLayout({ children }: { children: React.
     name: SITE_NAME,
     url: SITE_URL,
     image: DEFAULT_OG_IMAGE,
-    telephone: SITE_PHONE,
-    email: SITE_EMAIL,
+    telephone: content.hotel_phone?.trim() || SITE_PHONE,
+    email: content.hotel_email?.trim() || SITE_EMAIL,
     priceRange: '₦45,000–₦180,000',
-    address: {
+    address: content.hotel_address?.trim() || {
       '@type': 'PostalAddress',
       streetAddress: SITE_ADDRESS.street,
       addressLocality: SITE_ADDRESS.locality,

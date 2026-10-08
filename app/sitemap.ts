@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import { SITE_URL } from '../lib/siteConfig'
-import { roomTypes, shortLets } from '../data/mock'
 import { getPublishedBlogPosts } from '../lib/blog'
+import { getActiveRoomTypes, getPublicShortLets } from '../lib/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
@@ -22,7 +22,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/smoking-area', priority: 0.3 }, 
     { path: '/billboard', priority: 0.4 },
     { path: '/parking', priority: 0.4 }, 
-    { path: '/annex', priority: 0.7 }, 
+    { path: '/annex', priority: 0.7 },
+    { path: '/annex/dining', priority: 0.7 },
     { path: '/annex/outdoor-eatery', priority: 0.6 }, 
     { path: '/annex/grilling', priority: 0.6 },
     { path: '/annex/bar', priority: 0.6 }, 
@@ -36,7 +37,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/blog', priority: 0.7 },
     { path: '/reviews', priority: 0.7 },
   ]
-  const [posts] = await Promise.all([getPublishedBlogPosts()])
+  const [posts, roomTypes, shortLets] = await Promise.all([
+    getPublishedBlogPosts(),
+    getActiveRoomTypes(),
+    getPublicShortLets(),
+  ])
   const roomRoutes = roomTypes.map(r => ({ path: `/rooms/${r.slug}`, priority: 0.8 }))
   const shortletRoutes = shortLets.map(s => ({ path: `/annex/shortlets/${s.id}`, priority: 0.6 }))
   const blogRoutes = posts.map(post => ({ path: `/blog/${post.slug}`, priority: 0.65, lastModified: new Date(post.updated_at || post.published_at) }))

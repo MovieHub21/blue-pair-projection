@@ -19,14 +19,14 @@ const FALLBACK_IMAGES = [
   'https://bluepairsignature.com/blue-pair-hero.jpeg',
 ]
 
-export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string }) {
+export default function HomeClient({ roomTypes, rooms, offers, gallery, headline, subtitle, hotelAddress }: { roomTypes: RoomType[]; rooms: Room[]; offers: Offer[]; gallery: GalleryImage[]; headline?: string; subtitle?: string; hotelAddress?: string }) {
   const images = gallery.map(item => item.url).filter(Boolean)
 
   const heroImage = SITE_HERO_IMAGE // swap this one image to update the hero everywhere it's used
   const availableCount = (roomTypeId: string) => rooms.filter(room => room.roomTypeId === roomTypeId && room.status === 'available').length
 
   const heroInfo = [
-    { icon: MapPin, label: 'Location', value: '105/104, Uwalor Road, Uromi, Edo State' },
+    { icon: MapPin, label: 'Location', value: hotelAddress || 'Uromi, Edo State' },
   ]
 
 

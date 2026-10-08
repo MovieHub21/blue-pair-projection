@@ -6,6 +6,7 @@ import { SITE_NAME, SITE_URL } from '../../../lib/siteConfig'
 export const metadata: Metadata = {
   title: 'Guest Reviews | Blue Pair Hotel Uromi',
   description: 'Read verified guest reviews about stays, rooms, service, dining and facilities at Blue Pair Signature Crown Hotel & Suites in Uromi, Edo State.',
+  keywords: ['Blue Pair Hotel reviews', 'hotel reviews Uromi', 'guest reviews Blue Pair Hotel'],
   alternates: {
     canonical: `${SITE_URL}/reviews`,
   },

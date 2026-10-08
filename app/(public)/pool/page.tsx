@@ -5,7 +5,7 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 export const metadata = buildMetadata({
   title: 'Indoor Swimming Pool in Uromi, Edo State | Blue Pair Hotel',
   description: "Temperature-controlled indoor pool at Blue Pair Hotel, Uromi, Edo State — kids' section, poolside service and cabanas. Open daily 6am–9pm.",
-  keywords: 'indoor pool uromi, swimming pool edo state, hotel pool uromi, hotel with pool esan north-east, blue pair hotel pool',
+  keywords: 'indoor swimming pool Uromi, hotel with swimming pool Uromi, swimming pool in Uromi, Blue Pair Hotel pool',
   path: '/pool',
 })
 

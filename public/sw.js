@@ -1,10 +1,11 @@
-const CACHE_NAME = 'blue-pair-static-v2'
-const APP_SHELL = ['/manifest.webmanifest']
+const CACHE_NAME = 'blue-pair-static-v3'
+
+// Only cache same-origin files whose URLs identify static assets. In
+// particular, API responses, page data, auth, and realtime traffic are never
+// handled by this cache.
+const STATIC_ASSET = /\.(?:avif|css|gif|ico|jpe?g|js|mjs|mp4|otf|png|svg|ttf|webmanifest|webp|woff2?)$/i
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  )
   self.skipWaiting()
 })
 
@@ -36,14 +37,29 @@ self.addEventListener('fetch', (event) => {
   // immediately visible instead of being served from an old app shell.
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).catch(() => caches.match('/manifest.webmanifest'))
+      fetch(event.request, { cache: 'no-store' }).catch(() =>
+        new Response('You are offline. Reconnect and try again.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
+        })
+      )
     )
     return
   }
 
-  // Static assets use the normal browser cache. Next.js serves hashed
-  // assets, so a new deployment gets new URLs automatically.
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
-  )
+  // Cache only recognizable static assets. Network-first keeps unversioned
+  // public files current after deployments, with the cache as an offline fallback.
+  if (!STATIC_ASSET.test(url.pathname)) return
+
+  const assetRequest = fetch(event.request)
+  event.respondWith(assetRequest.catch(async () => {
+      const cached = await caches.match(event.request)
+      if (cached) return cached
+      return new Response('', { status: 503, headers: { 'Cache-Control': 'no-store' } })
+  }))
+  event.waitUntil(assetRequest.then(async (response) => {
+    if (response.ok && response.type === 'basic') {
+      await (await caches.open(CACHE_NAME)).put(event.request, response.clone())
+    }
+  }).catch(() => {}))
 })

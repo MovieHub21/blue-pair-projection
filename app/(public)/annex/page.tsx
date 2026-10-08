@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getPublishedAmenities, getShortLets } from '../../../lib/data'
+import { getPublishedAmenities, getPublicShortLets } from '../../../lib/data'
 import { buildMetadata } from '../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 import { SITE_URL } from '../../../lib/siteConfig'
@@ -40,7 +40,7 @@ const annexOutlets = [
 ]
 
 export default async function AnnexPage() {
-  const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getShortLets()])
+  const [amenities, shortLets] = await Promise.all([getPublishedAmenities('annex-'), getPublicShortLets()])
   const amenityMap = new Map(amenities.map(a => [a.key, a]))
   const heroImage = ANNEX_CONTENT_IMAGES['annex-home']?.[0] || shortLets[0]?.image || ''
 

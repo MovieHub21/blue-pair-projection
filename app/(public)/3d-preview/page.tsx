@@ -1,4 +1,12 @@
 import Hotel3DHero from '../../../components/ui/Hotel3DHero'
+import { buildMetadata } from '../../../lib/buildMetadata'
+
+export const metadata = buildMetadata({
+  title: 'Interactive 3D Hotel Preview | Blue Pair Hotel Uromi',
+  description: 'Explore an interactive 3D concept of Blue Pair Hotel in Uromi, Edo State.',
+  keywords: 'Blue Pair Hotel 3D preview, interactive hotel preview Uromi',
+  path: '/3d-preview',
+})
 
 export default function ThreeDPreviewPage() {
   return (

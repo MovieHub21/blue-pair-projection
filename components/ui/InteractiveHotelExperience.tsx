@@ -68,7 +68,7 @@ export default function InteractiveHotelExperience({ gallery }: { gallery: Galle
           </div>
 
           <div className="relative min-h-[500px] overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a1730] shadow-2xl">
-            <img src={active.image} alt={active.title} className="absolute inset-0 h-full w-full object-cover opacity-55 transition-opacity duration-500" />
+            <img src={active.image} alt={active.title} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-55 transition-opacity duration-500" />
             <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/20 to-navy-950/5" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(199,154,62,.12),transparent_42%)]" />
 

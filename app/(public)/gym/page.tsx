@@ -6,7 +6,7 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 export const metadata = buildMetadata({
   title: 'Hotel Gym & Fitness Centre in Uromi, Edo State | Blue Pair Hotel',
   description: 'Full-equipment fitness studio at Blue Pair Hotel, Uromi, Edo State — free weights, cardio machines and personal trainers. Open daily 5am–10pm, free for hotel guests.',
-  keywords: 'hotel gym uromi, fitness centre edo state, gym near me uromi, hotel with gym esan north-east, blue pair hotel gym, best gym in uromi',
+  keywords: 'gym in Uromi, hotel gym Uromi, fitness centre Uromi, Blue Pair Hotel gym',
   path: '/gym',
 })
 

@@ -5,7 +5,7 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 export const metadata = buildMetadata({
   title: 'VIP bar in Uromi, Edo State | Blue Pair Hotel',
   description: 'Private VIP bar at Blue Pair Hotel, Uromi, Edo State — booth seating, premium spirits and a dedicated host. Reserve a table for your next night out in Uromi.',
-  keywords: 'bar uromi, vip bar edo state, private bar uromi, hotel with bar esan north-east, blue pair hotel vip, best bar in uromi',
+  keywords: 'VIP bar Uromi, private bar Uromi, VIP lounge Uromi, hotel bar Uromi, Blue Pair Hotel VIP bar',
   path: '/vip-lounge',
 })
 

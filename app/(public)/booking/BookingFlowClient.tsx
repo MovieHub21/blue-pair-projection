@@ -48,7 +48,7 @@ async function createDirectBooking(input: {
   }
 }
 
-export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[] }) {
+export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTypes: RoomType[]; hotelAddress?: string }) {
   const params = useSearchParams()
   const pathname = usePathname()
   const auth = useAuth()
@@ -285,7 +285,7 @@ export default function BookingFlowClient({ roomTypes }: { roomTypes: RoomType[]
               ['Dates', `${formatDate(checkIn)} → ${formatDate(checkOut)}`],
               ['Amount', naira(total)],
               ['Payment status', 'Pending'],
-              ['Hotel', 'Blue Pair Hotel, Auchi Road, Uromi, Edo State'],
+              ['Hotel', `Blue Pair Hotel, ${hotelAddress || 'Uromi, Edo State'}`],
             ].map(([l,v]) => (
               <div key={l} className="flex justify-between text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium">{v}</span></div>
             ))}

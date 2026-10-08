@@ -12,32 +12,6 @@ interface Params {
 
 const SEO_BRAND = 'Blue Pair Hotel'
 
-const HOTEL_SEARCH_CONTEXT = [
-  'hotels in uromi',
-  'hotels in uromi edo state',
-  'best hotel in uromi',
-  'best hotel in uromi edo state',
-  'best hotels in uromi',
-  'biggest hotel in uromi nigeria',
-  'cheap hotels in uromi',
-  'hotel in uromi',
-  'hotels in uromi edo state nigeria',
-  'hotels in uromi nigeria',
-  'hotel in Nigeria',
-  'hotel in Edo State',
-  'hotel in Uromi',
-  'hotel with swimming pool in Nigeria',
-  'hotel with gym in Nigeria',
-  'hotel with pool and gym in Edo State',
-  'luxury hotel Nigeria',
-  'hotel accommodation Nigeria',
-  'hotel rooms and suites Nigeria',
-  'hotel booking Nigeria',
-  'hotel near Ekpoma',
-  'hotel near Auchi',
-  'hotel near Benin City',
-]
-
 function optimizeTitle(title: string) {
   let clean = title
     .replaceAll(SITE_NAME, SEO_BRAND)
@@ -71,17 +45,16 @@ export function buildMetadata({ title, description, path, keywords, image, noind
   const url = `${SITE_URL}${path}`
   const ogImage = image ?? DEFAULT_OG_IMAGE
   const seoTitle = optimizeTitle(title)
-  const keywordSet = new Set([
-    ...HOTEL_SEARCH_CONTEXT,
-    ...(keywords ? keywords.split(',').map(value => value.trim()).filter(Boolean) : []),
-  ])
+  const pageKeywords = keywords
+    ? Array.from(new Set(keywords.split(',').map(value => value.trim()).filter(Boolean)))
+    : undefined
 
   return {
     // Explicit page titles are absolute so the long legal company name in the
     // root title template cannot be appended to every public page.
     title: { absolute: seoTitle },
     description,
-    keywords: Array.from(keywordSet),
+    ...(pageKeywords?.length ? { keywords: pageKeywords } : {}),
     alternates: { canonical: url },
     robots: noindex ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {

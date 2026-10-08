@@ -1,22 +1,23 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
 import JsonLd from '../../../components/JsonLd'
-import { getEvents } from '../../../lib/data'
+import { getEvents, getSiteContent } from '../../../lib/data'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 import { formatDate, naira } from '../../../lib/format'
 
 export const metadata = buildMetadata({
   title: 'Nightclub in Uromi, Edo State | The Club at Blue Pair Hotel',
   description: 'Edo State\u2019s after-dark address — resident DJs, bottle service and VIP tables at The Club, Blue Pair Hotel, Uromi. Open Thursday to Sunday, 9pm–4am.',
-  keywords: 'nightclub uromi, club edo state, vip table uromi, night club esan north-east, blue pair hotel club, best club in uromi',
+  keywords: 'nightclub Uromi, night club Uromi, club in Uromi Edo State, VIP table Uromi, The Club Blue Pair Hotel',
   path: '/club',
 })
 
 export default async function ClubPage() {
-  const upcoming = await getEvents(true)
+  const [upcoming, content] = await Promise.all([getEvents(true), getSiteContent()])
+  const address = content.hotel_address?.trim() || 'Uromi, Edo State'
   const eventsJsonLd = upcoming.map(e => ({
     '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image,
-    location: { '@type': 'Place', name: 'The Club at Blue Pair Hotel', address: 'Auchi Road, Uromi, Edo State' },
+    location: { '@type': 'Place', name: 'The Club at Blue Pair Hotel', address },
     offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' },
   }))
   const config = await resolveAmenityConfig('club', {

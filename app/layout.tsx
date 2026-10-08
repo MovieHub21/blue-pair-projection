@@ -11,15 +11,6 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
-  keywords: [
-    'Blue Pair Signature Crown Hotel & Suites', 'Blue Pair Signature Crown', 'hotels in uromi',
-     'best hotel in uromi edo state', 'best hotels in uromi', 'biggest hotel in uromi nigeria',
-    'cheap hotels in uromi', 'hotels in uromi edo state nigeria', 'hotels in uromi nigeria',
-    'hotel in Nigeria', 'hotel in Edo State', 'hotel with swimming pool in uromi', 'hotel with gym in uromi',
-    'hotel with pool and gym in uromi', 'hotel rooms and suites uromi', 'hotel booking uromi',
-    'hotel accommodation uromi', 'hotel near Ekpoma', 'hotel near Auchi', 'hotel near Benin City',
-    'restaurant in Uromi', 'event venue Uromi', 'short-let Uromi',
-  ],
   category: 'hotel',
   formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../components/JsonLd'
 import { SITE_URL } from '../../../../lib/siteConfig'
-import { getShortLets } from '../../../../lib/data'
+import { getPublicShortLets } from '../../../../lib/data'
 import { naira } from '../../../../lib/format'
 import { BedDouble } from 'lucide-react'
 
@@ -24,7 +24,7 @@ const breadcrumbs = [
 ]
 
 export default async function ShortLetsPage() {
-  const shortLets = await getShortLets()
+  const shortLets = await getPublicShortLets()
 
   const heroImage =
     shortLets.find((sl) => sl.images?.length)?.images?.[0] ||

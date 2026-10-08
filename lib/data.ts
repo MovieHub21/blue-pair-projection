@@ -1,4 +1,5 @@
 import { createSupabasePublicClient } from './supabase/server'
+import { hasPublicListingName } from './publicContent'
 import {
   mapRoomType, mapRoom, mapMenuItem, mapDrink, mapShortLet, mapEvent,
   mapBillboard, mapParkingZone, mapOffer, mapGalleryImage, mapAmenity,
@@ -35,6 +36,7 @@ export async function getRoomBySlug(roomTypeId: string, slug: string) {
 export async function getMenuItems() { const db=createSupabasePublicClient(); const {data}=await db.from('menu_items').select('*').order('name'); return (data??[]).map(mapMenuItem) }
 export async function getDrinks() { const db=createSupabasePublicClient(); const {data}=await db.from('drinks').select('*').order('name'); return (data??[]).map(mapDrink) }
 export async function getShortLets() { const db=createSupabasePublicClient(); const {data}=await db.from('short_lets').select('*').order('price'); return (data??[]).map(mapShortLet) }
+export async function getPublicShortLets() { return (await getShortLets()).filter(s => hasPublicListingName(s.name)) }
 export async function getEvents(publishedOnly=true) { const db=createSupabasePublicClient(); let q=db.from('events').select('*').order('date'); if(publishedOnly) q=q.eq('published',true); const {data}=await q; return (data??[]).map(mapEvent) }
 export async function getBillboards() { const db=createSupabasePublicClient(); const {data}=await db.from('billboards').select('*').order('price',{ascending:false}); return (data??[]).map(mapBillboard) }
 export async function getParkingZones() { const db=createSupabasePublicClient(); const {data}=await db.from('parking_zones').select('*').order('name'); return (data??[]).map(mapParkingZone) }
