@@ -14,4 +14,9 @@ export const metadata=buildMetadata({title:'Hotel Rooms & Suites in Uromi, Edo S
     path:'/rooms'})
 const breadcrumbs=[{name:'Home',path:'/'},
     {name:'Rooms & Suites',path:'/rooms'}]
-export default async function RoomsPage(){const [roomTypes,rooms]=await Promise.all([getRoomTypes(),getRooms()]);return <div><JsonLd data={breadcrumbJsonLd(breadcrumbs,SITE_URL)}/><PageHero image="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=80" eyebrow="Accommodation" title="Rooms & Suites" crumbs="Home / Rooms & Suites"/><BookingDateFilter/><Suspense><RoomsClient roomTypes={roomTypes.filter(r=>r.active)} rooms={rooms}/></Suspense></div>}
+
+export default async function RoomsPage()
+
+{const [roomTypes,rooms]=await Promise.all
+    ([getRoomTypes(),getRooms()]);
+return <div><JsonLd data={breadcrumbJsonLd(breadcrumbs,SITE_URL)}/><PageHero image="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=80" eyebrow="Accommodation" title="Rooms & Suites" crumbs="Home / Rooms & Suites"/><Suspense><RoomsClient roomTypes={roomTypes.filter(r=>r.active)} rooms={rooms}/></Suspense></div>}

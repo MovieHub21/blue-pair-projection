@@ -28,6 +28,7 @@ export default async function ClubPage() {
       'https://www.bluepairsignature.com/images/club2.png',
       'https://www.bluepairsignature.com/images/club3.png',
       'https://www.bluepairsignature.com/images/CLUB2.jpg',
+      'images/lawson.jpg',
     ],
     hours: 'Thursday – Sunday, 9:00 PM – 4:00 AM',
     facilities: ['Resident & guest DJs', 'Bottle service', 'VIP table booths', 'Outdoor terrace', 'Dedicated security & valet', 'Live performances on weekends'],

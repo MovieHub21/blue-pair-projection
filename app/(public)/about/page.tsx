@@ -26,7 +26,7 @@ export default async function AboutPage() {
   return (
     <div>
       <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
-      <PageHero image="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=1600&q=80"
+      <PageHero image="/images/abouthero.jpg"
         eyebrow="Our story" title={`About ${SITE_NAME}`} crumbs="Home / About" height="h-80" />
       <section className="section">
         <div className="container-w grid lg:grid-cols-2 gap-16 items-center">
@@ -37,7 +37,7 @@ export default async function AboutPage() {
             <p className="text-navy-500 text-[15px] leading-relaxed">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced — which is why the same warmth shows up whether you're checking into a Standard Room or hosting 200 guests in the Grand Hall.</p>
           </div>
           <div className="h-[420px] rounded-xl2 overflow-hidden">
-            <img loading="lazy" decoding="async" src="/aboutimage.jpeg" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" src="/images/aboutimage.jpeg" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
           </div>
         </div>
       </section>

@@ -50,22 +50,10 @@ function rateLimit(request: NextRequest) {
   return null
 }
 
-// Every public page request used to wait on a database read of the maintenance flag. The flag
-// is now remembered for a few seconds per server instance, so almost all page loads skip that
-// round trip. Turning maintenance mode on/off takes effect within MAINTENANCE_TTL_MS.
-const MAINTENANCE_TTL_MS = 10_000
-let maintenanceCache: { environment: string; value: boolean; expiresAt: number } | null = null
-
 async function isMaintenanceMode(supabase: ReturnType<typeof createServerClient>, environment: string) {
-  const now = Date.now()
-  if (maintenanceCache && maintenanceCache.environment === environment && maintenanceCache.expiresAt > now) {
-    return maintenanceCache.value
-  }
   const { data, error } = await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
   if (error) return false
-  const value = !!data?.maintenance_mode
-  maintenanceCache = { environment, value, expiresAt: now + MAINTENANCE_TTL_MS }
-  return value
+  return !!data?.maintenance_mode
 }
 
 function getEnvironment() {
