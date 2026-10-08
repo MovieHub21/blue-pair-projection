@@ -7,7 +7,7 @@ type Job = {
   id: string
   user_id: string | null
   type: string
-  payload: { conversation_id?: string; message_id?: string; to?: string; subject?: string; html?: string; text?: string; idempotency_key?: string; include_account_cta?: boolean }
+  payload: { conversation_id?: string; message_id?: string; is_initial_message?: boolean; to?: string; subject?: string; html?: string; text?: string; idempotency_key?: string; include_account_cta?: boolean }
   idempotency_key?: string
   attempts: number
   max_attempts: number
@@ -153,15 +153,32 @@ async function handleContactMessageEmail(job: Job) {
       const staffRecipients = await getContactStaffRecipients()
       if (!staffRecipients.length) throw new Error('No staff member currently has access to Guest Messages')
       const staffEmail = contactMessageEmail({ recipientName: 'Team', recipientType: 'staff', conversationUrl: `${siteUrl}${conversationPath}` })
-      await Promise.all(staffRecipients.map(recipient => sendEmail({
+      const sends = staffRecipients.map(recipient => sendEmail({
         to: recipient.email,
         ...staffEmail,
         idempotencyKey: `${notificationKey}:staff:${recipient.userId}`,
         jobId: job.id,
         recipientType: 'contact_staff',
-      })))
+      }))
+      if (job.payload.is_initial_message) {
+        const guestReceipt = contactMessageEmail({
+          recipientName: String(conversation.guest_name || 'Guest'),
+          recipientType: 'guest',
+          guestEmailType: 'received',
+          guestNeedsAccount: !conversation.user_id,
+          conversationUrl: guestUrl,
+        })
+        sends.push(sendEmail({
+          to: guestEmail,
+          ...guestReceipt,
+          idempotencyKey: `${notificationKey}:guest-receipt`,
+          jobId: job.id,
+          recipientType: 'contact_guest_receipt',
+        }))
+      }
+      await Promise.all(sends)
     } else {
-      const guestEmailContent = contactMessageEmail({ recipientName: String(conversation.guest_name || 'Guest'), recipientType: 'guest', guestNeedsAccount: !conversation.user_id, conversationUrl: guestUrl })
+      const guestEmailContent = contactMessageEmail({ recipientName: String(conversation.guest_name || 'Guest'), recipientType: 'guest', guestEmailType: 'reply', guestNeedsAccount: !conversation.user_id, conversationUrl: guestUrl })
       await sendEmail({
         to: guestEmail,
         ...guestEmailContent,

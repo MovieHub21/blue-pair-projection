@@ -16,6 +16,45 @@ type Notification = {
   backgroundJob?: boolean
 }
 
+type NotificationSnapshot = { items: Notification[]; unread: number }
+const inFlightNotificationLoads = new Map<string, Promise<NotificationSnapshot>>()
+
+function loadNotificationSnapshot(scope: 'guest' | 'staff') {
+  const existing = inFlightNotificationLoads.get(scope)
+  if (existing) return existing
+  const request = (async () => {
+    const [legacyResponse, jobResponse] = await Promise.all([
+      fetch(`/api/notifications?limit=8&scope=${scope}`, { cache: 'no-store' }),
+      fetch('/api/background-jobs/notifications', { cache: 'no-store' }),
+    ])
+    const [legacyData, jobData] = await Promise.all([
+      legacyResponse.json().catch(() => ({})),
+      jobResponse.json().catch(() => ({})),
+    ])
+    const backgroundItems: Notification[] = (jobResponse.ok ? jobData.notifications ?? [] : []).map((item: any) => ({
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      body: item.message,
+      href: null,
+      metadata: { job_id: item.job_id },
+      read_at: item.read ? item.created_at : null,
+      created_at: item.created_at,
+      backgroundJob: true,
+    }))
+    const items = [...(legacyResponse.ok ? legacyData.notifications ?? [] : []), ...backgroundItems]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return {
+      items: items.slice(0, 38),
+      unread: (legacyResponse.ok ? Number(legacyData.unreadCount) || 0 : 0) + (jobResponse.ok ? Number(jobData.unreadCount) || 0 : 0),
+    }
+  })()
+  inFlightNotificationLoads.set(scope, request)
+  const clear = () => { if (inFlightNotificationLoads.get(scope) === request) inFlightNotificationLoads.delete(scope) }
+  void request.then(clear, clear)
+  return request
+}
+
 const iconMap: Record<string, typeof Bell> = {
   booking: CalendarCheck,
   payment: CreditCard,
@@ -58,29 +97,9 @@ export default function NotificationBell({ scope = 'guest', viewAllHref = '/acco
 
   async function load() {
     try {
-      const [legacyResponse, jobResponse] = await Promise.all([
-        fetch(`/api/notifications?limit=8&scope=${scope}`, { cache: 'no-store' }),
-        fetch('/api/background-jobs/notifications', { cache: 'no-store' }),
-      ])
-      const [legacyData, jobData] = await Promise.all([
-        legacyResponse.json().catch(() => ({})),
-        jobResponse.json().catch(() => ({})),
-      ])
-      const backgroundItems: Notification[] = (jobResponse.ok ? jobData.notifications ?? [] : []).map((item: any) => ({
-        id: item.id,
-        type: item.type,
-        title: item.title,
-        body: item.message,
-        href: null,
-        metadata: { job_id: item.job_id },
-        read_at: item.read ? item.created_at : null,
-        created_at: item.created_at,
-        backgroundJob: true,
-      }))
-      const merged = [...(legacyResponse.ok ? legacyData.notifications ?? [] : []), ...backgroundItems]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      setItems(merged.slice(0, 38))
-      setUnread((legacyResponse.ok ? Number(legacyData.unreadCount) || 0 : 0) + (jobResponse.ok ? Number(jobData.unreadCount) || 0 : 0))
+      const snapshot = await loadNotificationSnapshot(scope)
+      setItems(snapshot.items)
+      setUnread(snapshot.unread)
     } catch {
       // A temporary notification API failure should not disrupt the current page.
     } finally {

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ConciergeBell, Sparkles, UtensilsCrossed, ArrowRight, CalendarDays, BedDouble, Waves, Dumbbell, PartyPopper, Image, Tag, MapPinned, Clock3, ShoppingBag } from 'lucide-react'
-import { getCurrentUser, getMyBookings, getMyPayments } from '../../../../lib/account'
+import { getCurrentUser, getMyBookings, getMyCustomer, getMyPayments } from '../../../../lib/account'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { naira, formatDate } from '../../../../lib/format'
 import { SITE_HERO_IMAGE } from '../../../../lib/siteConfig'
@@ -13,8 +13,8 @@ import ImageCarousel from '../../../../components/ui/ImageCarousel'
 export default async function DashboardPage() {
   const { user, profile } = await getCurrentUser()
   const supabase = createSupabaseServerClient()
-  const [bookings, payments, customerResult] = await Promise.all([getMyBookings(), getMyPayments(), user ? supabase.from('customers').select('id').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null })])
-  const { data: annexOrders } = customerResult?.data ? await supabase.from('bar_orders').select('id,reference,outlet,total,status,created_at,delivery_label,takeout').eq('customer_id', customerResult.data.id).order('created_at', { ascending: false }).limit(3) : { data: [] as any[] }
+  const [bookings, payments, customer] = await Promise.all([getMyBookings(), getMyPayments(), getMyCustomer()])
+  const { data: annexOrders } = customer ? await supabase.from('bar_orders').select('id,reference,outlet,total,status,created_at,delivery_label,takeout').eq('customer_id', customer.id).order('created_at', { ascending: false }).limit(3) : { data: [] as any[] }
   const upcoming = bookings.find(b => ['confirmed', 'checked_in'].includes(b.status))
   const firstName = (profile?.name || 'there').split(' ')[0]
   const hasCheckedIn = bookings.some((b: any) => b.checkedInAt || b.checked_in_at || b.status === 'checked_in' || b.status === 'checked_out')

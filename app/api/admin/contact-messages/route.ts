@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const body: any = isJson ? await request.json() : await request.formData()
     const conversationId = String(isJson ? body.conversationId ?? '' : body.get('conversationId') ?? '')
     const message = String(isJson ? body.message ?? '' : body.get('message') ?? '').trim()
-    if (!conversationId || message.length < 2 || message.length > 5000) return NextResponse.json({ error: 'A valid conversation and message are required.' }, { status: 400 })
+    if (!conversationId || !message || message.length > 5000) return NextResponse.json({ error: 'A conversation and message are required. Messages can be up to 5000 characters.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
     const { data: conversation } = await admin.from('contact_conversations').select('*').eq('id', conversationId).maybeSingle()

@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { createSupabasePublicClient } from './supabase/server'
 
 export type BlogPost = {
@@ -14,7 +15,7 @@ export type BlogPost = {
   updated_at: string
 }
 
-export async function getPublishedBlogPosts(limit?: number) {
+const readPublishedBlogPosts = unstable_cache(async (limit: number | null) => {
   const supabase = createSupabasePublicClient()
   let query = supabase.from('blog_posts').select('*').eq('published', true).order('published_at', { ascending: false })
   if (limit) query = query.limit(limit)
@@ -24,11 +25,19 @@ export async function getPublishedBlogPosts(limit?: number) {
     return [] as BlogPost[]
   }
   return (data ?? []) as BlogPost[]
-}
+}, ['public-blog-posts-v1'], { revalidate: 60 })
 
-export async function getPublishedBlogPost(slug: string) {
+const readPublishedBlogPost = unstable_cache(async (slug: string) => {
   const supabase = createSupabasePublicClient()
   const { data, error } = await supabase.from('blog_posts').select('*').eq('slug', slug).eq('published', true).maybeSingle()
   if (error) console.error('[blog] failed to load post', error.message)
   return (data as BlogPost | null) ?? null
+}, ['public-blog-post-v1'], { revalidate: 60 })
+
+export async function getPublishedBlogPosts(limit?: number) {
+  return readPublishedBlogPosts(limit ?? null)
+}
+
+export async function getPublishedBlogPost(slug: string) {
+  return readPublishedBlogPost(slug)
 }

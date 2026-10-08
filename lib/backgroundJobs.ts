@@ -6,7 +6,7 @@ export type BackgroundEmailPayload = { to: string; subject: string; html: string
 type EnqueueBackgroundJobInput = {
   type: BackgroundJobType
   userId: string | null
-  payload: { conversation_id: string; message_id?: string } | BackgroundEmailPayload
+  payload: { conversation_id: string; message_id?: string; is_initial_message?: boolean } | BackgroundEmailPayload
   idempotencyKey: string
   maxAttempts?: number
 }

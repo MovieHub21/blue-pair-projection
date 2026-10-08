@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase/client'
 
 type JobNotification = { id: string; type: string; title: string; message: string; created_at: string }
 
-export default function BackgroundJobNotifications() {
+export default function BackgroundJobNotifications({ userId: initialUserId }: { userId: string | null }) {
   const [toast, setToast] = useState<JobNotification | null>(null)
   const seenIds = useRef(new Set<string>())
 
@@ -15,13 +15,6 @@ export default function BackgroundJobNotifications() {
     let channel: ReturnType<typeof supabase.channel> | null = null
     let userId: string | null = null
     let toastTimer = 0
-
-    const loadExisting = async () => {
-      const response = await fetch('/api/background-jobs/notifications', { cache: 'no-store' }).catch(() => null)
-      if (!response?.ok) return
-      const data = await response.json().catch(() => null)
-      for (const item of (data?.notifications ?? []) as JobNotification[]) seenIds.current.add(item.id)
-    }
 
     const updateUser = (nextUserId: string | null) => {
       if (!mounted || nextUserId === userId) return
@@ -32,7 +25,6 @@ export default function BackgroundJobNotifications() {
       channel = null
       if (!nextUserId) return
 
-      void loadExisting()
       channel = supabase.channel(`background-job-toast-${nextUserId}`)
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${nextUserId}`,
@@ -48,7 +40,7 @@ export default function BackgroundJobNotifications() {
         .subscribe()
     }
 
-    void supabase.auth.getUser().then(({ data }) => updateUser(data.user?.id ?? null))
+    updateUser(initialUserId)
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => updateUser(session?.user.id ?? null))
     return () => {
       mounted = false
@@ -56,7 +48,7 @@ export default function BackgroundJobNotifications() {
       listener.subscription.unsubscribe()
       if (channel) void supabase.removeChannel(channel)
     }
-  }, [])
+  }, [initialUserId])
 
   if (!toast) return null
   return <div role="status" className="fixed bottom-5 right-4 z-[190] max-w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-navy-950/95 px-4 py-3 text-sm text-white shadow-pop backdrop-blur-xl">

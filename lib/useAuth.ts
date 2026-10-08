@@ -21,6 +21,54 @@ export interface AuthState {
   signOut: () => Promise<void>
 }
 
+type AuthLookup = {
+  profile: Profile | null
+  roles: AppRole[]
+  customer: CustomerRow | null
+}
+
+// Multiple widgets may call useAuth on one screen (for example, every event
+// reservation card). Share overlapping auth and per-user reads in memory only.
+let initialUserRequest: ReturnType<typeof supabase.auth.getUser> | null = null
+const authLookups = new Map<string, Promise<AuthLookup>>()
+let lastAuthEventSignature = ''
+
+function getInitialUserRequest() {
+  initialUserRequest ??= supabase.auth.getUser()
+  return initialUserRequest
+}
+
+function getAuthLookup(userId: string) {
+  const existing = authLookups.get(userId)
+  if (existing) return existing
+  const request = Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    supabase.from('user_roles').select('role').eq('user_id', userId),
+    supabase.from('customers').select('id,name,email,phone').eq('user_id', userId).maybeSingle(),
+  ]).then(([profileResult, roleResult, customerResult]) => ({
+    profile: (profileResult.data as Profile | null) ?? null,
+    roles: (roleResult.data ?? []).map((row: any) => row.role as AppRole),
+    customer: (customerResult.data as CustomerRow | null) ?? null,
+  }))
+  authLookups.set(userId, request)
+  void request.finally(() => {
+    if (authLookups.get(userId) === request) authLookups.delete(userId)
+  })
+  return request
+}
+
+function invalidateAuthLookup(event: string, userId: string | null, accessToken: string | null) {
+  const signature = `${event}:${userId ?? ''}:${accessToken ?? ''}`
+  if (signature === lastAuthEventSignature) return
+  lastAuthEventSignature = signature
+  queueMicrotask(() => {
+    if (lastAuthEventSignature === signature) lastAuthEventSignature = ''
+  })
+  initialUserRequest = null
+  if (userId) authLookups.delete(userId)
+  else authLookups.clear()
+}
+
 export function useAuth(): AuthState {
   const [state, setState] = useState<Omit<AuthState, 'signOut'>>({
     loading: true, userId: null, email: null, profile: null, customer: null,
@@ -35,26 +83,24 @@ export function useAuth(): AuthState {
         if (active) setState({ loading: false, userId: null, email: null, profile: null, customer: null, roles: [], isStaff: false, isAdmin: false })
         return
       }
-      const [{ data: profile }, { data: roleRows }, { data: customer }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-        supabase.from('user_roles').select('role').eq('user_id', userId),
-        supabase.from('customers').select('id,name,email,phone').eq('user_id', userId).maybeSingle(),
-      ])
-      const roles = (roleRows ?? []).map((r: any) => r.role as AppRole)
+      const { profile, roles, customer } = await getAuthLookup(userId)
       if (!active) return
       setState({
         loading: false, userId, email,
-        profile: (profile as Profile) ?? null,
-        customer: (customer as CustomerRow) ?? null,
+        profile,
+        customer,
         roles,
         isStaff: roles.length > 0,
         isAdmin: roles.includes('super_admin') || roles.includes('manager'),
       })
     }
 
-    supabase.auth.getUser().then(({ data }) => load(data.user?.id ?? null, data.user?.email ?? null))
+    getInitialUserRequest().then(({ data }) => load(data.user?.id ?? null, data.user?.email ?? null))
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        invalidateAuthLookup(event, session?.user?.id ?? null, session?.access_token ?? null)
+      }
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
         void load(session?.user?.id ?? null, session?.user?.email ?? null)
       }

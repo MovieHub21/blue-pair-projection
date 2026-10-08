@@ -2,6 +2,7 @@ import { getStaffPortalContext } from '../../lib/staffPortal'
 import type { Metadata } from 'next'
 import PortalShell from '../../components/layout/PortalShell'
 import { MANAGEMENT_GROUPS, filterGroups } from '../../lib/portalNav'
+import BackgroundJobNotifications from '../../components/ui/BackgroundJobNotifications'
 
 export const metadata: Metadata = {
   robots: {
@@ -15,10 +16,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { name, roleLabel, allowed } = await getStaffPortalContext()
+  const { userId, name, roleLabel, allowed } = await getStaffPortalContext()
 
   return (
     <>
+      <BackgroundJobNotifications userId={userId} />
       <PortalShell
         portalName="Admin"
         portalTag="Hotel Management"

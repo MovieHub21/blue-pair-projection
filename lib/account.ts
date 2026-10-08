@@ -79,64 +79,19 @@ export const getMyCustomer = cache(async () => {
 })
 
 export async function getMyBookings() {
-  const { user, profile } = await getCurrentUser()
+  const { user } = await getCurrentUser()
   if (!user) return []
 
-  // Use the verified auth user id directly with the service-role client for this
-  // server-side account read. This avoids depending on the client-side RLS session
-  // being propagated through a nested relationship query during a Server Component
-  // render. The customer id is resolved from the authenticated user, then every
-  // booking query is explicitly scoped to that customer.
-  const admin = createSupabaseAdminClient()
-  let { data: customer, error: customerError } = await admin
-    .from('customers')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (customerError) {
-    console.error('[account] getMyBookings customer lookup failed', customerError.message)
-    return []
-  }
-
-  // Fallback for an account whose customer row has not yet been linked by user_id.
-  if (!customer) {
-    const email = String(user.email ?? profile?.email ?? '').trim().toLowerCase()
-    if (email) {
-      const { data: emailCustomer, error: emailError } = await admin
-        .from('customers')
-        .select('*')
-        .ilike('email', email)
-        .maybeSingle()
-      if (emailError) {
-        console.error('[account] getMyBookings email customer lookup failed', emailError.message)
-        return []
-      }
-      if (emailCustomer) {
-        if (!emailCustomer.user_id) {
-          const { data: claimed, error: claimError } = await admin
-            .from('customers')
-            .update({ user_id: user.id })
-            .eq('id', emailCustomer.id)
-            .is('user_id', null)
-            .select('*')
-            .maybeSingle()
-          if (claimError) {
-            console.error('[account] getMyBookings customer claim failed', claimError.message)
-            return []
-          }
-          customer = claimed
-        } else if (emailCustomer.user_id === user.id) {
-          customer = emailCustomer
-        }
-      }
-    }
-  }
+  // Reuse the request-cached customer resolver shared with payments and requests.
+  // It retains the safe walk-in customer linking behavior and avoids a second lookup.
+  const customer = await getMyCustomer()
 
   if (!customer) {
     console.error('[account] getMyBookings: no customer found for authenticated user', user.id)
     return []
   }
+
+  const admin = createSupabaseAdminClient()
 
   // Do not embed `rooms` here. The bookings table has multiple relationships in
   // the PostgREST schema that can resolve to `rooms`, so an implicit `rooms(...)`
@@ -192,7 +147,10 @@ export async function getMyPayments() {
   const { data: bookings } = await db.from('bookings').select('reference').eq('customer_id', customer.id)
   const refs = (bookings ?? []).map((b: any) => b.reference)
   if (!refs.length) return []
-  const { data } = await db.from('payments').select('*').in('booking_ref', refs).order('date', { ascending: false })
+  const { data } = await db.from('payments')
+    .select('id,reference,booking_ref,customer,customer_id,amount,method,status,date')
+    .in('booking_ref', refs)
+    .order('date', { ascending: false })
   return (data ?? []).map(mapPayment)
 }
 
@@ -200,6 +158,9 @@ export async function getMyGuestRequests() {
   const customer = await getMyCustomer()
   if (!customer) return []
   const db = createSupabaseServerClient()
-  const { data } = await db.from('guest_requests').select('*').eq('customer_id', customer.id).order('created_at', { ascending: false })
+  const { data } = await db.from('guest_requests')
+    .select('id,customer_id,booking_ref,room,guest_name,type,message,status,created_at')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false })
   return (data ?? []).map(mapGuestRequest)
 }

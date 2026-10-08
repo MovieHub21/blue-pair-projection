@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       job = await enqueueBackgroundJob({
         type: 'contact_message_email',
         userId: user?.id ?? null,
-        payload: { conversation_id: conversation.id, message_id: savedMessage.id },
+        payload: { conversation_id: conversation.id, message_id: savedMessage.id, is_initial_message: true },
         idempotencyKey: `contact-message:${savedMessage.id}`,
         maxAttempts: 5,
       })

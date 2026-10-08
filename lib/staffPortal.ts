@@ -23,6 +23,7 @@ export const getStaffPortalContext = cache(async () => {
   const { data: { user } } = await db.auth.getUser()
   if (!user) {
     return {
+      userId: null as string | null,
       name: 'Staff',
       roleLabel: 'Staff',
       roles: [] as AppRole[],
@@ -57,6 +58,7 @@ export const getStaffPortalContext = cache(async () => {
   const primary = PRIORITY.find(role => roles.includes(role as AppRole))
 
   return {
+    userId: user.id,
     name: profile?.name || user.email || 'Staff',
     roleLabel: primary ? ROLE_LABELS[primary] : 'Staff',
     roles,
