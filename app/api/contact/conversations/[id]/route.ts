@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import { sendResendEmail } from '../../../../../lib/email/resend'
-import { SITE_EMAIL, SITE_URL } from '../../../../../lib/siteConfig'
+import { SITE_URL } from '../../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment, withContactAttachmentUrls } from '../../../../../lib/contactAttachments'
 import { notifyContactMessage } from '../../../../../lib/staffEvents'
-
-async function getCompanyEmail(admin: ReturnType<typeof createSupabaseAdminClient>) {
-  const { data } = await admin.from('site_content').select('key,value').eq('key', 'hotel_email').maybeSingle()
-  return data?.value || SITE_EMAIL
-}
+import { contactMessageEmail } from '@/supabase/functions/_shared/contactMessageEmail'
+import { resolveContactMessageStaffRecipients } from '@/lib/contactMessageStaffRecipients'
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const server = createSupabaseServerClient()
@@ -44,18 +41,35 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved. Start a new message if you need further help.' }, { status: 409 })
 
     const attachment = file ? await uploadContactAttachment(file, conversation.id, 'guest') : null
-    const { error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) })
+    const { data: savedMessage, error } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('id').single()
     if (error) throw error
 
     await notifyContactMessage(admin, { conversationId: conversation.id, guestName: conversation.guest_name, subject: conversation.subject, isReply: true })
-    const companyEmail = await getCompanyEmail(admin)
-    const conversationUrl = `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`
-    await sendResendEmail({
-      to: companyEmail,
-      subject: `New guest reply: ${conversation.subject}`,
-      text: `${conversation.guest_name} has sent a new reply in an existing Blue Pair Signature conversation.\n\nSubject: ${conversation.subject}\n\nOpen the conversation in the staff portal: ${conversationUrl}`,
-      html: `<h2>New guest reply</h2><p><strong>${conversation.guest_name}</strong> has sent a new reply in an existing Blue Pair Signature conversation.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
+    const recipients = await resolveContactMessageStaffRecipients(admin)
+    if (!recipients.length) throw new Error('No staff member currently has access to Guest Messages')
+
+    const staffEmail = contactMessageEmail({
+      recipientName: 'Team',
+      recipientType: 'staff',
+      conversationUrl: `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`,
     })
+    const guestEmail = contactMessageEmail({
+      recipientName: conversation.guest_name,
+      recipientType: 'guest',
+      conversationUrl: `${SITE_URL}/account/messages?conversation=${conversation.id}`,
+    })
+    await Promise.all([
+      ...recipients.map(recipient => sendResendEmail({
+        to: recipient.email,
+        ...staffEmail,
+        idempotencyKey: `contact-message:${savedMessage.id}:staff:${recipient.userId}`,
+      })),
+      sendResendEmail({
+        to: conversation.guest_email,
+        ...guestEmail,
+        idempotencyKey: `contact-message:${savedMessage.id}:guest`,
+      }),
+    ])
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('[contact-conversation-guest-reply]', error)

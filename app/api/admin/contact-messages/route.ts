@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sendResendEmail } from '../../../../lib/email/resend'
-import { SITE_EMAIL, SITE_URL } from '../../../../lib/siteConfig'
+import { SITE_URL } from '../../../../lib/siteConfig'
+import { contactMessageEmail } from '@/supabase/functions/_shared/contactMessageEmail'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 
@@ -13,11 +14,6 @@ async function requireStaff() {
   const { data: roles } = await server.from('user_roles').select('role').eq('user_id', user.id)
   if (!(roles ?? []).some((row: any) => STAFF_ROLES.has(row.role))) return { user: null, error: NextResponse.json({ error: 'Not allowed.' }, { status: 403 }) }
   return { user, error: null }
-}
-
-async function getCompanyEmail(admin: ReturnType<typeof createSupabaseAdminClient>) {
-  const { data } = await admin.from('site_content').select('key,value').eq('key', 'hotel_email').maybeSingle()
-  return data?.value || SITE_EMAIL
 }
 
 export async function GET() {
@@ -33,9 +29,11 @@ export async function POST(request: Request) {
   try {
     const { user, error } = await requireStaff()
     if (error || !user) return error || NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
-    const body = await request.json()
-    const conversationId = String(body.conversationId ?? '')
-    const message = String(body.message ?? '').trim()
+    const contentType = request.headers.get('content-type') || ''
+    const isJson = contentType.includes('application/json')
+    const body: any = isJson ? await request.json() : await request.formData()
+    const conversationId = String(isJson ? body.conversationId ?? '' : body.get('conversationId') ?? '')
+    const message = String(isJson ? body.message ?? '' : body.get('message') ?? '').trim()
     if (!conversationId || message.length < 2 || message.length > 5000) return NextResponse.json({ error: 'A valid conversation and message are required.' }, { status: 400 })
 
     const admin = createSupabaseAdminClient()
@@ -43,17 +41,23 @@ export async function POST(request: Request) {
     if (!conversation) return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 })
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved.' }, { status: 409 })
 
-    const { error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message })
+    const { data: savedMessage, error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message }).select('id').single()
     if (messageError) throw messageError
     await admin.from('contact_conversations').update({ status: 'waiting_for_guest' }).eq('id', conversation.id)
 
     if (conversation.guest_email) {
-      const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
+      const email = contactMessageEmail({
+        recipientName: conversation.guest_name,
+        recipientType: 'guest',
+        guestNeedsAccount: !conversation.user_id,
+        conversationUrl: conversation.user_id
+          ? `${SITE_URL}/account/messages?conversation=${conversation.id}`
+          : `${SITE_URL}/account/register?redirect=${encodeURIComponent(`/account/messages?conversation=${conversation.id}`)}`,
+      })
       await sendResendEmail({
         to: conversation.guest_email,
-        subject: `New message from Blue Pair Signature: ${conversation.subject}`,
-        text: `Blue Pair Signature has sent you a new message in your guest portal.\n\nSubject: ${conversation.subject}\n\nSign in to your guest portal to view the message and reply: ${guestUrl}`,
-        html: `<h2>You have a new message</h2><p>Blue Pair Signature has sent you a new message in your guest portal.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${guestUrl}">View the message and reply</a></p>`,
+        ...email,
+        idempotencyKey: `contact-message:${savedMessage.id}:guest`,
       })
     }
 

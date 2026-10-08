@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sendResendEmail } from '../../../../../lib/email/resend'
 import { SITE_URL } from '../../../../../lib/siteConfig'
+import { contactMessageEmail } from '@/supabase/functions/_shared/contactMessageEmail'
 import { createSupabaseAdminClient } from '../../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server'
 import { uploadContactAttachment } from '../../../../../lib/contactAttachments'
@@ -33,17 +34,23 @@ export async function POST(request: Request) {
     if (conversation.status === 'resolved') return NextResponse.json({ error: 'This conversation is resolved.' }, { status: 409 })
 
     const attachment = file ? await uploadContactAttachment(file, conversation.id, 'staff') : null
-    const { error: insertError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message: message || '', ...(attachment || {}) })
+    const { data: savedMessage, error: insertError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'staff', sender_user_id: user.id, message: message || '', ...(attachment || {}) }).select('id').single()
     if (insertError) throw insertError
     await admin.from('contact_conversations').update({ status: 'waiting_for_guest' }).eq('id', conversation.id)
 
     if (conversation.guest_email) {
-      const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
+      const email = contactMessageEmail({
+        recipientName: conversation.guest_name,
+        recipientType: 'guest',
+        guestNeedsAccount: !conversation.user_id,
+        conversationUrl: conversation.user_id
+          ? `${SITE_URL}/account/messages?conversation=${conversation.id}`
+          : `${SITE_URL}/account/register?redirect=${encodeURIComponent(`/account/messages?conversation=${conversation.id}`)}`,
+      })
       await sendResendEmail({
         to: conversation.guest_email,
-        subject: `New message from Blue Pair Signature: ${conversation.subject}`,
-        text: `Blue Pair Signature has sent you a new message in your guest portal.\n\nSubject: ${conversation.subject}\n\nSign in to your guest portal to view the message and reply: ${guestUrl}`,
-        html: `<h2>You have a new message</h2><p>Blue Pair Signature has sent you a new message in your guest portal.</p><p><strong>Subject:</strong> ${conversation.subject}</p><p><a href="${guestUrl}">View the message and reply</a></p>`,
+        ...email,
+        idempotencyKey: `contact-message:${savedMessage.id}:guest`,
       })
     }
     return NextResponse.json({ success: true })

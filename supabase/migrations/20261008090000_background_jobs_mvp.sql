@@ -250,53 +250,8 @@ grant execute on function public.fail_background_job(uuid,bigint,text) to servic
 grant execute on function public.fail_abandoned_background_job(uuid,bigint) to service_role;
 grant execute on function public.archive_background_job_message(bigint) to service_role;
 
--- Supabase Cron invokes the Edge Function once per minute. The URL and service
--- credentials are read from Vault at runtime and are never stored in this repo.
-create schema if not exists extensions;
-create schema if not exists net;
-create schema if not exists vault;
-create extension if not exists pg_cron;
-create extension if not exists pg_net with schema net;
-create extension if not exists supabase_vault with schema vault;
-
-create or replace function public.invoke_background_jobs_worker()
-returns void
-language plpgsql
-security definer
-set search_path = public, extensions, vault, net, pg_temp
-as $$
-declare
-  v_project_url text;
-  v_service_role_key text;
-  v_anon_key text;
-begin
-  select decrypted_secret into v_project_url from vault.decrypted_secrets where name = 'blue_pair_project_url';
-  select decrypted_secret into v_service_role_key from vault.decrypted_secrets where name = 'blue_pair_service_role_key';
-  select decrypted_secret into v_anon_key from vault.decrypted_secrets where name = 'blue_pair_anon_key';
-  if coalesce(v_project_url, '') = '' or coalesce(v_service_role_key, '') = '' or coalesce(v_anon_key, '') = '' then
-    return;
-  end if;
-
-  perform net.http_post(
-    url := rtrim(v_project_url, '/') || '/functions/v1/process-background-jobs',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'apikey', v_anon_key,
-      'Authorization', 'Bearer ' || v_service_role_key
-    ),
-    body := '{}'::jsonb
-  );
-end;
-$$;
-revoke all on function public.invoke_background_jobs_worker() from public, anon, authenticated;
-
-do $$
-begin
-  if not exists (select 1 from cron.job where jobname = 'blue-pair-background-jobs') then
-    perform cron.schedule('blue-pair-background-jobs', '* * * * *', 'select public.invoke_background_jobs_worker();');
-  end if;
-end;
-$$;
+-- Scheduling is configured separately after the Edge Function is deployed.
+-- This avoids requiring Supabase Vault; see BACKGROUND_JOBS_SETUP.md.
 
 alter table public.notifications replica identity full;
 drop trigger if exists bluepair_realtime_change on public.notifications;

@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { canAccessContactMessages } from '../_shared/contactMessageAccess.ts'
+import { contactMessageEmail } from '../_shared/contactMessageEmail.ts'
 
 type QueueMessage = { message_id: number; read_count: number; message: { job_id?: string } }
 type Job = {
@@ -17,10 +19,6 @@ const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL')!
 const siteUrl = Deno.env.get('SITE_URL') || 'https://bluepairsignature.com'
 const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!)
-}
-
 async function sendEmail(input: { to: string; subject: string; text: string; html: string; idempotencyKey: string }) {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -31,50 +29,86 @@ async function sendEmail(input: { to: string; subject: string; text: string; htm
   if (!response.ok) throw new Error(`Resend returned ${response.status}: ${JSON.stringify(result)}`)
 }
 
+async function getContactStaffRecipients() {
+  const [{ data: roleRows, error: roleError }, { data: permissionRows, error: permissionError }] = await Promise.all([
+    admin.from('user_roles').select('user_id,role'),
+    admin.from('role_permissions').select('role,section,allowed').eq('section', 'reception'),
+  ])
+  if (roleError) throw roleError
+  if (permissionError) throw permissionError
+
+  const rolesByUser = new Map<string, string[]>()
+  for (const row of roleRows ?? []) {
+    const userId = String(row.user_id || '')
+    if (!userId) continue
+    rolesByUser.set(userId, [...(rolesByUser.get(userId) ?? []), String(row.role)])
+  }
+  const eligibleIds = [...rolesByUser.entries()]
+    .filter(([, roles]) => canAccessContactMessages(roles, permissionRows ?? []))
+    .map(([userId]) => userId)
+  if (!eligibleIds.length) return []
+
+  const [{ data: profiles, error: profileError }, { data: staffRows, error: staffError }] = await Promise.all([
+    admin.from('profiles').select('id,name,email').in('id', eligibleIds),
+    admin.from('staff').select('user_id,name,email').in('user_id', eligibleIds),
+  ])
+  if (profileError) throw profileError
+  if (staffError) throw staffError
+
+  const byEmail = new Map<string, { userId: string; name: string; email: string }>()
+  for (const userId of eligibleIds) {
+    const profile = (profiles ?? []).find((row: any) => row.id === userId)
+    const staff = (staffRows ?? []).find((row: any) => row.user_id === userId)
+    const email = String(profile?.email || staff?.email || '').trim().toLowerCase()
+    if (!/^\S+@\S+\.\S+$/.test(email)) continue
+    byEmail.set(email, { userId, name: String(profile?.name || staff?.name || 'Team'), email })
+  }
+  return [...byEmail.values()]
+}
+
 async function handleContactMessageEmail(job: Job) {
   const conversationId = job.payload?.conversation_id
   if (!conversationId || !/^[0-9a-f-]{36}$/i.test(conversationId)) throw new Error('Invalid conversation id')
 
   const { data: conversation, error } = await admin
     .from('contact_conversations')
-    .select('id,user_id,guest_name,guest_email,subject,category')
+    .select('id,user_id,guest_name,guest_email')
     .eq('id', conversationId)
     .maybeSingle()
   if (error) throw error
   if (!conversation) throw new Error('Contact conversation was not found')
 
-  const { data: content, error: contentError } = await admin.from('site_content').select('value').eq('key', 'hotel_email').maybeSingle()
-  if (contentError) throw contentError
-  const companyEmail = String(content?.value || '').trim()
   const guestEmail = String(conversation.guest_email || '').trim().toLowerCase()
-  if (!companyEmail || !/^\S+@\S+\.\S+$/.test(companyEmail)) throw new Error('Hotel contact email is not configured')
-  if (!guestEmail || !/^\S+@\S+\.\S+$/.test(guestEmail)) throw new Error('Guest contact email is invalid')
+  if (!/^\S+@\S+\.\S+$/.test(guestEmail)) throw new Error('Guest contact email is invalid')
 
-  const name = String(conversation.guest_name || 'Guest')
-  const subject = String(conversation.subject || 'General enquiry')
-  const category = String(conversation.category || 'General enquiry')
-  const conversationUrl = `${siteUrl}/admin/contact-messages?conversation=${conversation.id}`
-  const guestUrl = `${siteUrl}/account/messages?conversation=${conversation.id}`
-  const registerUrl = `${siteUrl}/account/register?email=${encodeURIComponent(guestEmail)}&name=${encodeURIComponent(name)}&redirect=${encodeURIComponent(guestUrl)}`
+  const staffRecipients = await getContactStaffRecipients()
+  if (!staffRecipients.length) throw new Error('No staff member currently has access to Guest Messages')
 
-  await sendEmail({
-    to: companyEmail,
-    subject: `New guest message: ${subject}`,
-    text: `${name} has sent a new message through the Blue Pair Signature website.\n\nSubject: ${subject}\nCategory: ${category}\n\nOpen the conversation in the staff portal: ${conversationUrl}`,
-    html: `<h2>New guest message</h2><p><strong>${escapeHtml(name)}</strong> has sent a new message through the Blue Pair Signature website.</p><p><strong>Subject:</strong> ${escapeHtml(subject)}<br /><strong>Category:</strong> ${escapeHtml(category)}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
-    idempotencyKey: `contact-message:${conversation.id}:staff`,
+  const conversationPath = `/admin/contact-messages?conversation=${conversation.id}`
+  const guestPath = `/account/messages?conversation=${conversation.id}`
+  const guestUrl = conversation.user_id
+    ? `${siteUrl}${guestPath}`
+    : `${siteUrl}/account/register?redirect=${encodeURIComponent(guestPath)}`
+  const staffEmail = contactMessageEmail({
+    recipientName: 'Team',
+    recipientType: 'staff',
+    conversationUrl: `${siteUrl}${conversationPath}`,
+  })
+  const guestEmailContent = contactMessageEmail({
+    recipientName: String(conversation.guest_name || 'Guest'),
+    recipientType: 'guest',
+    guestNeedsAccount: !conversation.user_id,
+    conversationUrl: guestUrl,
   })
 
-  const signedIn = Boolean(conversation.user_id)
+  await Promise.all(staffRecipients.map(recipient => sendEmail({
+    to: recipient.email,
+    ...staffEmail,
+    idempotencyKey: `contact-message:${conversation.id}:staff:${recipient.userId}`,
+  })))
   await sendEmail({
     to: guestEmail,
-    subject: signedIn ? 'Your message has been received by Blue Pair Signature' : 'Your message is saved — create your Blue Pair guest account',
-    text: signedIn
-      ? `Your message has been received by Blue Pair Signature. The team will review it and notify you by email when they reply.\n\nOpen your guest portal: ${guestUrl}`
-      : `Your message has been received and saved by Blue Pair Signature. To see the conversation and future replies, create a guest account using this same email address: ${guestEmail}\n\nCreate your guest account: ${registerUrl}`,
-    html: signedIn
-      ? `<h2>Your message has been received</h2><p>Blue Pair Signature has received your message. The team will notify you by email when they reply.</p><p><a href="${guestUrl}">Open your guest portal</a></p>`
-      : `<h2>Your message is saved</h2><p>Blue Pair Signature has received your message and saved the conversation.</p><p>To see the conversation and future replies in your guest portal, create a guest account using this same email address: <strong>${escapeHtml(guestEmail)}</strong>.</p><p><a href="${registerUrl}">Create your guest account</a></p><p>Your existing conversation will be linked to the account automatically.</p>`,
+    ...guestEmailContent,
     idempotencyKey: `contact-message:${conversation.id}:guest`,
   })
 }
