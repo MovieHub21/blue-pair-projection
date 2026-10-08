@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Bell, CheckCheck, ChevronRight, ConciergeBell, CreditCard, CalendarCheck, MessageSquare, Sparkles, Wine, Wrench } from 'lucide-react'
-import { supabase } from '../../lib/supabase/client'
 
 type Notification = {
   id: string
@@ -14,6 +13,7 @@ type Notification = {
   metadata: Record<string, unknown>
   read_at: string | null
   created_at: string
+  backgroundJob?: boolean
 }
 
 const iconMap: Record<string, typeof Bell> = {
@@ -58,98 +58,74 @@ export default function NotificationBell({ scope = 'guest', viewAllHref = '/acco
 
   async function load() {
     try {
-      const response = await fetch(`/api/notifications?limit=8&scope=${scope}`, { cache: 'no-store' })
-      const data = await response.json()
-      if (response.ok) {
-        setItems(data.notifications ?? [])
-        setUnread(data.unreadCount ?? 0)
-      }
+      const [legacyResponse, jobResponse] = await Promise.all([
+        fetch(`/api/notifications?limit=8&scope=${scope}`, { cache: 'no-store' }),
+        fetch('/api/background-jobs/notifications', { cache: 'no-store' }),
+      ])
+      const [legacyData, jobData] = await Promise.all([
+        legacyResponse.json().catch(() => ({})),
+        jobResponse.json().catch(() => ({})),
+      ])
+      const backgroundItems: Notification[] = (jobResponse.ok ? jobData.notifications ?? [] : []).map((item: any) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        body: item.message,
+        href: null,
+        metadata: { job_id: item.job_id },
+        read_at: item.read ? item.created_at : null,
+        created_at: item.created_at,
+        backgroundJob: true,
+      }))
+      const merged = [...(legacyResponse.ok ? legacyData.notifications ?? [] : []), ...backgroundItems]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      setItems(merged.slice(0, 38))
+      setUnread((legacyResponse.ok ? Number(legacyData.unreadCount) || 0 : 0) + (jobResponse.ok ? Number(jobData.unreadCount) || 0 : 0))
+    } catch {
+      // A temporary notification API failure should not disrupt the current page.
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null
-    let mounted = true
-
-    const setupRealtime = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (!mounted || !data.user) return
-
-      // Give each mounted bell its own topic. This prevents a second mounted
-      // instance or a React/Next development remount from reusing a channel
-      // that has already been subscribed.
-      const topic = `${staff ? 'staff' : 'guest'}-notifications-${data.user.id}-${crypto.randomUUID()}`
-
-      channel = supabase
-        .channel(topic)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: staff ? 'staff_notifications' : 'guest_notifications',
-            filter: `user_id=eq.${data.user.id}`,
-          },
-          () => {
-            if (mounted) void load()
-          },
-        )
-
-      try {
-        const status = await channel.subscribe((status, error) => {
-          if (status === 'SUBSCRIBED') {
-            console.debug('[guest-notifications][subscription]', { status, topic })
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error('[guest-notifications][subscription]', {
-              status,
-              topic,
-              error: error?.message ?? error ?? null,
-            })
-          }
-        })
-
-        if (status !== 'SUBSCRIBED' && mounted) {
-          console.warn('[guest-notifications][subscription-not-ready]', { status, topic })
-        }
-      } catch (error) {
-        if (mounted) {
-          console.error('[guest-notifications][subscription-failed]', {
-            topic,
-            error: error instanceof Error ? error.message : String(error),
-          })
-        }
-      }
-    }
-
     void load()
-    void setupRealtime()
 
     const onFocus = () => void load()
     window.addEventListener('focus', onFocus)
-    // Backup for the live channel: the site's realtime bridge announces every change to the notification table.
-    const onDbChange = (event: Event) => { if ((event as CustomEvent).detail?.table === (staff ? 'staff_notifications' : 'guest_notifications')) void load() }
+    const onDbChange = (event: Event) => {
+      const table = (event as CustomEvent).detail?.table
+      if (table === (staff ? 'staff_notifications' : 'guest_notifications')) void load()
+    }
+    const onBackgroundJobNotification = () => void load()
     window.addEventListener('bluepair:database-change', onDbChange)
+    window.addEventListener('bluepair:background-job-notification', onBackgroundJobNotification)
 
     return () => {
-      mounted = false
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('bluepair:database-change', onDbChange)
-      if (channel) void supabase.removeChannel(channel)
+      window.removeEventListener('bluepair:background-job-notification', onBackgroundJobNotification)
     }
   }, [scope])
 
   async function markRead(id: string) {
-    setItems(current => current.map(item => item.id === id ? { ...item, read_at: new Date().toISOString() } : item))
+    const item = items.find(notification => notification.id === id)
+    if (!item || item.read_at) return
+    setItems(current => current.map(notification => notification.id === id ? { ...notification, read_at: new Date().toISOString() } : notification))
     setUnread(current => Math.max(0, current - 1))
-    await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', id, scope }) })
+    const response = await fetch(item.backgroundJob ? '/api/background-jobs/notifications' : '/api/notifications', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.backgroundJob ? { action: 'read', id } : { action: 'read', id, scope }),
+    }).catch(() => null)
+    if (!response?.ok) void load()
   }
 
   async function markAllRead() {
     setItems(current => current.map(item => ({ ...item, read_at: item.read_at || new Date().toISOString() })))
     setUnread(0)
-    await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'all_read', scope }) })
+    await Promise.all([
+      fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'all_read', scope }) }),
+      fetch('/api/background-jobs/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'all_read' }) }),
+    ])
   }
 
   const visibleUnread = useMemo(() => items.filter(item => !item.read_at).length, [items])

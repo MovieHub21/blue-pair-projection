@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server'
-import { sendResendEmail } from '../../../../lib/email/resend'
-import { SITE_EMAIL, SITE_URL } from '../../../../lib/siteConfig'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { notifyContactMessage } from '../../../../lib/staffEvents'
+import { enqueueBackgroundJob } from '../../../../lib/backgroundJobs'
 
 const CATEGORIES = ['Booking', 'Existing reservation', 'Rooms', 'Restaurant & dining', 'Events', 'Short-let', 'Facilities', 'Payment', 'Complaint', 'General enquiry', 'Other']
-
-async function getCompanyEmail(admin: ReturnType<typeof createSupabaseAdminClient>) {
-  const { data } = await admin.from('site_content').select('key,value').eq('key', 'hotel_email').maybeSingle()
-  return data?.value || SITE_EMAIL
-}
 
 export async function GET() {
   const server = createSupabaseServerClient()
@@ -63,29 +57,22 @@ export async function POST(request: Request) {
     if (messageError) throw messageError
 
     await notifyContactMessage(admin, { conversationId: conversation.id, guestName: name, subject, isReply: false })
-    const companyEmail = await getCompanyEmail(admin)
-    const conversationUrl = `${SITE_URL}/admin/contact-messages?conversation=${conversation.id}`
-    await sendResendEmail({
-      to: companyEmail,
-      subject: `New guest message: ${subject}`,
-      text: `${name} has sent a new message through the Blue Pair Signature website.\n\nSubject: ${subject}\nCategory: ${category}\n\nOpen the conversation in the staff portal: ${conversationUrl}`,
-      html: `<h2>New guest message</h2><p><strong>${name}</strong> has sent a new message through the Blue Pair Signature website.</p><p><strong>Subject:</strong> ${subject}<br /><strong>Category:</strong> ${category}</p><p><a href="${conversationUrl}">Open the conversation in the staff portal</a></p>`,
-    })
+    let job: { id: string }
+    try {
+      job = await enqueueBackgroundJob({
+        type: 'contact_message_email',
+        userId: user?.id ?? null,
+        payload: { conversation_id: conversation.id },
+        idempotencyKey: `contact-message:${conversation.id}`,
+        maxAttempts: 3,
+      })
+    } catch {
+      // Keep the durable conversation and tell the caller that email delivery was not queued.
+      console.error('[contact-conversation-create] background email was not queued', { conversationId: conversation.id })
+      return NextResponse.json({ error: 'Your message is saved, but email delivery could not be queued. Please try again later.', conversationId: conversation.id }, { status: 503 })
+    }
 
-    const guestUrl = `${SITE_URL}/account/messages?conversation=${conversation.id}`
-    const registerUrl = `${SITE_URL}/account/register?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&redirect=${encodeURIComponent(`/account/messages?conversation=${conversation.id}`)}`
-    await sendResendEmail({
-      to: email,
-      subject: isGuestWithoutAccount ? `Your message is saved — create your Blue Pair guest account` : `Your message has been received by Blue Pair Signature`,
-      text: isGuestWithoutAccount
-        ? `Your message has been received and saved by Blue Pair Signature. To see the conversation and future replies in your guest portal, create a guest account using this same email address: ${email}\n\nCreate your guest account: ${registerUrl}`
-        : `Your message has been received by Blue Pair Signature. The team will review it and notify you by email when they reply.\n\nOpen your guest portal: ${guestUrl}`,
-      html: isGuestWithoutAccount
-        ? `<h2>Your message is saved</h2><p>Blue Pair Signature has received your message and saved the conversation.</p><p>To see the conversation and future replies in your guest portal, create a guest account using this same email address: <strong>${email}</strong>.</p><p><a href="${registerUrl}">Create your guest account</a></p><p>Your existing conversation will be linked to the account automatically.</p>`
-        : `<h2>Your message has been received</h2><p>Blue Pair Signature has received your message. The team will notify you by email when they reply.</p><p><a href="${guestUrl}">Open your guest portal</a></p>`,
-    })
-
-    return NextResponse.json({ success: true, conversationId: conversation.id, guestAccountRequired: isGuestWithoutAccount })
+    return NextResponse.json({ success: true, conversationId: conversation.id, guestAccountRequired: isGuestWithoutAccount, jobId: job.id })
   } catch (error: any) {
     console.error('[contact-conversation-create]', error)
     return NextResponse.json({ error: error?.message || 'Unable to start the conversation.' }, { status: 500 })

@@ -6,6 +6,7 @@ import RouteProgress from '../components/RouteProgress'
 import GuestEmailWatcher from '../components/GuestEmailWatcher'
 import RealtimeBridge from '../components/RealtimeBridge'
 import ActionLoading from '../components/ui/ActionLoading'
+import BackgroundJobNotifications from '../components/ui/BackgroundJobNotifications'
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A1229' }
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GuestEmailWatcher />
         <RealtimeBridge />
         <ActionLoading />
+        <BackgroundJobNotifications />
         {children}
       </body>
     </html>

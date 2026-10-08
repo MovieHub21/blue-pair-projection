@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Menu, X, ChevronDown, User, LayoutGrid, LogOut, Headset } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 import { initials } from '../../lib/format'
+import NotificationBell from '../account/NotificationBell'
 
 const COMPANY_NAME = 'Blue Pair Signature Crown Hotel & Suites'
 
@@ -43,6 +44,7 @@ export default function PublicNavbar() {
           <Link href="/account/profile" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100"><User size={14} />Profile</Link><button onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100 text-left text-red-600"><LogOut size={14} />Sign out</button></div></div>}</div> : <Link href="/account/login" className="text-[13.5px] font-semibold text-navy-800">Sign in</Link>}
           <Link href="/booking" className="btn-gold btn-sm">Book a room</Link>
         </div>
+        {auth.userId && <NotificationBell scope="guest" viewAllHref="/account/notifications" />}
         <div className="lg:hidden flex items-center gap-2 shrink-0">
           <Link href="/contact" aria-label="Contact support" title="Contact support" className="w-9 h-9 rounded-full border border-black/10 flex items-center justify-center text-navy-800 hover:bg-cream-100 transition-colors"><Headset size={17} /></Link>
           <button aria-label={open ? 'Close menu' : 'Open menu'} className="w-9 h-9 flex items-center justify-center" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
