@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, X, ChevronDown, User, LayoutGrid, LogOut, Headset } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LayoutGrid, LogOut, Headset, ArrowRight } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 import { initials } from '../../lib/format'
 import NotificationBell from '../account/NotificationBell'
@@ -9,7 +9,7 @@ import NotificationBell from '../account/NotificationBell'
 const COMPANY_NAME = 'Blue Pair Signature Crown Hotel & Suites'
 
 const explore = [
-  { href: '/dining', label: 'Dining' }, 
+  { href: '/dining', label: 'Restaurant' }, 
   { href: '/vip-lounge', label: 'VIP Bar' }, 
   { href: '/pool', label: 'Indoor Pool' },
   { href: '/gym', label: 'Gym' }, 
@@ -25,6 +25,10 @@ export default function PublicNavbar() {
   async function handleSignOut() { setAccountOpen(false); await auth.signOut() }
   return (
     <nav className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-black/5">
+      <div className="flex items-center justify-between gap-3 bg-navy-950 px-4 py-2 md:px-10">
+        <p className="min-w-0 text-[9px] font-medium leading-tight text-white/85 sm:text-xs">Looking for a more budget-friendly stay?</p>
+        <Link href="/annex" className="btn-gold btn-sm flex shrink-0 items-center gap-1.5 !px-3 !py-1.5 text-[10px] sm:text-xs">Try the Annex <ArrowRight size={12} /></Link>
+      </div>
       <div className="w-full flex items-center justify-between py-3.5 px-5 md:px-10">
         <Link href="/" aria-label={COMPANY_NAME} className="flex items-center gap-2.5 shrink-0 min-w-0">
           <img src="/icon-192.png" alt="Blue Pair Hotel" className="w-10 h-10 md:w-11 md:h-11 rounded-xl object-cover shrink-0" />

@@ -21,9 +21,9 @@ export default async function PublicRouteLayout({ children }: { children: React.
     telephone: content.hotel_phone?.trim() || SITE_PHONE,
     email: content.hotel_email?.trim() || SITE_EMAIL,
     priceRange: '₦45,000–₦180,000',
-    address: content.hotel_address?.trim() || {
+    address: {
       '@type': 'PostalAddress',
-      streetAddress: SITE_ADDRESS.street,
+      streetAddress: content.hotel_address?.trim() || SITE_ADDRESS.street,
       addressLocality: SITE_ADDRESS.locality,
       addressRegion: SITE_ADDRESS.region,
       postalCode: SITE_ADDRESS.postalCode,
@@ -34,6 +34,16 @@ export default async function PublicRouteLayout({ children }: { children: React.
       latitude: SITE_GEO.lat,
       longitude: SITE_GEO.lng,
     },
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${SITE_GEO.lat},${SITE_GEO.lng}`,
+    amenityFeature: [
+      'Indoor swimming pool',
+      'Fitness gym',
+      'Restaurant',
+      'VIP lounge',
+      'Bar and nightclub',
+      'Games room',
+      'Parking',
+    ].map(name => ({ '@type': 'LocationFeatureSpecification', name, value: true })),
     sameAs,
   }
 
@@ -41,7 +51,7 @@ export default async function PublicRouteLayout({ children }: { children: React.
     <div className="public-site">
       <JsonLd data={hotelJsonLd} />
       <PublicNavbar />
-      <div className="pointer-events-none fixed inset-x-0 top-[76px] z-30">
+      <div className="pointer-events-none fixed inset-x-0 top-[120px] z-30">
         <div className="container-w px-4 md:px-10">
           <div className="pointer-events-auto w-fit">
             <BackButton />

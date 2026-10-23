@@ -5,10 +5,11 @@ import PageHero from '../../../components/layout/PageHero'
 import SectionHeading from '../../../components/ui/SectionHeading'
 import { getEvents, getSiteContent } from '../../../lib/data'
 import { naira, formatDate } from '../../../lib/format'
-import { Users, Calendar } from 'lucide-react'
+import { Users, Calendar, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import ReserveSpotButton from './ReserveSpotButton'
 
-export const metadata = buildMetadata({ title: 'Upcoming Events in Uromi, Edo State | Blue Pair Hotel', description: 'See upcoming events at Blue Pair Hotel in Uromi, Edo State, and reserve your spot online.', keywords: 'upcoming events Uromi, hotel events Uromi, event reservations Uromi, Blue Pair Hotel events', path: '/events' })
+export const metadata = buildMetadata({ title: 'Events & Event Hall in Uromi, Edo State | Blue Pair Hotel', description: 'Find upcoming hotel events and enquire about the Blue Pair event hall in Uromi for meetings, corporate events, birthdays, weddings and church programmes. Venue capacity varies by seating arrangement.', keywords: 'events Uromi, event hall Uromi, event venue Uromi, wedding venue Uromi, meeting venue Uromi, corporate event space Uromi, hotel events Uromi, event reservations Uromi, Blue Pair Hotel events', path: '/events' })
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Events',path:'/events'}]
 
 export default async function EventsPage() {
@@ -27,5 +28,6 @@ export default async function EventsPage() {
         </div>)}
       </div>
     </div></section>
+    <section className="section border-t border-black/5 bg-cream-50"><div className="container-w"><SectionHeading eyebrow="Make it yours" title="Host your event at Blue Pair" subtitle="Our event hall in Uromi welcomes celebrations, meetings and gatherings. Capacity depends on the seating arrangement; enquire with our team for a tailored setup." /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[{name:'General event',capacity:'250 guests'},{name:'Board meetings',capacity:'250–300 guests*'},{name:'Corporate events',capacity:'200 guests'},{name:'Birthday parties',capacity:'180–200 guests'},{name:'Destination weddings',capacity:'150–200 guests'},{name:'Church programmes',capacity:'250 guests'}].map(item=><div key={item.name} className="rounded-xl border border-black/[.07] bg-white p-5"><p className="text-xs text-navy-400">Event hall</p><h3 className="mt-1 font-semibold">{item.name}</h3><p className="mt-2 font-display text-xl text-navy-900">{item.capacity}</p></div>)}</div><p className="mt-4 text-xs text-navy-500">*A 300-person board-meeting arrangement requires confirmation by the hotel. All capacities vary with seating and room layout.</p><Link href="/contact" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-navy-900 underline underline-offset-4 hover:text-gold-700">Enquire about the event hall <ArrowRight size={14}/></Link></div></section>
   </div>
 }

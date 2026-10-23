@@ -58,36 +58,21 @@ function StaffLoginForm() {
       if (authError) {
         console.error('[BP-AUTH][staff] authentication failed', authError)
         setError(authError.message === 'Invalid login credentials' ? 'Incorrect email or password.' : authError.message)
+        setLoading(false)
         return
       }
 
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-
-      console.info('[BP-AUTH][staff] session check after login', {
-        hasSession: !!sessionData.session,
-        userId: sessionData.session?.user?.id ?? null,
-        error: sessionError
-          ? {
-              message: sessionError.message,
-              name: sessionError.name,
-              status: sessionError.status,
-            }
-          : null,
-      })
-
-      if (sessionError || !sessionData.session) {
-        console.error('[BP-AUTH][staff] login returned without a usable session', {
-          sessionError,
-          hasSession: !!sessionData.session,
-        })
-        setError(sessionError?.message || 'Login succeeded but no session was created. Please try again.')
+      if (!data.session) {
+        console.error('[BP-AUTH][staff] login returned without a usable session')
+        setError('Login succeeded but no session was created. Please try again.')
+        setLoading(false)
         return
       }
 
       const destination = params.get('redirect') || '/admin/dashboard'
       console.info('[BP-AUTH][staff] navigating after successful login', {
         destination,
-        userId: sessionData.session.user.id,
+        userId: data.session.user.id,
       })
 
       router.replace(destination)
@@ -101,7 +86,6 @@ function StaffLoginForm() {
         error: err,
       })
       setError(err?.message || 'Unable to sign in. Please try again.')
-    } finally {
       setLoading(false)
     }
   }

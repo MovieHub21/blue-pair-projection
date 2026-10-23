@@ -19,9 +19,9 @@ type Experience = {
 export default function InteractiveHotelExperience({ gallery }: { gallery: GalleryImage[] }) {
   const images = useMemo(() => gallery.map(item => item.url).filter(Boolean), [gallery])
   const fallback = 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1800&q=85'
-  const poolImage = 'blue-pair-pool.jpeg'
-  const diningImage = images[3] || 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=85'
-  const roomImage = images[1] || fallback
+  const poolImage = 'https://bluepairsignature.com/images/blue-pair-pool.jpeg'
+  const diningImage = '/images/dining.jpg'
+  const roomImage = 'https://bluepairsignature.com/images/Diplomatic.jpg'
   const eventsImage = images[4] || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1200&q=85'
 
   const experiences: Experience[] = [

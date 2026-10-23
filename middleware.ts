@@ -65,6 +65,7 @@ function getEnvironment() {
 export async function middleware(request: NextRequest) {
   const originalPathname = request.nextUrl.pathname
   const hostname = request.headers.get('host')?.split(':')[0]?.toLowerCase() || ''
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
   const isAdminSubdomain = hostname === ADMIN_HOST
   const isMainProductionHost = MAIN_HOSTS.has(hostname)
 
@@ -82,6 +83,12 @@ export async function middleware(request: NextRequest) {
       })
       return NextResponse.json({ error: 'Unable to process your request. Please try again.' }, { status: 503 })
     }
+    return NextResponse.next({ request })
+  }
+
+  // Search engines need the sitemap and robots policy even while the public
+  // site is in maintenance mode; these endpoints must remain machine-readable.
+  if (!isAdminSubdomain && (originalPathname === '/sitemap.xml' || originalPathname === '/robots.txt')) {
     return NextResponse.next({ request })
   }
 
@@ -143,7 +150,9 @@ export async function middleware(request: NextRequest) {
   })
 
   const environment = getEnvironment()
-  const maintenanceOn = needsStaff ? false : await isMaintenanceMode(supabase, 'production')
+  // Maintenance is a production visitor control. Keep local development accessible
+  // even while the production site is in maintenance mode.
+  const maintenanceOn = needsStaff || isLocalhost ? false : await isMaintenanceMode(supabase, 'production')
 
   if (maintenanceOn && !needsStaff) {
     const { data: { user } } = await supabase.auth.getUser()

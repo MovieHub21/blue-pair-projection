@@ -136,6 +136,7 @@ export default async function ShortLetsPage() {
 
                       {sl.type}
                     </p>
+                    <p className="mt-2 text-[11px] text-navy-400">No complimentary breakfast at the Annex.</p>
                   </div>
                 </div>
 

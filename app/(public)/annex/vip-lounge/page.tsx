@@ -1,6 +1,7 @@
 import { buildMetadata } from '../../../../lib/buildMetadata'
 import AmenityPage from '../../../../components/ui/AmenityPage'
 import { getAmenity } from '../../../../lib/data'
+import Link from 'next/link'
 
 const ANNEX_VIP_IMAGES = [
   'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=85',
@@ -28,5 +29,5 @@ export default async function AnnexVipLoungePage() {
     pricingNote: '',
     ctaLabel: 'Reserve now',
   }
-  return <AmenityPage config={config} />
+  return <AmenityPage config={{ ...config, extra: <div className="mt-8 rounded-xl2 bg-cream-100 p-5 text-sm text-navy-600"><p><b className="text-navy-900">Private venue capacity:</b> up to 50 persons.</p><Link href="/contact" className="mt-3 inline-flex text-xs font-semibold text-navy-900 underline underline-offset-4 hover:text-gold-700">Enquire about the VIP Lounge <span aria-hidden="true">→</span></Link></div> }} />
 }

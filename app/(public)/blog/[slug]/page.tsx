@@ -13,12 +13,27 @@ type Props = { params: { slug: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPublishedBlogPost(params.slug)
-  if (!post) return { title: 'Story not found | Blue Pair Hotel' }
+  if (!post) return { title: { absolute: 'Story not found | Blue Pair Hotel' } }
   return {
-    title: `${post.title} | Blue Pair Hotel`,
+    title: { absolute: `${post.title} | Blue Pair Hotel` },
     description: post.description,
     alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
-    openGraph: { title: post.title, description: post.description, url: `${SITE_URL}/blog/${post.slug}`, images: [{ url: post.image_url, alt: post.title }] },
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.description,
+      url: `${SITE_URL}/blog/${post.slug}`,
+      publishedTime: post.published_at,
+      modifiedTime: post.updated_at || post.published_at,
+      images: post.image_url ? [{ url: post.image_url, alt: post.title }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: post.image_url ? [post.image_url] : undefined,
+    },
   }
 }
 

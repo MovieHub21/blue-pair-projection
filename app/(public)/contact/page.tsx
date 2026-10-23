@@ -10,9 +10,9 @@ export async function generateMetadata() {
   const content = await getSiteContent()
   const address = content.hotel_address?.trim() || SITE_ADDRESS_DISPLAY
   return buildMetadata({
-    title: 'Contact Blue Pair Hotel | Uromi, Edo State',
-    description: `Get in touch with Blue Pair Hotel, ${address}. Phone, email and directions.`,
-    keywords: 'blue pair hotel contact, hotel uromi address, hotel phone number edo state, hotel near me uromi, hotel booking uromi, hotel reservations nigeria',
+    title: 'Contact Blue Pair Signature | Uromi, Edo State',
+    description: `Get in touch with Blue Pair Signature, ${address}. Phone, email and directions.`,
+    keywords: 'blue pair Signature contact, hotel uromi address, hotel phone number edo state, hotel near me uromi, hotel booking uromi, hotel reservations nigeria',
     path: '/contact',
   })
 }
@@ -46,12 +46,12 @@ export default async function ContactPage() {
             <a href={`mailto:${email}`} className="card p-6 flex items-center gap-4 hover:border-gold-400 transition-colors"><Mail className="text-gold-500" /><div><b className="block text-sm">Email</b><span className="text-sm text-navy-500">{email}</span></div></a>
             <div className="overflow-hidden rounded-xl2 border border-navy-100 bg-navy-100 shadow-sm">
               <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white border-b border-navy-100">
-                <div><b className="block text-sm">Find Blue Pair Hotel</b><span className="text-xs text-navy-400">{address}</span></div>
+                <div><b className="block text-sm text-gold-600">Find Blue Pair Signature Crown Hotel and Suites</b><span className="text-xs text-navy-400">{address}</span></div>
                 <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-navy-800 hover:text-gold-600">Open map <ExternalLink size={13} /></a>
               </div>
               <div className="relative h-72 sm:h-80">
                 <iframe title="Blue Pair Hotel location map" src={mapEmbedUrl} className="absolute inset-0 h-full w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
-                <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Hotel location in Google Maps" className="absolute inset-0 z-10"><span className="sr-only">Open Blue Pair Hotel location in Google Maps</span></a>
+                <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Signature location in Google Maps" className="absolute inset-0 z-10"><span className="sr-only">Open Blue Pair Hotel location in Google Maps</span></a>
               </div>
             </div>
           </div>

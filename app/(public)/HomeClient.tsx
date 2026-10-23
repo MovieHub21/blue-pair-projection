@@ -31,8 +31,8 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
 
 
   const experienceCards = [
-    { title: 'Suites & Rooms', eyebrow: 'Stay', href: '/rooms', image: images[1] || FALLBACK_IMAGES[1], description: 'Refined spaces designed for quiet, comfortable stays.' },
-    { title: 'Dining & Lounge', eyebrow: 'Taste', href: '/dining', image: images[2] || FALLBACK_IMAGES[2], description: 'Good food, relaxed evenings and places to gather.' },
+    { title: 'Suites & Rooms', eyebrow: 'Stay', href: '/rooms', image: 'https://bluepairsignature.com/images/Diplomatic.jpg', description: 'Refined spaces designed for quiet, comfortable stays.' },
+    { title: 'Restaurant & Lounge', eyebrow: 'Taste', href: '/dining', image: 'https://bluepairsignature.com/images/annexvip.jpg', description: 'Good food, relaxed evenings and places to gather.' },
     { title: 'Events & Occasions', eyebrow: 'Celebrate', href: '/events', image: 'https://bluepairsignature.com/images/CLUB2.jpg', description: 'Elegant spaces for celebrations, meetings and moments.' },
   ]
 
@@ -61,7 +61,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         className="motion-fade-up eyebrow inline-block text-gold-300"
         style={{ animationDuration: '550ms' }}
       >
-        Blue Pair Signature · Uromi
+        Hotel in Uromi, Edo State · Blue Pair Signature
       </span>
 
       <h1

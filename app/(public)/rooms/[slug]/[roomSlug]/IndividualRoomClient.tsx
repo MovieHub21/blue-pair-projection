@@ -10,6 +10,7 @@ import AvailabilityCalendar from '../../../../../components/booking/Availability
 import type { RoomType } from '../../../../../data/mock'
 import { onAvailabilityChange } from '../../../../../lib/availabilityRealtime'
 import ImageCarousel from '../../../../../components/ui/ImageCarousel'
+import { complimentaryBreakfastCount } from '../../../../../lib/breakfast'
 // A physical room carries no photos of its own — every room of this type shows the same, type-level gallery.
 type Unit = { id:string; room_number:string; name?:string|null; slug:string; floor?:string; status:string }
 type GuestStatus = 'available'|'availableSoon'|'taken'|'held'|'reserved'
@@ -22,6 +23,7 @@ function RoomGallery({ images, name }: { images:string[]; name:string }) {
 export default function IndividualRoomClient({ type, unit }: { type: RoomType; unit: Unit }) {
  const params=useSearchParams(); const auth=useAuth(); const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(1,params.get('checkin')||todayISO())); const [guests,setGuests]=useState(()=>Math.min(Math.max(1,Number(params.get('guests')||1)),type.guests)); const [status,setStatus]=useState<GuestStatus|null>(null); const [checking,setChecking]=useState(true); const [error,setError]=useState<string|null>(null)
  const name=unit.name||`Room ${unit.room_number}`; const gallery=useMemo(()=>Array.from(new Set((type.images||[]).filter(Boolean))),[type.images]); const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=type.price*nights; const tax=Math.round(total*.075)
+ const breakfastCount=complimentaryBreakfastCount(type.name)
  useEffect(()=>{if(!checkIn||!checkOut||checkIn>=checkOut){setChecking(false);setStatus(null);return}let cancelled=false;const load=async()=>{if(!cancelled){setChecking(true);setStatus(null)}try{const response=await fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(type.id)}&_=${Date.now()}`,{cache:'no-store'});const data=response.ok?await response.json():null;if(cancelled)return;const current=data?.rooms?.find((r:any)=>r.id===unit.id);setStatus(current?.guest_status||null)}catch{if(!cancelled)setError('Unable to check this room right now.')}finally{if(!cancelled)setChecking(false)}};void load();const stopListening=onAvailabilityChange(()=>void load());return()=>{cancelled=true;stopListening()}},[checkIn,checkOut,type.id,unit.id])
  const updateDates=(ci:string,co:string)=>{
   setCheckIn(ci)
@@ -39,7 +41,7 @@ export default function IndividualRoomClient({ type, unit }: { type: RoomType; u
   <div className="grid min-w-0 lg:grid-cols-[1.35fr,.65fr] gap-8 mt-5"><div className="min-w-0 max-w-full">
 
     <RoomGallery images={gallery} name={name}/><span className="eyebrow mt-8 inline-block">{type.category} · Room 
-      {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1><p className="text-xs text-navy-400 mt-2">
+      {unit.room_number}</span><h1 className="text-4xl font-semibold mt-2">{name}</h1>{breakfastCount !== null && <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800">{breakfastCount} complimentary breakfast{breakfastCount === 1 ? '' : 'es'} included</p>}<p className="text-xs text-navy-400 mt-2">
         Floor {unit.floor||'—'} · Specific physical room</p>
         <p className="text-navy-500 leading-relaxed mt-4">{type.description}</p>
 

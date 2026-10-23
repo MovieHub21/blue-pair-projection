@@ -31,10 +31,12 @@ export default async function AboutPage() {
       <section className="section">
         <div className="container-w grid lg:grid-cols-2 gap-16 items-center">
           <div>
-            <span className="eyebrow">Since 2014</span>
             <h2 className="text-3xl md:text-4xl font-semibold mt-3 mb-5">{content.about_title || 'A Nigerian hospitality brand, built to compete anywhere'}</h2>
-            <p className="text-navy-500 text-[15px] leading-relaxed mb-4">Blue Pair Signature Crown Hotel &amp; Suites opened on Auchi Road, Uromi in 2014 with a simple premise: Edo State deserved a hotel that matched Esan hospitality with world-class standards, without guests needing to travel to Lagos or Abuja for it. Twelve years on, Blue Pair is a full campus — the main hotel, the Annex short-let residences, two restaurants, three bars, an indoor pool, a club, and an events hall — serving Uromi, Ekpoma, Auchi, Ubiaja and beyond.</p>
-            <p className="text-navy-500 text-[15px] leading-relaxed">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced — which is why the same warmth shows up whether you're checking into a Standard Room or hosting 200 guests in the Grand Hall.</p>
+            <p className="text-navy-500 text-[15px] leading-relaxed mb-4">Blue Pair Signature Crown Hotel & Suites is a premium hotel in Uromi, Edo State, created to bring accommodation, dining, relaxation, business and entertainment together in one welcoming destination. Whether you are visiting Uromi for business, attending an event, planning a celebration or simply looking for a comfortable place to unwind, our goal is to make every stay convenient, enjoyable and memorable.
+</p>
+            <p className="text-navy-500 text-[15px] leading-relaxed mb-4">Our hospitality experience goes beyond comfortable rooms. Guests can enjoy quality hotel accommodation, short-let residences, restaurants, bars, an indoor swimming pool, a fitness centre, a club, lounges and versatile event spaces designed for both personal and professional occasions. This makes Blue Pair Signature Crown Hotel & Suites suitable for business travellers, families, couples, corporate teams and guests looking for a complete hospitality experience in Uromi.</p>
+          <p className="text-navy-500 text-[15px] leading-relaxed mb-4">Every department, from housekeeping to the kitchen, is trained and managed in-house. Nothing here is outsourced which is why the same warmth and attention to detail shows up whether you're checking into a comfortable room, enjoying a meal, hosting a meeting or welcoming guests to one of our event spaces.</p>
+          <p className="text-navy-500 text-[15px] leading-relaxed">Stay with us. Meet with us. Celebrate with us. Experience Blue Pair.</p>
           </div>
           <div className="h-[420px] rounded-xl2 overflow-hidden">
             <img loading="lazy" decoding="async" src="/images/aboutimage.jpeg" alt="Blue Pair Signature Crown Hotel & Suites event space, Uromi, Edo State" className="w-full h-full object-cover" />
@@ -46,7 +48,7 @@ export default async function AboutPage() {
           <SectionHeading eyebrow="Hospitality philosophy" title="What guests can expect" light center subtitle="Four principles that shape every department at Blue Pair Signature Crown Hotel & Suites." />
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
             {[
-              { t: 'Warm, not scripted', d: 'Staff are trained on judgment, not just scripts — every guest interaction is genuine.' },
+              { t: 'Warm, not scripted', d: 'Staff are trained on judgment, not just scripts every guest interaction is genuine.' },
               { t: 'Detail over decoration', d: 'We spend on mattresses and water pressure before we spend on lobby flowers.' },
               { t: 'Proudly Edo', d: 'Our menus, music, and events celebrate Esan and Edo culture, with global-standard execution.' },
               { t: 'Always improving', d: 'Every guest request feeds back into how we run the property, department by department.' },

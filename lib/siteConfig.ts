@@ -8,7 +8,7 @@ export const DEFAULT_OG_IMAGE = SITE_HERO_IMAGE
 export const SITE_HERO_VIDEO_URL = 'https://vimeo.com/1206966618'
 export const SITE_PHONE = '+234 916 937 4811'
 export const SITE_PHONE_DISPLAY = '+234 916 937 4811'
-export const SITE_EMAIL = 'reservations@bluepairhotel.com'
+export const SITE_EMAIL = 'bookings@bluepairsignature.com'
 
 export const SITE_ADDRESS = {
   street: '105/104, Uwalor Road',

@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { buildMetadata } from '../../../../../lib/buildMetadata'
 import JsonLd, { breadcrumbJsonLd } from '../../../../../components/JsonLd'
 import { SITE_URL } from '../../../../../lib/siteConfig'
+import { complimentaryBreakfastCount } from '../../../../../lib/breakfast'
 import { getRoomTypes, getRoomTypeBySlug, getRoomBySlug } from '../../../../../lib/data'
 import IndividualRoomClient from './IndividualRoomClient'
 
@@ -19,7 +20,9 @@ export async function generateMetadata({params}:{params:{slug:string;roomSlug:st
  const type=await getRoomTypeBySlug(params.slug); if(!type)return buildMetadata({title:'Room Not Found',description:'Room not found',path:`/rooms/${params.slug}/${params.roomSlug}`,noindex:true})
  const unit=await getRoomBySlug(type.id,params.roomSlug); if(!unit)return buildMetadata({title:'Room Not Found',description:'Room not found',path:`/rooms/${params.slug}/${params.roomSlug}`,noindex:true})
  const name=unit.name||`Room ${unit.room_number}`
- return buildMetadata({title:`${name} — ${type.name} | Blue Pair Hotel Uromi`,description:`Stay in ${name}, a ${type.name} at Blue Pair Hotel, Uromi, Edo State. ${type.description} Enjoy ${type.amenities.slice(0,6).join(', ')}. From ₦${type.price.toLocaleString()} per night.`,keywords:`${name.toLowerCase()} blue pair hotel, ${type.name.toLowerCase()} room uromi, room ${unit.room_number} uromi, hotel room edo state`,path:`/rooms/${params.slug}/${params.roomSlug}`,image:unit.image_url||type.images[0]})
+ const breakfastCount = complimentaryBreakfastCount(type.name)
+ const breakfastText = breakfastCount === null ? '' : ` Includes ${breakfastCount} complimentary breakfast${breakfastCount === 1 ? '' : 's'}.`
+ return buildMetadata({title:`${name} — ${type.name} | Blue Pair Hotel Uromi`,description:`Stay in ${name}, a ${type.name} at Blue Pair Hotel, Uromi, Edo State. ${type.description} Enjoy ${type.amenities.slice(0,6).join(', ')}. From ₦${type.price.toLocaleString()} per night.${breakfastText}`,keywords:`${name.toLowerCase()} blue pair hotel, ${type.name.toLowerCase()} room uromi, room ${unit.room_number} uromi, hotel room edo state${breakfastCount === null ? '' : ', hotel with complimentary breakfast Uromi'}`,path:`/rooms/${params.slug}/${params.roomSlug}`,image:unit.image_url||type.images[0]})
 }
 
 export default async function IndividualRoomPage({params}:{params:{slug:string;roomSlug:string}}){

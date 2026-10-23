@@ -7,8 +7,7 @@ import { getPublishedBlogPosts } from '../lib/blog'
 import { getActiveRoomTypes, getPublicShortLets } from '../lib/data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date()
-  const staticRoutes: { path: string; priority: number }[] = [
+  const staticRoutes: { path: string; priority: number; lastModified?: Date }[] = [
     { path: '/', priority: 1.0 }, 
     { path: '/about', priority: 0.7 }, 
     { path: '/rooms', priority: 0.9 }, 
@@ -45,7 +44,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const roomRoutes = roomTypes.map(r => ({ path: `/rooms/${r.slug}`, priority: 0.8 }))
   const shortletRoutes = shortLets.map(s => ({ path: `/annex/shortlets/${s.id}`, priority: 0.6 }))
   const blogRoutes = posts.map(post => ({ path: `/blog/${post.slug}`, priority: 0.65, lastModified: new Date(post.updated_at || post.published_at) }))
+  const latestBlogUpdate = posts.reduce<Date | undefined>((latest, post) => {
+    const modified = new Date(post.updated_at || post.published_at)
+    return !latest || modified > latest ? modified : latest
+  }, undefined)
+  const routes: { path: string; priority: number; lastModified?: Date }[] = [
+    ...staticRoutes.map(route => route.path === '/blog' && latestBlogUpdate ? { ...route, lastModified: latestBlogUpdate } : route),
+    ...roomRoutes,
+    ...shortletRoutes,
+    ...blogRoutes,
+  ]
 
-  return [...staticRoutes.map(r => ({ ...r, lastModified: now })), ...roomRoutes.map(r => ({ ...r, lastModified: now })), ...shortletRoutes.map(r => ({ ...r, lastModified: now })), ...blogRoutes]
-    .map(r => ({ url: `${SITE_URL}${r.path}`, lastModified: r.lastModified, priority: r.priority }))
+  return routes
+    .map(r => ({ url: `${SITE_URL}${r.path}`, ...(r.lastModified ? { lastModified: r.lastModified } : {}), priority: r.priority }))
 }

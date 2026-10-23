@@ -76,6 +76,7 @@ export default async function ShortLetDetailsPage({ params }: { params: { id: st
             </p>
 
             <p className="text-navy-500 leading-relaxed mt-4">{sl.description}</p>
+            <p className="mt-3 text-xs text-navy-500">Breakfast is not included with Annex short-let stays.</p>
 
             <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10">
               <div className="flex gap-2">

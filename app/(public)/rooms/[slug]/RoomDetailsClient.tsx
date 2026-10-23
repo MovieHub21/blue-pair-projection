@@ -8,6 +8,7 @@ import RoomCard from '../../../../components/ui/RoomCard'
 import ImageCarousel from '../../../../components/ui/ImageCarousel'
 import type { RoomType } from '../../../../data/mock'
 import { onAvailabilityChange } from '../../../../lib/availabilityRealtime'
+import { complimentaryBreakfastCount } from '../../../../lib/breakfast'
 
 // A physical room carries no photos of its own — it always shows the room type's images.
 type Unit={id:string;room_number:string;name:string;slug:string;status:string;floor?:string}
@@ -35,6 +36,7 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
  },[checkIn,checkOut,room.id])
 
  const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
+ const breakfastCount=complimentaryBreakfastCount(room.name)
 
  return <div className="container-w w-full min-w-0 max-w-7xl overflow-x-clip px-4 sm:px-6 md:px-10 py-8">
   <div className="text-xs text-navy-400 mb-5">Home / Rooms & Suites / {room.name}</div>
@@ -42,6 +44,7 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
    <div className="w-full min-w-0">
     <ImageCarousel images={room.images} alt={room.name} className="h-[420px] rounded-2xl" autoPlay interval={5500} transition="fade" showArrows={false} showDots />
     <h1 className="text-3xl md:text-4xl font-semibold mt-8">{room.name}</h1>
+    {breakfastCount !== null && <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800">{breakfastCount} complimentary breakfast{breakfastCount === 1 ? '' : 'es'} included</p>}
     <p className="text-navy-500 mt-4 leading-relaxed max-w-2xl">{room.description}</p>
     <div className="flex flex-wrap gap-8 py-6 my-6 border-y border-black/10"><div className="flex gap-2"><Users size={18} className="text-gold-500"/><b>{room.guests} guests</b></div><div className="flex gap-2"><BedDouble size={18} className="text-gold-500"/><b>{room.bedType}</b></div><div className="flex gap-2"><Ruler size={18} className="text-gold-500"/><b>{room.sizeSqm} m²</b></div></div>
     <h3 className="text-lg font-semibold mb-4">Amenities</h3><div className="grid sm:grid-cols-2 gap-3 mb-10">{room.amenities.map(a=><div key={a} className="flex gap-2 text-sm"><CheckCircle2 size={16} className="text-gold-500"/>{a}</div>)}</div>
@@ -365,4 +368,4 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
   </div>
   <h3 className="text-xl font-semibold mt-20 mb-5">Other room types</h3><div className="grid md:grid-cols-3 gap-6 pb-20">{others.map(r=><RoomCard key={r.id} room={r} availableCount={availability[r.id] ?? 0} showAvailabilityBadge={false}/>)}</div>
  </div>
-} 
+}

@@ -3,11 +3,13 @@ import { Users, BedDouble, Ruler } from 'lucide-react'
 import { naira } from '../../lib/format'
 import type { RoomType } from '../../data/mock'
 import { failRoomServicePayment } from '@/lib/roomServicePayments';
+import { complimentaryBreakfastCount } from '../../lib/breakfast'
 
 export default function RoomCard({ room, availableCount, showRoomCount = false, showAvailabilityBadge = false }: { room: RoomType; availableCount?: number; showRoomCount?: boolean; showAvailabilityBadge?: boolean }) {
   const hasLiveCount = typeof availableCount === 'number'
   const count = hasLiveCount ? availableCount : 0
   const available = hasLiveCount ? count > 0 : true
+  const breakfastCount = complimentaryBreakfastCount(room.name)
 
   return (
     <div className="card group flex min-h-[400px] flex-col overflow-hidden rounded-md border border-navy-900/10 bg-white shadow-sm">
@@ -25,6 +27,8 @@ export default function RoomCard({ room, availableCount, showRoomCount = false, 
             <div className="font-display text-xl font-semibold text-gold-600 sm:text-2xl">{naira(room.price)}<span className="ml-1 font-body text-xs font-normal text-navy-400">/ night</span></div>
           </div>
         </div>
+
+        {breakfastCount !== null && <p className="mt-3 text-xs text-navy-600"><span className="font-semibold text-navy-900">Breakfast included:</span> {breakfastCount} complimentary breakfast{breakfastCount === 1 ? '' : 'es'}</p>}
 
         <div className="mt-auto flex items-center gap-3 border-t border-navy-900/10 pt-6">
           <Link href={`/rooms/${room.slug}`} className="text-sm font-semibold text-navy-900 underline underline-offset-4 transition-colors hover:text-gold-600">View room details</Link>
