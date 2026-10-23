@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
+import { getGoogleReviewFallbackUrl } from '../../../../lib/googleReviews'
 import { bookingConfirmationEmail, paymentSuccessfulEmail, paymentFailedEmail, bookingCancelledEmail, bookingModifiedEmail, preArrivalEmail, checkInReminderEmail, checkInWelcomeEmail, checkoutReminderEmail, checkoutThankYouEmail, reviewRequestEmail, serviceRequestReceivedEmail, serviceRequestStatusEmail, supportTicketEmail } from '../../../../lib/email/templates'
 
 type EventName = 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified' | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder' | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status' | 'support_acknowledged' | 'support_status'
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       case 'checkin_reminder': email = checkInReminderEmail(base); break
       case 'checkin_welcome': email = checkInWelcomeEmail(base); break
       case 'checkout_reminder': email = checkoutReminderEmail({ guestName, reference, roomName, checkOut: base.checkOut }); break
-      case 'checkout_thank_you': email = checkoutThankYouEmail(base); break
+      case 'checkout_thank_you': email = checkoutThankYouEmail({ ...base, reviewUrl: getGoogleReviewFallbackUrl() }); break
       case 'review_request': email = reviewRequestEmail({ guestName, reference, reviewUrl: body.reviewUrl ? String(body.reviewUrl) : undefined }); break
       case 'service_request_received': if (!requestRow) return NextResponse.json({ error: 'Request not found' }, { status: 404 }); email = serviceRequestReceivedEmail({ guestName, bookingRef: requestRow.booking_ref || reference, type: requestRow.type, message: requestRow.message }); break
       case 'service_request_status': if (!requestRow) return NextResponse.json({ error: 'Request not found' }, { status: 404 }); email = serviceRequestStatusEmail({ guestName, bookingRef: requestRow.booking_ref || reference, type: requestRow.type, message: requestRow.message, status: requestRow.status }); break

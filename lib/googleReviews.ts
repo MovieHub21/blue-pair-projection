@@ -23,6 +23,10 @@ export function getGoogleReviewUrl() {
   return process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL?.trim() || googleMapsSearchUrl()
 }
 
+export function getGoogleReviewFallbackUrl() {
+  return googleMapsSearchUrl()
+}
+
 export function getGoogleMapsProfileUrl() {
   return process.env.NEXT_PUBLIC_GOOGLE_MAPS_URL?.trim() || googleMapsSearchUrl()
 }

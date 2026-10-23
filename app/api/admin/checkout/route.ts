@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 import { checkoutThankYouEmail } from '../../../../lib/email/templates'
+import { getGoogleReviewFallbackUrl } from '../../../../lib/googleReviews'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
           roomName,
           checkIn: booking.check_in || '',
           checkOut: booking.check_out || '',
+          reviewUrl: getGoogleReviewFallbackUrl(),
         })
         await enqueueBackgroundEmail({
           to: guestEmail,

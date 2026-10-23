@@ -21,9 +21,9 @@ function details(input: { reference?: string; roomName?: string; checkIn?: strin
               Total</td><td style="padding:12px 0 6px;text-align:right;font-weight:700;border-top:1px solid #e5e1d7">${money(input.total)}
               </td></tr>` : ''}${input.payment ? `<tr><td style="padding:6px 0;color:#777f91">Payment</td><td style="padding:6px 0;text-align:right">
                 ${escapeHtml(input.payment)}</td></tr>` : ''}</table></div>` }
-function basic(name: string, title: string, message: string, extra = '', outro = 'We look forward to welcoming you.') 
+function basic(name: string, title: string, message: string, extra = '', outro = 'We look forward to welcoming you.', extraText = '') 
 { const safeName = escapeHtml(name || 'Guest'); return { subject: `${title} | Blue Pair Signature`, text: `Hello ${name || 
-  'Guest'},\n\n${message}\n\n${outro}\n\nBlue Pair Signature, Uromi.`, html: layout(title, `<p style="font-size:16px">Hello 
+  'Guest'},\n\n${message}${extraText ? `\n\n${extraText}` : ''}\n\n${outro}\n\nBlue Pair Signature, Uromi.`, html: layout(title, `<p style="font-size:16px">Hello 
     ${safeName},</p><p style="color:#566079;line-height:1.7">${escapeHtml(message)}</p>${extra}<p style="margin-top:28px;color:#566079">${escapeHtml(outro)}</p>`) } }
 
 export function bookingConfirmationEmail(input: { guestName:string; email:string; reference:string; roomName:string; 
@@ -67,10 +67,10 @@ export function checkInWelcomeEmail(input:{guestName:string;reference:string;roo
 { return basic(input.guestName, 'Checkout reminder', `Your stay ends on ${input.checkOut}. 
   Please complete checkout with reception before leaving and ensure personal belongings are collected.`, details(input)) }
 
-  export function checkoutThankYouEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string}) 
+  export function checkoutThankYouEmail(input:{guestName:string;reference:string;roomName:string;checkIn:string;checkOut:string;reviewUrl?:string}) 
 { return basic(input.guestName, 'Thank you for staying with us', `Thank you for staying at Blue Pair Signature. 
   Your booking ${input.reference} has been checked out successfully.`, details(input), 
-  'Thank you for choosing Blue Pair Signature. We wish to have the pleasure of hosting you again.') }
+  'Thank you for choosing Blue Pair Signature. We wish to have the pleasure of hosting you again.', input.reviewUrl ? `<p style="margin:24px 0"><a href="${escapeHtml(input.reviewUrl)}" style="display:inline-block;background:#0b1633;color:#fff;padding:12px 18px;text-decoration:none;border-radius:8px;font-weight:700">Rate us on Google</a></p>` : '', input.reviewUrl ? `Rate your stay on Google: ${input.reviewUrl}` : '') }
 
   export function reviewRequestEmail(input:{guestName:string;reference:string;reviewUrl?:string}) 
 { return basic(input.guestName, 'How was your stay?', `We would love to hear about your experience at Blue Pair Signature.
