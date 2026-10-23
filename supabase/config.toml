@@ -1,4 +1,0 @@
-project_id = "jyllymseodyvuzkatdzp"
-
-[functions.process-background-jobs]
-verify_jwt = false

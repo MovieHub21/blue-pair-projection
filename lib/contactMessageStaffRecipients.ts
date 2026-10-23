@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { canAccessContactMessages } from '../supabase/functions/_shared/contactMessageAccess'
+import { canAccessContactMessages } from './contactMessageAccess'
 
 export type ContactMessageStaffRecipient = { userId: string; name: string; email: string }
 
