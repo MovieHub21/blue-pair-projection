@@ -3,9 +3,9 @@ import AmenityPage from '../../../components/ui/AmenityPage'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
-  title: 'Games Room & Entertainment in Uromi, Edo State | Blue Pair Hotel',
-  description: 'Pool tables, table tennis and a sports lounge at Blue Pair Hotel, Uromi, Edo State. Open daily 10am–midnight — free for VIP Suite guests.',
-  keywords: 'games room Uromi, pool table Uromi, table tennis Uromi, things to do in Uromi, Blue Pair Hotel games room',
+  title: 'Games Room & Entertainment in Uromi, Edo State | Blue Pair Signature',
+  description: 'Pool tables, table tennis and a sports lounge at Blue Pair Signature, Uromi, Edo State. Open daily 10am–midnight — free for VIP Suite guests.',
+  keywords: 'games room Uromi, pool table Uromi, table tennis Uromi, things to do in Uromi, Blue Pair Signature games room',
   path: '/games',
 })
 

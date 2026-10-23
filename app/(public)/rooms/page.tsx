@@ -9,7 +9,7 @@ import BookingDateFilter from '../../../components/booking/BookingDateFilter'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const metadata=buildMetadata({title:'Hotel Rooms & Suites in Uromi, Edo State | Prices & Online Booking',
-    description:'Browse Blue Pair Hotel rooms and suites in Uromi, Edo State. See live room availability, guest capacity and book online.',
+    description:'Browse Blue Pair Signature rooms and suites in Uromi, Edo State. See live room availability, guest capacity and book online.',
     keywords:'hotel rooms Uromi, hotel room prices Uromi, hotel room rates Uromi, book a hotel room Uromi',
     path:'/rooms'})
 const breadcrumbs=[{name:'Home',path:'/'},

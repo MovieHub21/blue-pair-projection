@@ -285,7 +285,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
               ['Dates', `${formatDate(checkIn)} → ${formatDate(checkOut)}`],
               ['Amount', naira(total)],
               ['Payment status', 'Pending'],
-              ['Hotel', `Blue Pair Hotel, ${hotelAddress || 'Uromi, Edo State'}`],
+              ['Hotel', `Blue Pair Signature, ${hotelAddress || 'Uromi, Edo State'}`],
             ].map(([l,v]) => (
               <div key={l} className="flex justify-between text-sm py-2.5 border-b border-dashed border-black/10 last:border-none"><span className="text-navy-400">{l}</span><span className="font-medium">{v}</span></div>
             ))}

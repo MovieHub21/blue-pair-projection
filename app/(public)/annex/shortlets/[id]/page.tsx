@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   return buildMetadata({
     title: `${sl.name} — Short-let in Uromi, Edo State | ₦${sl.price.toLocaleString()}/night`,
-    description: `${sl.description} ${sl.bedrooms} bedrooms, from ₦${sl.price.toLocaleString()} per night at the Blue Pair Hotel Annex, Uromi, Edo State.`,
+    description: `${sl.description} ${sl.bedrooms} bedrooms, from ₦${sl.price.toLocaleString()} per night at the Blue Pair Signature Annex, Uromi, Edo State.`,
     keywords: `${sl.name.toLowerCase()}, short let uromi, ${sl.type.toLowerCase()} for rent edo state`,
     path: `/annex/shortlets/${sl.id}`,
     image: sl.images?.[0] || sl.image,

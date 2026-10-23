@@ -6,9 +6,9 @@ import SectionHeading from '../../../components/ui/SectionHeading'
 import { getOffers } from '../../../lib/data'
 
 export const metadata = buildMetadata({
-  title: 'Hotel Deals & Discounts in Uromi, Edo State | Blue Pair Hotel Offers',
-  description: 'Current room, restaurant and seasonal offers at Blue Pair Hotel, Uromi, Edo State. Save on your next stay.',
-  keywords: 'hotel deals uromi, hotel discount edo state, blue pair hotel offers, cheap hotel uromi',
+  title: 'Hotel Deals & Discounts in Uromi, Edo State | Blue Pair Signature Offers',
+  description: 'Current room, restaurant and seasonal offers at Blue Pair Signature, Uromi, Edo State. Save on your next stay.',
+  keywords: 'hotel deals uromi, hotel discount edo state, Blue Pair Signature offers, cheap hotel uromi',
   path: '/offers',
 })
 

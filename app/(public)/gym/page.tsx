@@ -5,9 +5,9 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 import Link from 'next/link'
 
 export const metadata = buildMetadata({
-  title: 'Hotel Gym & Fitness Centre in Uromi, Edo State | Blue Pair Hotel',
-  description: 'A full-equipment fitness studio at Blue Pair Hotel in Uromi, with daily morning and evening sessions and membership options for local visitors.',
-  keywords: 'gym in Uromi, hotel gym Uromi, fitness centre Uromi, Blue Pair Hotel gym',
+  title: 'Hotel Gym & Fitness Centre in Uromi, Edo State | Blue Pair Signature',
+  description: 'A full-equipment fitness studio at Blue Pair Signature in Uromi, with daily morning and evening sessions and membership options for local visitors.',
+  keywords: 'gym in Uromi, hotel gym Uromi, fitness centre Uromi, Blue Pair Signature gym',
   path: '/gym',
 })
 

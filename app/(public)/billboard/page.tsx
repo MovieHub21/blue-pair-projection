@@ -7,7 +7,7 @@ import BillboardClient from './BillboardClient'
 
 export const metadata = buildMetadata({
   title: 'Billboard & Advertising Space in Uromi, Edo State',
-  description: 'Advertise on high-visibility billboard spaces across the Blue Pair Hotel campus in Uromi, Edo State. View locations, dimensions and pricing.',
+  description: 'Advertise on high-visibility billboard spaces across the Blue Pair Signature campus in Uromi, Edo State. View locations, dimensions and pricing.',
   keywords: 'billboard advertising uromi, billboard edo state, advertise hotel uromi',
   path: '/billboard',
 })

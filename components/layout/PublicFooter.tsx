@@ -65,8 +65,8 @@ export default function PublicFooter({ content = {} }: { content?: Record<string
             </div>
             <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-gold-400 hover:text-gold-300">Open map <ExternalLink size={13} /></a>
           </div>
-          <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Hotel location in Google Maps" className="relative block h-36 border-t border-white/10 sm:h-auto sm:min-h-[132px] sm:w-64 sm:shrink-0 sm:border-l sm:border-t-0">
-            <iframe title="Blue Pair Hotel location map" src={mapEmbedUrl} className="pointer-events-none absolute inset-0 h-full w-full border-0 opacity-90" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+          <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Signature location in Google Maps" className="relative block h-36 border-t border-white/10 sm:h-auto sm:min-h-[132px] sm:w-64 sm:shrink-0 sm:border-l sm:border-t-0">
+            <iframe title="Blue Pair Signature location map" src={mapEmbedUrl} className="pointer-events-none absolute inset-0 h-full w-full border-0 opacity-90" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
           </a>
         </div>
         <div className="mt-16 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-3 text-xs text-white/40">

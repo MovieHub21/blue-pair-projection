@@ -3,9 +3,9 @@ import AmenityPage from '../../../components/ui/AmenityPage'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
-  title: 'Indoor Swimming Pool in Uromi, Edo State | Blue Pair Hotel',
-  description: "Visit the indoor swimming pool at Blue Pair Hotel in Uromi. Day entry is available for adults and children, with special-event access arranged by enquiry.",
-  keywords: 'indoor swimming pool Uromi, hotel with swimming pool Uromi, swimming pool in Uromi, Blue Pair Hotel pool',
+  title: 'Indoor Swimming Pool in Uromi, Edo State | Blue Pair Signature',
+  description: "Visit the indoor swimming pool at Blue Pair Signature in Uromi. Day entry is available for adults and children, with special-event access arranged by enquiry.",
+  keywords: 'indoor swimming pool Uromi, hotel with swimming pool Uromi, swimming pool in Uromi, Blue Pair Signature pool',
   path: '/pool',
 })
 

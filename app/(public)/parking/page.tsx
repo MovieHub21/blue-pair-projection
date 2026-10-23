@@ -8,7 +8,7 @@ import { Car, ShieldCheck } from 'lucide-react'
 
 export const metadata = buildMetadata({
   title: 'Hotel Parking & VIP Parking in Uromi, Edo State',
-  description: 'Secure on-site parking at Blue Pair Hotel, Uromi, Edo State — complimentary guest parking plus a dedicated VIP courtyard.',
+  description: 'Secure on-site parking at Blue Pair Signature, Uromi, Edo State — complimentary guest parking plus a dedicated VIP courtyard.',
   keywords: 'hotel parking uromi, vip parking edo state, secure parking uromi hotel',
   path: '/parking',
 })

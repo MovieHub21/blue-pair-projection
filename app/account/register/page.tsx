@@ -21,11 +21,11 @@ function RegisterForm() {
     setLoading(false); if (!data.session) { setCheckEmail(true); return }
     router.push(params.get('redirect') || '/account/dashboard'); router.refresh()
   }
-  if (checkEmail) return <div className="min-h-screen flex items-center justify-center bg-navy-950 px-6 py-16"><div className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8 text-center"><div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-16 h-16 rounded-2xl object-cover" /></div><div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div><h2 className="font-display text-lg font-semibold mb-2">Check your email</h2><p className="text-sm text-navy-500">We've sent a confirmation link to <b>{email}</b>. Confirm your address, then sign in.</p><Link href="/account/login" className="btn-primary w-full justify-center mt-6">Go to sign in</Link></div></div>
+  if (checkEmail) return <div className="min-h-screen flex items-center justify-center bg-navy-950 px-6 py-16"><div className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-8 text-center"><div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Signature" className="w-16 h-16 rounded-2xl object-cover" /></div><div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-2xl">✓</div><h2 className="font-display text-lg font-semibold mb-2">Check your email</h2><p className="text-sm text-navy-500">We've sent a confirmation link to <b>{email}</b>. Confirm your address, then sign in.</p><Link href="/account/login" className="btn-primary w-full justify-center mt-6">Go to sign in</Link></div></div>
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-950 px-5 py-12 sm:px-6 sm:py-16">
       <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-7 sm:p-8">
-        <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
+        <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Signature" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
         <p className="text-sm text-navy-400 mb-7 text-center">Create your guest account</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Full name</label><input required value={name} onChange={e => setName(e.target.value)} className="field-input mb-4" placeholder="Your name" />

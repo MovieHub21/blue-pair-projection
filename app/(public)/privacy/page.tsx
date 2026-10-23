@@ -4,7 +4,7 @@ import { getSiteContent } from '../../../lib/data'
 import { SITE_EMAIL, SITE_NAME, SITE_PHONE_DISPLAY, SITE_URL, SITE_ADDRESS_DISPLAY } from '../../../lib/siteConfig'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Blue Pair Hotel',
+  title: 'Privacy Policy | Blue Pair Signature',
   description: `Privacy Policy for ${SITE_NAME}, Uromi, Edo State. Learn how we collect, use, protect and retain guest information.`,
   alternates: { canonical: `${SITE_URL}/privacy` },
 }
@@ -85,7 +85,7 @@ export default async function PrivacyPolicyPage() {
 
             <section className="glass-blue rounded-2xl p-6 md:p-8">
               <h2 className="text-2xl font-display font-semibold mb-3">11. Contact us</h2>
-              <p>If you have a privacy question or request, contact Blue Pair Hotel:</p>
+              <p>If you have a privacy question or request, contact Blue Pair Signature:</p>
               <div className="mt-4 space-y-1">
                 <p>{address}</p>
                 <p>{phone}</p>

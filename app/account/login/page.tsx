@@ -93,7 +93,7 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-navy-950 px-5 py-12 sm:px-6 sm:py-16">
       <form onInvalidCapture={(e) => console.warn('[BP-AUTH][guest] FORM VALIDATION BLOCKED SUBMIT', { target: (e.target as HTMLInputElement).name || (e.target as HTMLInputElement).type, valueMissing: (e.target as HTMLInputElement).validity?.valueMissing, typeMismatch: (e.target as HTMLInputElement).validity?.typeMismatch, validationMessage: (e.target as HTMLInputElement).validationMessage })} onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl2 shadow-pop p-7 sm:p-8">
-        <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Hotel" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
+        <div className="flex justify-center mb-5"><img src="/icon-192.png" alt="Blue Pair Signature" className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl object-cover" /></div>
         <p className="text-sm text-navy-400 mb-7 text-center">Sign in to manage your bookings</p>
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Email</label>

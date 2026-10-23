@@ -14,8 +14,8 @@ const ANNEX_CONTENT_IMAGES: Record<string, string[]> = {
 }
 
 export const metadata = buildMetadata({
-  title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Hotel',
-  description: 'Explore the Blue Pair Hotel Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
+  title: 'The Annex — Short-lets, Bar & Restaurant in Uromi | Blue Pair Signature',
+  description: 'Explore the Blue Pair Signature Annex in Uromi, Edo State — short-let apartments, an outdoor eatery and grill, a dedicated bar, VIP lounge and restaurant.',
   keywords: 'blue pair annex, short-let uromi, annex restaurant uromi, annex bar edo state, apartment for rent uromi, annex in uromi',
   path: '/annex',
 })

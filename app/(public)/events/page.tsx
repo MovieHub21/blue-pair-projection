@@ -9,13 +9,13 @@ import { Users, Calendar, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import ReserveSpotButton from './ReserveSpotButton'
 
-export const metadata = buildMetadata({ title: 'Events & Event Hall in Uromi, Edo State | Blue Pair Hotel', description: 'Find upcoming hotel events and enquire about the Blue Pair event hall in Uromi for meetings, corporate events, birthdays, weddings and church programmes. Venue capacity varies by seating arrangement.', keywords: 'events Uromi, event hall Uromi, event venue Uromi, wedding venue Uromi, meeting venue Uromi, corporate event space Uromi, hotel events Uromi, event reservations Uromi, Blue Pair Hotel events', path: '/events' })
+export const metadata = buildMetadata({ title: 'Events & Event Hall in Uromi, Edo State | Blue Pair Signature', description: 'Find upcoming hotel events and enquire about the Blue Pair event hall in Uromi for meetings, corporate events, birthdays, weddings and church programmes. Venue capacity varies by seating arrangement.', keywords: 'events Uromi, event hall Uromi, event venue Uromi, wedding venue Uromi, meeting venue Uromi, corporate event space Uromi, hotel events Uromi, event reservations Uromi, Blue Pair Signature events', path: '/events' })
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Events',path:'/events'}]
 
 export default async function EventsPage() {
   const [published, content] = await Promise.all([getEvents(true), getSiteContent()])
   const address = content.hotel_address?.trim() || 'Uromi, Edo State'
-  const eventsJsonLd = published.map(e => ({ '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image, location: { '@type': 'Place', name: 'Blue Pair Hotel', address }, offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' } }))
+  const eventsJsonLd = published.map(e => ({ '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image, location: { '@type': 'Place', name: 'Blue Pair Signature', address }, offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' } }))
   return <div>
     <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), ...eventsJsonLd]} />
     <PageHero image="https://images.unsplash.com/photo-1519167758481-83f29c8e8de8?auto=format&fit=crop&w=1600&q=80" eyebrow="What's on" title="Upcoming Events at Blue Pair" crumbs="Home / Events" height="h-72" />

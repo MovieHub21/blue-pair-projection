@@ -11,8 +11,8 @@ const ANNEX_OUTDOOR_IMAGES = [
 ]
 
 export const metadata = buildMetadata({
-  title: 'Outdoor Eatery in Uromi, Edo State | Blue Pair Hotel Annex',
-  description: 'Explore the Blue Pair Hotel Annex Outdoor Eatery in Uromi, Edo State, with open-air dining and a browsable food menu.',
+  title: 'Outdoor Eatery in Uromi, Edo State | Blue Pair Signature Annex',
+  description: 'Explore the Blue Pair Signature Annex Outdoor Eatery in Uromi, Edo State, with open-air dining and a browsable food menu.',
   keywords: 'outdoor eatery uromi, open air restaurant uromi, outdoor dining edo state, annex outdoor eatery',
   path: '/annex/outdoor-eatery',
 })

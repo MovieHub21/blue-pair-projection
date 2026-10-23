@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { sendResendEmail } from '../../../../lib/email/resend'
 import { preArrivalEmail, checkInReminderEmail, checkoutReminderEmail, reviewRequestEmail } from '../../../../lib/email/templates'
+import { getGoogleReviewUrl } from '../../../../lib/googleReviews'
 
 function dateOnly(value: string) { return new Date(`${value}T00:00:00Z`) }
 function diffDays(from: string, to: string) { return Math.round((dateOnly(to).getTime() - dateOnly(from).getTime()) / 86400000) }
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
           ? checkInReminderEmail(base)
           : event === 'checkout_reminder'
             ? checkoutReminderEmail({ guestName: base.guestName, reference: base.reference, roomName: base.roomName, checkOut: base.checkOut })
-            : reviewRequestEmail({ guestName: base.guestName, reference: base.reference })
+            : reviewRequestEmail({ guestName: base.guestName, reference: base.reference, reviewUrl: getGoogleReviewUrl() })
 
       const result = await sendResendEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text })
       const { error: logError } = await supabase.from('email_logs').insert({ dedupe_key: dedupeKey, event, booking_id: booking.id, recipient, subject: email.subject, resend_id: result.id ?? null })

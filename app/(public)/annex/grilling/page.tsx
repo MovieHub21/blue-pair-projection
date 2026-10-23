@@ -11,8 +11,8 @@ const ANNEX_GRILLING_IMAGES = [
 ]
 
 export const metadata = buildMetadata({
-  title: 'Grill Menu & Prices in Uromi, Edo State | Blue Pair Hotel Annex',
-  description: 'Explore grilled food at the Blue Pair Hotel Annex in Uromi, Edo State, with a browsable grill menu and prices.',
+  title: 'Grill Menu & Prices in Uromi, Edo State | Blue Pair Signature Annex',
+  description: 'Explore grilled food at the Blue Pair Signature Annex in Uromi, Edo State, with a browsable grill menu and prices.',
   keywords: 'grill menu uromi, grilling uromi, suya uromi, annex grilling blue pair, grill house edo state',
   path: '/annex/grilling',
 })

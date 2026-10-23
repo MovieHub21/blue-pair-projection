@@ -6,9 +6,9 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 import { formatDate, naira } from '../../../lib/format'
 
 export const metadata = buildMetadata({
-  title: 'Nightclub in Uromi, Edo State | The Club at Blue Pair Hotel',
-  description: 'Edo State\u2019s after-dark address — resident DJs, bottle service and VIP tables at The Club, Blue Pair Hotel, Uromi. Open Thursday to Sunday, 9pm–4am.',
-  keywords: 'nightclub Uromi, night club Uromi, club in Uromi Edo State, VIP table Uromi, The Club Blue Pair Hotel',
+  title: 'Nightclub in Uromi, Edo State | The Club at Blue Pair Signature',
+  description: 'Edo State\u2019s after-dark address — resident DJs, bottle service and VIP tables at The Club, Blue Pair Signature, Uromi. Open Thursday to Sunday, 9pm–4am.',
+  keywords: 'nightclub Uromi, night club Uromi, club in Uromi Edo State, VIP table Uromi, The Club Blue Pair Signature',
   path: '/club',
 })
 
@@ -17,7 +17,7 @@ export default async function ClubPage() {
   const address = content.hotel_address?.trim() || 'Uromi, Edo State'
   const eventsJsonLd = upcoming.map(e => ({
     '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image,
-    location: { '@type': 'Place', name: 'The Club at Blue Pair Hotel', address },
+    location: { '@type': 'Place', name: 'The Club at Blue Pair Signature', address },
     offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' },
   }))
   const config = await resolveAmenityConfig('club', {

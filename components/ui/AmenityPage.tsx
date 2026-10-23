@@ -130,7 +130,7 @@ export default function AmenityPage({ config }: { config: AmenityConfig }) {
 
         {/* Guest Access Note */}
         <p className="text-[11px] text-navy-400 text-center mt-10">
-          Guests staying at Blue Pair Hotel enjoy priority access.
+          Guests staying at Blue Pair Signature enjoy priority access.
         </p>
 
       </div>

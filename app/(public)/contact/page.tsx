@@ -50,8 +50,8 @@ export default async function ContactPage() {
                 <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-navy-800 hover:text-gold-600">Open map <ExternalLink size={13} /></a>
               </div>
               <div className="relative h-72 sm:h-80">
-                <iframe title="Blue Pair Hotel location map" src={mapEmbedUrl} className="absolute inset-0 h-full w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
-                <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Signature location in Google Maps" className="absolute inset-0 z-10"><span className="sr-only">Open Blue Pair Hotel location in Google Maps</span></a>
+                <iframe title="Blue Pair Signature location map" src={mapEmbedUrl} className="absolute inset-0 h-full w-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+                <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Open Blue Pair Signature location in Google Maps" className="absolute inset-0 z-10"><span className="sr-only">Open Blue Pair Signature location in Google Maps</span></a>
               </div>
             </div>
           </div>

@@ -31,7 +31,7 @@ export default function PublicNavbar() {
       </div>
       <div className="w-full flex items-center justify-between py-3.5 px-5 md:px-10">
         <Link href="/" aria-label={COMPANY_NAME} className="flex items-center gap-2.5 shrink-0 min-w-0">
-          <img src="/icon-192.png" alt="Blue Pair Hotel" className="w-10 h-10 md:w-11 md:h-11 rounded-xl object-cover shrink-0" />
+          <img src="/icon-192.png" alt="Blue Pair Signature" className="w-10 h-10 md:w-11 md:h-11 rounded-xl object-cover shrink-0" />
           <span className="text-[11px] sm:text-xs md:text-sm font-semibold leading-tight tracking-tight text-navy-900 max-w-[185px] sm:max-w-[240px] md:max-w-[285px]">{COMPANY_NAME}</span>
         </Link>
         <div className="hidden lg:flex items-center gap-8 text-[13.5px] font-medium text-navy-700">

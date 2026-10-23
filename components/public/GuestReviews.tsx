@@ -1,250 +1,110 @@
 'use client'
 
 import Link from 'next/link'
-import { Star, Quote, ArrowRight } from 'lucide-react'
-import { useEffect, useRef } from 'react'
-import type { GuestReview } from '../../lib/reviews'
+import { ArrowRight, ExternalLink, Star } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { GoogleReviewsData } from '../../lib/googleReviews'
 
-export default function GuestReviews({ reviews }: { reviews: GuestReview[] }) {
+function Stars({ rating }: { rating: number }) {
+  return <span className="inline-flex gap-0.5 text-gold-500" aria-label={`${rating} out of 5 stars`}>
+    {[1, 2, 3, 4, 5].map(star => <Star key={star} size={15} fill={star <= Math.round(rating) ? 'currentColor' : 'none'} strokeWidth={1.8} />)}
+  </span>
+}
+
+export default function GuestReviews({ mapsProfileUrl }: { mapsProfileUrl: string }) {
+  const [data, setData] = useState<GoogleReviewsData | null>(null)
+  const [loaded, setLoaded] = useState(false)
   const trackRef = useRef<HTMLDivElement>(null)
-  const positionRef = useRef(0)
-  const animationRef = useRef<number | null>(null)
+  const pausedRef = useRef(false)
 
-  const average =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+  useEffect(() => {
+    let active = true
+    fetch('/api/google-reviews').then(response => response.ok ? response.json() : null)
+      .then(result => { if (active) setData(result?.data ?? null) })
+      .catch(() => { if (active) setData(null) })
+      .finally(() => { if (active) setLoaded(true) })
+    return () => { active = false }
+  }, [])
 
-  const rating = Math.round(average * 2) / 2
-
-  const renderRatingStars = (value: number, size = 15) => {
-    return (
-      <div className="flex text-gold-500">
-        {[1, 2, 3, 4, 5].map(i => {
-          const fillPercentage = Math.max(
-            0,
-            Math.min(1, value - (i - 1))
-          )
-
-          return (
-            <span
-              key={i}
-              className="relative inline-flex shrink-0"
-              style={{
-                width: size,
-                height: size,
-              }}
-            >
-              <Star
-                size={size}
-                className="absolute inset-0"
-                strokeWidth={1.8}
-              />
-
-              {fillPercentage > 0 && (
-                <span
-                  className="absolute inset-y-0 left-0 overflow-hidden"
-                  style={{
-                    width: `${fillPercentage * 100}%`,
-                  }}
-                >
-                  <Star
-                    size={size}
-                    fill="currentColor"
-                    strokeWidth={1.8}
-                  />
-                </span>
-              )}
-            </span>
-          )
-        })}
-      </div>
-    )
-  }
+  const mapsUrl = data?.googleMapsUri || mapsProfileUrl
+  const reviews = data?.reviews ?? []
 
   useEffect(() => {
     const track = trackRef.current
+    const firstGroup = track?.firstElementChild as HTMLElement | null
+    if (!track || !firstGroup || reviews.length === 0) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    if (!track || reviews.length === 0) return
-
+    let position = 0
     let lastTime = performance.now()
+    let frame = 0
+    let cycleDistance = firstGroup.offsetWidth + 16
 
-    const speed = 35
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - lastTime
-      lastTime = currentTime
-
-      positionRef.current -= (speed * elapsed) / 1000
-
-      const firstGroup = track.children[0] as HTMLElement
-
-      if (firstGroup) {
-        const firstGroupWidth = firstGroup.offsetWidth + 20
-
-        if (Math.abs(positionRef.current) >= firstGroupWidth) {
-          positionRef.current += firstGroupWidth
-        }
+    const animate = (now: number) => {
+      const elapsed = now - lastTime
+      lastTime = now
+      if (!pausedRef.current) {
+        position -= (28 * elapsed) / 1000
+        if (Math.abs(position) >= cycleDistance) position += cycleDistance
+        track.style.transform = `translate3d(${position}px, 0, 0)`
       }
-
-      track.style.transform = `translate3d(${positionRef.current}px, 0, 0)`
-
-      animationRef.current = requestAnimationFrame(animate)
+      frame = requestAnimationFrame(animate)
     }
 
-    animationRef.current = requestAnimationFrame(animate)
-
+    const resizeObserver = new ResizeObserver(() => {
+      cycleDistance = firstGroup.offsetWidth + 16
+    })
+    resizeObserver.observe(firstGroup)
+    frame = requestAnimationFrame(animate)
     return () => {
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current)
-      }
+      cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+      track.style.transform = ''
     }
   }, [reviews.length])
 
-  if (!reviews.length) return null
-
-  const reviewGroups = [
-    reviews,
-    reviews,
-    reviews,
-    reviews,
-  ]
+  const reviewGroups = [reviews, reviews]
 
   return (
-    <section className="section bg-cream-100 overflow-hidden">
+    <section className="section bg-cream-100">
       <div className="container-w">
-        <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-10 lg:gap-14 items-stretch">
-
-          {/* IMAGE */}
-          <div className="relative min-h-[380px] lg:min-h-[520px] rounded-2xl overflow-hidden">
-            <img
-              src="https://bluepairsignature.com/images/blue-pair-image.jpeg"
-              alt="Guest experience at Blue Pair Hotel"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-
-            <div className="absolute left-6 right-6 bottom-6 text-white">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/70">
-                Guest experiences
-              </span>
-
-              <h2 className="text-3xl md:text-4xl font-display mt-2 leading-tight">
-                What guests say about Blue Pair
-              </h2>
-
-              <p className="text-sm text-white/75 mt-3 max-w-md leading-6">
-                Real feedback from guests who have stayed with us in Uromi,
-                covering rooms, service, dining, facilities and their overall
-                experience.
-              </p>
-            </div>
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <span className="eyebrow">Guest experiences on Google</span>
+            <h2 className="mt-2 font-display text-3xl md:text-4xl">What guests say about Blue Pair Signature</h2>
+            <p className="mt-3 text-sm leading-6 text-navy-500">Read guest feedback published on Google, or share your own experience directly on our Business Profile.</p>
           </div>
-
-          {/* REVIEWS */}
-          <div className="min-w-0 flex flex-col justify-center">
-
-            {/* HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-7">
-              <div>
-                <span className="eyebrow">
-                  Guest experiences
-                </span>
-
-                <p className="text-navy-500 text-sm mt-3 max-w-xl">
-                  Hear directly from our guests about their stay at Blue Pair
-                  Hotel.
-                </p>
-              </div>
-
-              {/* TOTAL RATING */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-3xl font-display">
-                  {average.toFixed(1)}
-                </div>
-
-                <div>
-                  {renderRatingStars(rating, 15)}
-
-                  <span className="text-xs text-navy-400">
-                    Verified guest reviews
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* AUTO SCROLL */}
-            <div className="relative overflow-hidden">
-              <div
-                ref={trackRef}
-                className="flex w-max gap-5"
-                style={{
-                  willChange: 'transform',
-                }}
-              >
-                {reviewGroups.map((group, groupIndex) => (
-                  <div
-                    key={groupIndex}
-                    className="flex gap-5 shrink-0"
-                  >
-                    {group.map((review, reviewIndex) => (
-                      <article
-                        key={`${groupIndex}-${review.id}-${reviewIndex}`}
-                        className="
-                          card p-6 flex flex-col shrink-0
-                          w-[88vw] sm:w-[360px] md:w-[390px]
-                          min-h-[330px]
-                        "
-                      >
-                        <Quote
-                          size={22}
-                          className="text-gold-500/70 mb-4"
-                        />
-
-                        {/* REVIEW RATING */}
-                        <div className="flex text-gold-500 mb-3">
-                          {renderRatingStars(review.rating, 14)}
-                        </div>
-
-                        {review.title && (
-                          <h3 className="font-semibold text-base mb-2">
-                            {review.title}
-                          </h3>
-                        )}
-
-                        <p className="text-sm text-navy-600 leading-7 flex-1">
-                          “{review.review}”
-                        </p>
-
-                        {/* REVIEW DATE */}
-                        <div className="mt-5 pt-4 border-t border-black/5 text-[11px] text-navy-400">
-                          Verified Blue Pair guest ·{' '}
-                          {new Date(
-                            review.created_at
-                          ).toLocaleDateString('en-NG', {
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* BOTTOM */}
-            <div className="flex items-center justify-end mt-7">
-              <Link
-                href="/booking"
-                className="btn-outline inline-flex items-center gap-2"
-              >
-                Plan your stay
-                <ArrowRight size={15} />
-              </Link>
-            </div>
-
+          <div className="flex flex-wrap items-center gap-3">
+            {data?.rating !== null && data?.rating !== undefined && <div className="flex items-center gap-2 rounded-xl border border-black/5 bg-white px-4 py-2.5">
+              <span className="font-display text-2xl">{data.rating.toFixed(1)}</span><span className="flex flex-col"><Stars rating={data.rating} /><span className="text-[10px] text-navy-400">Overall rating · {data.reviewCount ?? 0} Google reviews</span></span>
+            </div>}
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-navy-900/15 bg-white px-3.5 py-2 text-xs font-semibold text-navy-800 transition-colors hover:border-gold-500 hover:text-navy-950">See all reviews on Google <ExternalLink size={12} /></a>
           </div>
         </div>
+
+        {reviews.length > 0 ? <>
+          <div className="relative mt-8 overflow-hidden" onPointerEnter={() => { pausedRef.current = true }} onPointerLeave={() => { pausedRef.current = false }} onFocusCapture={() => { pausedRef.current = true }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pausedRef.current = false }}>
+            <div ref={trackRef} className="flex w-max gap-4 will-change-transform" aria-label="Google guest reviews" aria-live="off">
+              {reviewGroups.map((group, groupIndex) => <div key={groupIndex} aria-hidden={groupIndex === 1} className="flex shrink-0 gap-4">
+                {group.map(review => <article key={`${groupIndex}-${review.id}`} className="flex min-h-[230px] w-[min(82vw,370px)] flex-col rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:w-[370px]">
+                  <div className="flex items-center justify-between gap-3"><Stars rating={review.rating} /><span className="text-[11px] text-navy-400">{review.published}</span></div>
+                  <p className="mt-4 flex-1 whitespace-pre-line text-sm leading-7 text-navy-700">“{review.text}”</p>
+                  <div className="mt-5 flex items-center justify-between gap-2 border-t border-black/5 pt-4 text-xs">
+                    {review.authorUrl ? <a href={review.authorUrl} target="_blank" rel="noopener noreferrer" tabIndex={groupIndex === 1 ? -1 : undefined} className="font-semibold text-navy-800 hover:underline">{review.author}</a> : <span className="font-semibold text-navy-800">{review.author}</span>}
+                    <a href={review.googleMapsUri} target="_blank" rel="noopener noreferrer" tabIndex={groupIndex === 1 ? -1 : undefined} className="inline-flex shrink-0 items-center gap-1 text-navy-500 hover:text-navy-900">View on Google <ExternalLink size={12} /></a>
+                  </div>
+                </article>)}
+              </div>)}
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] text-navy-400">Google reviews shown here are ordered by relevance. Google checks reviews for policy violations; reviews are not individually verified by Google.</p>
+        </> : <div className="mt-8 rounded-2xl border border-black/5 bg-white p-6 text-sm text-navy-500">
+          {loaded ? data ? 'There are no Google review excerpts available to display right now.' : 'See the latest rating and guest reviews on our Google Business Profile.' : 'Loading Google reviews…'}
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center gap-1 font-semibold text-navy-900 underline underline-offset-4">Open Google Maps <ExternalLink size={12} /></a>
+        </div>}
+
+        <div className="mt-6 flex justify-end"><Link href="/booking" className="btn-outline inline-flex items-center gap-2">Plan your stay <ArrowRight size={15} /></Link></div>
+        <div className="mt-3 text-right text-[11px] font-medium text-navy-400">Google Maps</div>
       </div>
     </section>
   )

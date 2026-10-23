@@ -11,8 +11,8 @@ const ANNEX_RESTAURANT_IMAGES = [
 ]
 
 export const metadata = buildMetadata({
-  title: 'Annex Restaurant Menu in Uromi, Edo State | Blue Pair Hotel',
-  description: 'Explore the Blue Pair Hotel Annex Restaurant menu in Uromi, Edo State, with dishes, categories and prices.',
+  title: 'Annex Restaurant Menu in Uromi, Edo State | Blue Pair Signature',
+  description: 'Explore the Blue Pair Signature Annex Restaurant menu in Uromi, Edo State, with dishes, categories and prices.',
   keywords: 'annex restaurant uromi, restaurant menu uromi, nigerian food edo state, blue pair annex restaurant, restaurant esan north-east',
   path: '/annex/restaurant',
 })
@@ -41,7 +41,7 @@ export default async function AnnexRestaurantPage() {
         mode="food"
         eyebrow={amenity?.eyebrow || 'Dining'}
         title={amenity?.name || 'Annex Restaurant'}
-        description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Hotel Annex.'}
+        description={amenity?.description || 'Homestyle dishes and a relaxed dining experience at the Blue Pair Signature Annex.'}
         heroImage={ANNEX_RESTAURANT_IMAGES[0]}
         items={items}
         annexMenu={annexMenu}

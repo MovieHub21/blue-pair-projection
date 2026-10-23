@@ -9,9 +9,9 @@ import { naira } from '../../../../lib/format'
 import { BedDouble } from 'lucide-react'
 
 export const metadata = buildMetadata({
-  title: 'Short-let Apartments for Rent in Uromi, Edo State | Blue Pair Hotel Annex',
+  title: 'Short-let Apartments for Rent in Uromi, Edo State | Blue Pair Signature Annex',
   description:
-    'Self-contained short-let apartments and duplexes at the Blue Pair Hotel Annex, Uromi, Edo State. Compare properties and prices.',
+    'Self-contained short-let apartments and duplexes at the Blue Pair Signature Annex, Uromi, Edo State. Compare properties and prices.',
   keywords:
     'short let uromi, short let apartment edo state, furnished apartment uromi rent, apartment for rent esan north-east, shortlet apartment in uromi,',
   path: '/annex/shortlets',

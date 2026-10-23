@@ -27,7 +27,7 @@ export default function GymHeroVideo({
       playsInline
       preload="metadata"
       poster={poster}
-      aria-label="Blue Pair Hotel fitness gym"
+      aria-label="Blue Pair Signature fitness gym"
     />
   )
 }

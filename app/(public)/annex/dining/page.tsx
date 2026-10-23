@@ -6,8 +6,8 @@ import { getAnnexActiveBookings, getAnnexMenuData, type AnnexOutletKey } from '.
 import AnnexMenuExperience from '../../../../components/annex/AnnexMenuExperience'
 
 export const metadata = buildMetadata({
-  title: 'Annex Dining & Drinks in Uromi, Edo State | Blue Pair Hotel',
-  description: 'Explore dining and drinks at the Blue Pair Hotel Annex in Uromi, Edo State — restaurant, bar, open-flame grills and outdoor eatery in one unified menu.',
+  title: 'Annex Dining & Drinks in Uromi, Edo State | Blue Pair Signature',
+  description: 'Explore dining and drinks at the Blue Pair Signature Annex in Uromi, Edo State — restaurant, bar, open-flame grills and outdoor eatery in one unified menu.',
   keywords: 'annex dining uromi, annex restaurant, annex bar, annex grilling, suya uromi, blue pair annex dining',
   path: '/annex/dining',
 })
@@ -52,7 +52,7 @@ export default async function AnnexDiningPage({
         outlet={initialOutlet}
         annexMenu={annexMenu}
         activeBookings={activeBookings}
-        footerLabel="Blue Pair Hotel · The Annex"
+        footerLabel="Blue Pair Signature · The Annex"
       />
     </>
   )

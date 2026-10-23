@@ -38,7 +38,7 @@ export default function AmenityCarousel({ images, name }: Props) {
             >
               <img
                 src={image}
-                alt={`${name} at Blue Pair Hotel, Uromi`}
+                alt={`${name} at Blue Pair Signature, Uromi`}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 decoding="async"
                 className="w-full h-full object-cover"

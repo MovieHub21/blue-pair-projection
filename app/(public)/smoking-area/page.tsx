@@ -3,9 +3,9 @@ import AmenityPage from '../../../components/ui/AmenityPage'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 
 export const metadata = buildMetadata({
-  title: 'Smoking Area & Rules | Blue Pair Hotel Uromi',
-  description: 'Designated open-air smoking area at Blue Pair Hotel, Uromi, Edo State — location, access rules and shisha service on request.',
-  keywords: 'smoking area uromi hotel, shisha uromi, blue pair hotel smoking policy',
+  title: 'Smoking Area & Rules | Blue Pair Signature Uromi',
+  description: 'Designated open-air smoking area at Blue Pair Signature, Uromi, Edo State — location, access rules and shisha service on request.',
+  keywords: 'smoking area uromi hotel, shisha uromi, Blue Pair Signature smoking policy',
   path: '/smoking-area',
   noindex: false,
 })

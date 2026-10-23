@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   category: 'hotel',
   formatDetection: { telephone: true, address: true, email: true },
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Hotels in Uromi | Blue Pair Signature', template: '%s | Blue Pair Hotel' },
+  title: { default: 'Hotels in Uromi | Blue Pair Signature', template: '%s | Blue Pair Signature' },
   description: 'Blue Pair Signature Crown Hotel & Suites is a premium hotel in Uromi, Edo State, Nigeria, offering rooms and suites, an indoor swimming pool, fitness gym, dining, VIP lounge, events and short-let accommodation. Book your stay online.',
   openGraph: {
     siteName: SITE_NAME,
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     locale: 'en_NG',
     type: 'website',
   },
-  twitter: { card: 'summary_large_image', title: 'Hotels in Uromi | Blue Pair Hotel', description: 'Premium hotel accommodation, dining, leisure, events and guest services in Uromi, Edo State, Nigeria.' },
+  twitter: { card: 'summary_large_image', title: 'Hotels in Uromi | Blue Pair Signature', description: 'Premium hotel accommodation, dining, leisure, events and guest services in Uromi, Edo State, Nigeria.' },
   icons: {
     icon: [{ url: '/favicon.png', type: 'image/png' }],
     apple: [{ url: '/apple-touch-icon.png', type: 'image/png' }],

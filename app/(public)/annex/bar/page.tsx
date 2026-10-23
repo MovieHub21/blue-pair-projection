@@ -11,8 +11,8 @@ const ANNEX_BAR_IMAGES = [
 ]
 
 export const metadata = buildMetadata({
-  title: 'Annex Bar Drinks Menu in Uromi, Edo State | Blue Pair Hotel',
-  description: 'Explore drinks at the Blue Pair Hotel Annex Bar in Uromi, Edo State, with a browsable menu of available selections.',
+  title: 'Annex Bar Drinks Menu in Uromi, Edo State | Blue Pair Signature',
+  description: 'Explore drinks at the Blue Pair Signature Annex Bar in Uromi, Edo State, with a browsable menu of available selections.',
   keywords: 'annex bar uromi, drinks menu uromi, bar uromi, blue pair annex bar, drinks edo state',
   path: '/annex/bar',
 })

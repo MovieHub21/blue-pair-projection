@@ -10,10 +10,14 @@ interface Params {
   noindex?: boolean
 }
 
-const SEO_BRAND = 'Blue Pair Hotel'
+const SEO_BRAND = 'Blue Pair Signature'
+
+export function normalizeSeoBrand(value: string) {
+  return value.replace(/Blue Pair Hotel/gi, SEO_BRAND)
+}
 
 function optimizeTitle(title: string) {
-  let clean = title
+  let clean = normalizeSeoBrand(title)
     .replaceAll(SITE_NAME, SEO_BRAND)
     .replace(/\s+/g, ' ')
     .trim()
@@ -45,6 +49,7 @@ export function buildMetadata({ title, description, path, keywords, image, noind
   const url = `${SITE_URL}${path}`
   const ogImage = image ?? DEFAULT_OG_IMAGE
   const seoTitle = optimizeTitle(title)
+  const seoDescription = normalizeSeoBrand(description)
   const pageKeywords = keywords
     ? Array.from(new Set(keywords.split(',').map(value => value.trim()).filter(Boolean)))
     : undefined
@@ -53,13 +58,13 @@ export function buildMetadata({ title, description, path, keywords, image, noind
     // Explicit page titles are absolute so the long legal company name in the
     // root title template cannot be appended to every public page.
     title: { absolute: seoTitle },
-    description,
+    description: seoDescription,
     ...(pageKeywords?.length ? { keywords: pageKeywords } : {}),
     alternates: { canonical: url },
     robots: noindex ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       title: seoTitle,
-      description,
+      description: seoDescription,
       url,
       siteName: SITE_NAME,
       images: [{ url: ogImage, width: 1200, height: 630 }],
@@ -69,7 +74,7 @@ export function buildMetadata({ title, description, path, keywords, image, noind
     twitter: {
       card: 'summary_large_image',
       title: seoTitle,
-      description,
+      description: seoDescription,
       images: [ogImage],
     },
   }

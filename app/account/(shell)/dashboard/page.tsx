@@ -44,12 +44,12 @@ export default async function DashboardPage() {
 
       <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gold-500/30 bg-navy-950/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md shadow-[0_2px_14px_rgba(0,0,0,0.3)]"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Welcome Home</span>
-        <span className="rounded-full border border-navy-900/10 bg-white/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-navy-800 backdrop-blur-md shadow-sm">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Hotel'}</span>
+        <span className="rounded-full border border-navy-900/10 bg-white/80 px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider text-navy-800 backdrop-blur-md shadow-sm">{upcoming ? (upcoming.status === 'checked_in' ? 'Currently staying' : 'Upcoming stay') : 'Blue Pair Signature'}</span>
       </div>
 
       <div className="hidden lg:grid lg:grid-cols-[1.02fr_0.98fr] gap-5 xl:gap-6 items-stretch mb-8">
         <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[390px] text-white shadow-pop">
-          <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+          <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Signature` : 'Blue Pair Signature'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
           <div className="absolute inset-0 bg-gradient-to-t from-navy-950/75 via-navy-950/10 to-transparent pointer-events-none" />
           <div className="absolute left-6 bottom-6 right-6 z-10">
             <span className="inline-flex items-center rounded-full border border-white/15 bg-black/20 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-gold-300 backdrop-blur-md">{upcoming ? 'Your stay' : 'Blue Pair Signature'}</span>
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
       <div className="lg:hidden">
               <section className="relative overflow-hidden rounded-[1.75rem] border border-gold-500/20 bg-navy-950 min-h-[260px] md:min-h-[340px] text-white shadow-pop">
-                <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Hotel` : 'Blue Pair Hotel'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
+                <ImageCarousel images={heroImages} alt={upcoming?.room?.name ? `${upcoming.room.name} at Blue Pair Signature` : 'Blue Pair Signature'} className="absolute inset-0 h-full w-full" imageClassName="scale-[1.02]" autoPlay interval={3000} showArrows={heroImages.length > 1} showDots={heroImages.length > 1} showCounter={heroImages.length > 1} />
                 <div className="absolute inset-0 bg-gradient-to-r from-navy-950/60 via-navy-950/25 to-navy-950/10 pointer-events-none" />
                 <div className="absolute inset-x-0 bottom-0 h-28 md:h-36 bg-gradient-to-t from-cream-50 via-cream-50/80 to-transparent pointer-events-none" />
               </section>

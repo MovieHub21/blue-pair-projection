@@ -22,7 +22,7 @@ export async function generateMetadata({params}:{params:{slug:string;roomSlug:st
  const name=unit.name||`Room ${unit.room_number}`
  const breakfastCount = complimentaryBreakfastCount(type.name)
  const breakfastText = breakfastCount === null ? '' : ` Includes ${breakfastCount} complimentary breakfast${breakfastCount === 1 ? '' : 's'}.`
- return buildMetadata({title:`${name} — ${type.name} | Blue Pair Hotel Uromi`,description:`Stay in ${name}, a ${type.name} at Blue Pair Hotel, Uromi, Edo State. ${type.description} Enjoy ${type.amenities.slice(0,6).join(', ')}. From ₦${type.price.toLocaleString()} per night.${breakfastText}`,keywords:`${name.toLowerCase()} blue pair hotel, ${type.name.toLowerCase()} room uromi, room ${unit.room_number} uromi, hotel room edo state${breakfastCount === null ? '' : ', hotel with complimentary breakfast Uromi'}`,path:`/rooms/${params.slug}/${params.roomSlug}`,image:unit.image_url||type.images[0]})
+ return buildMetadata({title:`${name} — ${type.name} | Blue Pair Signature Uromi`,description:`Stay in ${name}, a ${type.name} at Blue Pair Signature, Uromi, Edo State. ${type.description} Enjoy ${type.amenities.slice(0,6).join(', ')}. From ₦${type.price.toLocaleString()} per night.${breakfastText}`,keywords:`${name.toLowerCase()} Blue Pair Signature, ${type.name.toLowerCase()} room uromi, room ${unit.room_number} uromi, hotel room edo state${breakfastCount === null ? '' : ', hotel with complimentary breakfast Uromi'}`,path:`/rooms/${params.slug}/${params.roomSlug}`,image:unit.image_url||type.images[0]})
 }
 
 export default async function IndividualRoomPage({params}:{params:{slug:string;roomSlug:string}}){

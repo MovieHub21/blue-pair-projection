@@ -48,7 +48,7 @@ export const ANNEX_OUTLETS_CONFIG: Record<
     eyebrow: 'Dining & Cuisine',
     tag: 'Homestyle dining',
     blurb: 'Nigerian classics & continental favourites',
-    description: 'Homestyle Nigerian dishes and continental favourites, freshly prepared at the Blue Pair Hotel Annex.',
+    description: 'Homestyle Nigerian dishes and continental favourites, freshly prepared at the Blue Pair Signature Annex.',
     heroImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=85',
     mode: 'food',
   },
@@ -114,7 +114,7 @@ export default function AnnexMenuExperience({
   annexMenu,
   outlet,
   showAnnexNavigation = true,
-  footerLabel = 'Blue Pair Hotel · The Annex',
+  footerLabel = 'Blue Pair Signature · The Annex',
   activeBookings = [],
 }: Props) {
   const [currentOutlet, setCurrentOutlet] = useState<AnnexOutletKey>(outlet)

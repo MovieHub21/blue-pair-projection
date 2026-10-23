@@ -208,7 +208,7 @@ export default function Hotel3DHero({ className = '' }: ThreeCanvasProps) {
       <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(7,21,54,.28)_75%,rgba(7,21,54,.72)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-navy-950/55 via-navy-950/15 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-navy-950/75 via-navy-950/25 to-transparent" />
-      <canvas ref={canvasRef} aria-label="Interactive three-dimensional Blue Pair hotel visualization" className={`relative z-[1] h-full w-full touch-auto transition-opacity duration-700 ${state === 'fallback' ? 'opacity-0' : 'opacity-100'}`} />
+      <canvas ref={canvasRef} aria-label="Interactive three-dimensional Blue Pair Signature visualization" className={`relative z-[1] h-full w-full touch-auto transition-opacity duration-700 ${state === 'fallback' ? 'opacity-0' : 'opacity-100'}`} />
       {state === 'loading' && <div className="absolute inset-0 z-20 grid place-items-center"><div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-white/45 backdrop-blur">Building the scene…</div></div>}
       {state === 'fallback' && <div className="absolute inset-0 z-20 grid place-items-center p-8 text-center"><div className="max-w-xs rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"><div className="text-[10px] uppercase tracking-[0.22em] text-[#e2bd69]">Blue Pair</div><p className="mt-2 text-xs leading-relaxed text-white/50">The interactive architectural view is unavailable on this device.</p></div></div>}
     </div>
