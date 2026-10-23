@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase/client'
 
 const WATCHED_TABLES = new Set([
   'user_roles','profiles','room_types','rooms','customers','bookings','staff',
-  'menu_items','drinks','short_lets','events','maintenance_tickets','housekeeping_tasks',
+  'menu_items','drinks','short_lets','events','club_events','maintenance_tickets','housekeeping_tasks',
   'billboards','parking_zones','payments','offers','guest_requests','gallery_images',
   'amenities','role_permissions','site_content','email_logs','activity_logs','blog_posts',
   'event_reservations','contact_conversations','contact_messages','guest_reviews',

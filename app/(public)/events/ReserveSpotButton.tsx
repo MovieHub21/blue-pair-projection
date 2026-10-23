@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CheckCircle2, Loader2, X } from 'lucide-react'
 import { useAuth } from '../../../lib/useAuth'
 
@@ -36,14 +37,15 @@ export default function ReserveSpotButton({ eventId, eventTitle, eventDate, pric
   }
 
   return <>
-    <button onClick={() => setOpen(true)} className="btn-gold btn-sm">Reserve spot</button>
-    {open && <div className="fixed inset-0 z-[80] bg-navy-950/65 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto" onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
-      <div className="w-full max-w-lg max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col my-auto">
-        <div className="shrink-0 bg-white/95 backdrop-blur border-b border-black/5 px-5 sm:px-6 py-4 flex items-start justify-between">
+    <button type="button" onClick={() => setOpen(true)} className="btn-gold btn-sm">Reserve spot</button>
+    {open && createPortal(<div className="fixed inset-0 z-[200] flex justify-end bg-navy-950/55 backdrop-blur-md" onMouseDown={e => { if (e.target === e.currentTarget) close() }}>
+      <style jsx>{`@keyframes reserve-drawer-in{from{transform:translateX(100%)}to{transform:translateX(0)}}@media(prefers-reduced-motion:no-preference){.reserve-drawer{animation:reserve-drawer-in 280ms cubic-bezier(.22,1,.36,1) both}}`}</style>
+      <div role="dialog" aria-modal="true" aria-label={`Reserve a spot for ${eventTitle}`} className="reserve-drawer h-[100dvh] w-full overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] bg-white shadow-2xl sm:max-w-lg sm:border-l sm:border-white/20">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-black/5 px-5 sm:px-6 py-4 flex items-start justify-between">
           <div className="min-w-0 pr-3"><span className="eyebrow">Event reservation</span><h2 className="font-display text-xl sm:text-2xl text-navy-950 mt-1 break-words">{eventTitle}</h2><p className="text-xs text-navy-400 mt-1">{eventDate} · {capacity} capacity · ₦{price.toLocaleString('en-NG')} per person</p></div>
           <button onClick={close} className="p-2 rounded-full hover:bg-black/5 shrink-0" aria-label="Close"><X size={18} /></button>
         </div>
-        <div className="min-h-0 overflow-y-auto overscroll-contain">
+        <div className="min-h-full">
           {submitted ? <div className="p-8 text-center"><div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4"><CheckCircle2 size={30} /></div><h3 className="font-display text-2xl text-navy-950">Request received</h3><p className="text-sm text-navy-500 leading-6 mt-3">Your request has been sent to the reception team. We have emailed you a confirmation of the request. Your spot is not reserved yet; reception will email you again once it is confirmed.</p><button onClick={close} className="btn-primary mt-6">Done</button></div> : <form onSubmit={submit} className="p-5 sm:p-6 grid gap-4 pb-8">
             <div className="grid sm:grid-cols-2 gap-4"><div><label className="field-label">Full name *</label><input required className="field-input" value={form.guestName} onChange={e=>setForm({...form,guestName:e.target.value})} /></div><div><label className="field-label">Phone number *</label><input required className="field-input" type="tel" value={form.guestPhone} onChange={e=>setForm({...form,guestPhone:e.target.value})} /></div></div>
             <div><label className="field-label">Email address *</label><input required type="email" className="field-input" value={form.guestEmail} onChange={e=>setForm({...form,guestEmail:e.target.value})} /></div>
@@ -55,6 +57,6 @@ export default function ReserveSpotButton({ eventId, eventTitle, eventDate, pric
           </form>}
         </div>
       </div>
-    </div>}
+    </div>, document.body)}
   </>
 }

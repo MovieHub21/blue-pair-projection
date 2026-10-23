@@ -83,12 +83,12 @@ export default function GuestReviews({ mapsProfileUrl }: { mapsProfileUrl: strin
         </div>
 
         {reviews.length > 0 ? <>
-          <div className="relative mt-8 overflow-hidden" onPointerEnter={() => { pausedRef.current = true }} onPointerLeave={() => { pausedRef.current = false }} onFocusCapture={() => { pausedRef.current = true }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pausedRef.current = false }}>
+          <div className="relative mt-8 overflow-hidden" onFocusCapture={() => { pausedRef.current = true }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) pausedRef.current = false }}>
             <div ref={trackRef} className="flex w-max gap-4 will-change-transform" aria-label="Google guest reviews" aria-live="off">
               {reviewGroups.map((group, groupIndex) => <div key={groupIndex} aria-hidden={groupIndex === 1} className="flex shrink-0 gap-4">
-                {group.map(review => <article key={`${groupIndex}-${review.id}`} className="flex min-h-[230px] w-[min(82vw,370px)] flex-col rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:w-[370px]">
+                {group.map(review => <article key={`${groupIndex}-${review.id}`} className="flex h-[300px] w-[min(82vw,370px)] flex-col rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:w-[370px]">
                   <div className="flex items-center justify-between gap-3"><Stars rating={review.rating} /><span className="text-[11px] text-navy-400">{review.published}</span></div>
-                  <p className="mt-4 flex-1 whitespace-pre-line text-sm leading-7 text-navy-700">“{review.text}”</p>
+                  <p className="mt-4 h-32 shrink-0 overflow-y-auto overscroll-contain whitespace-pre-line pr-2 text-sm leading-7 text-navy-700">“{review.text}”</p>
                   <div className="mt-5 flex items-center justify-between gap-2 border-t border-black/5 pt-4 text-xs">
                     {review.authorUrl ? <a href={review.authorUrl} target="_blank" rel="noopener noreferrer" tabIndex={groupIndex === 1 ? -1 : undefined} className="font-semibold text-navy-800 hover:underline">{review.author}</a> : <span className="font-semibold text-navy-800">{review.author}</span>}
                     <a href={review.googleMapsUri} target="_blank" rel="noopener noreferrer" tabIndex={groupIndex === 1 ? -1 : undefined} className="inline-flex shrink-0 items-center gap-1 text-navy-500 hover:text-navy-900">View on Google <ExternalLink size={12} /></a>

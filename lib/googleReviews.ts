@@ -62,7 +62,7 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
         id: review.name || `${place.id}-${index}`,
         rating: Number(review.rating) || 0,
         text: review.text?.text || review.originalText?.text || '',
-        author: review.authorAttribution?.displayName || 'Google Maps user',
+        author: review.authorAttribution?.displayName || 'Google  user',
         authorUrl: review.authorAttribution?.uri,
         photoUrl: review.authorAttribution?.photoUri,
         published: review.relativePublishTimeDescription || '',

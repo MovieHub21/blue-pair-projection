@@ -87,6 +87,7 @@ export async function getDrinks() { return readDrinks() }
 export async function getShortLets() { const db=createSupabasePublicClient(); const {data}=await db.from('short_lets').select('*').order('price'); return (data??[]).map(mapShortLet) }
 export async function getPublicShortLets() { return (await getShortLets()).filter(s => hasPublicListingName(s.name)) }
 export async function getEvents(publishedOnly=true) { const db=createSupabasePublicClient(); let q=db.from('events').select('*').order('date'); if(publishedOnly) q=q.eq('published',true); const {data}=await q; return (data??[]).map(mapEvent) }
+export async function getClubEvents() { const db=createSupabasePublicClient(); const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); const {data}=await db.from('club_events').select('id,title,date,price,description,published').eq('published',true).gte('date',today).order('date'); return data ?? [] }
 export async function getBillboards() { const db=createSupabasePublicClient(); const {data}=await db.from('billboards').select('*').order('price',{ascending:false}); return (data??[]).map(mapBillboard) }
 export async function getParkingZones() { const db=createSupabasePublicClient(); const {data}=await db.from('parking_zones').select('*').order('name'); return (data??[]).map(mapParkingZone) }
 export async function getOffers(activeOnly = false) { return readOffers(activeOnly) }

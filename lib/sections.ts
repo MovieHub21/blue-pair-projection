@@ -15,6 +15,7 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/admin/annex', 'annex'],
   ['/admin/shortlets', 'shortlets'],
   ['/admin/events', 'events'],
+  ['/admin/club', 'club'],
   ['/admin/billboards', 'billboards'],
   ['/admin/parking', 'parking'],
   ['/admin/offers', 'offers'],

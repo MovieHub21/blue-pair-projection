@@ -1,9 +1,9 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
 import JsonLd from '../../../components/JsonLd'
-import { getEvents, getSiteContent } from '../../../lib/data'
+import { getClubEvents, getSiteContent } from '../../../lib/data'
 import { resolveAmenityConfig } from '../../../lib/amenity'
-import { formatDate, naira } from '../../../lib/format'
+import { formatDate } from '../../../lib/format'
 
 export const metadata = buildMetadata({
   title: 'Nightclub in Uromi, Edo State | The Club at Blue Pair Signature',
@@ -13,12 +13,11 @@ export const metadata = buildMetadata({
 })
 
 export default async function ClubPage() {
-  const [upcoming, content] = await Promise.all([getEvents(true), getSiteContent()])
+  const [upcoming, content] = await Promise.all([getClubEvents(), getSiteContent()])
   const address = content.hotel_address?.trim() || 'Uromi, Edo State'
   const eventsJsonLd = upcoming.map(e => ({
-    '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description, image: e.image,
+    '@context': 'https://schema.org', '@type': 'Event', name: e.title, startDate: e.date, description: e.description,
     location: { '@type': 'Place', name: 'The Club at Blue Pair Signature', address },
-    offers: { '@type': 'Offer', price: e.price, priceCurrency: 'NGN', availability: 'https://schema.org/InStock' },
   }))
   const config = await resolveAmenityConfig('club', {
     name: 'Club', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
@@ -40,9 +39,9 @@ export default async function ClubPage() {
         <b className="block mb-3 text-navy-900">Upcoming at the Club</b>
         <div className="flex flex-col gap-2.5">
           {upcoming.map(e => (
-            <div key={e.id} className="flex items-center justify-between bg-cream-100 rounded-xl px-4 py-3 text-sm">
-              <span className="font-medium">{e.title}</span>
-              <span className="text-navy-400">{formatDate(e.date)} · {naira(e.price)}</span>
+            <div key={e.id} className="flex flex-col gap-1 bg-cream-100 rounded-xl px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-medium">{e.title}{e.description ? <span className="mt-1 block text-xs font-normal leading-5 text-navy-500">{e.description}</span> : null}</span>
+              <span className="shrink-0 text-navy-400">{formatDate(e.date)}</span>
             </div>
           ))}
         </div>

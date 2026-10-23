@@ -15,6 +15,7 @@ export const PATH_SECTIONS: { prefix: string; section: string }[] = [
   { prefix: '/admin/annex', section: 'annex' },
   { prefix: '/admin/shortlets', section: 'shortlets' },
   { prefix: '/admin/events', section: 'events' },
+  { prefix: '/admin/club', section: 'club' },
   { prefix: '/admin/billboards', section: 'billboards' },
   { prefix: '/admin/parking', section: 'parking' },
   { prefix: '/admin/offers', section: 'offers' },
