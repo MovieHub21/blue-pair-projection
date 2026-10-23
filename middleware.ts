@@ -8,6 +8,7 @@ const STAFF_PREFIXES = ['/admin']
 const GUEST_PREFIXES = ['/account']
 const PUBLIC_PATHS = ['/account/login', '/account/register', '/account/forgot-password', '/account/reset-password', '/staff/login']
 const MAINTENANCE_PATH = '/site-maintenance'
+const MAINTENANCE_RETRY_AFTER_SECONDS = 3600
 const ADMIN_HOST = 'admin.bluepairsignature.com'
 const MAIN_HOSTS = new Set(['bluepairsignature.com', 'www.bluepairsignature.com'])
 
@@ -162,7 +163,10 @@ export async function middleware(request: NextRequest) {
     }
     const url = request.nextUrl.clone()
     url.pathname = MAINTENANCE_PATH
-    return NextResponse.rewrite(url)
+    return NextResponse.rewrite(url, {
+      status: 503,
+      headers: { 'Retry-After': String(MAINTENANCE_RETRY_AFTER_SECONDS) },
+    })
   }
 
   if (!needsStaff && !needsGuest) {
