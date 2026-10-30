@@ -13,6 +13,7 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
   { label: 'Operations', items: [
     { href: '/admin/bookings', label: 'Bookings', icon: <CalendarCheck size={16} /> }, 
     { href: '/admin/rooms', label: 'Room Management', icon: <BedDouble size={16} /> }, 
+    { href: '/admin/room-operations', label: 'Room Operations', icon: <ClipboardList size={16} /> },
     { href: '/admin/availability', label: 'Room Availability', icon: <Grid3x3 size={16} /> }, 
     { href: '/admin/checkins', label: 'Check-in', icon: <LogIn size={16} /> }, 
     { href: '/admin/checkouts', label: 'Check-out', icon: <LogOut size={16} /> }, 
@@ -53,5 +54,8 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
 ]
 
 export function filterGroups(groups: PortalNavGroup[], allowed: (section: string) => boolean): PortalNavGroup[] {
-  return groups.map(group => ({ ...group, items: group.items.filter(item => { const section = sectionForPath(item.href); return !section || allowed(section) }) })).filter(group => group.items.length > 0)
+  return groups.map(group => ({ ...group, items: group.items.filter(item => {
+    const section = item.href === '/admin/room-operations' ? 'room_operations' : sectionForPath(item.href)
+    return !section || allowed(section)
+  }) })).filter(group => group.items.length > 0)
 }

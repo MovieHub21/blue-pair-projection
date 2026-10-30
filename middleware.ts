@@ -201,12 +201,17 @@ export async function middleware(request: NextRequest) {
     const list = (roles ?? []).map((r: any) => r.role as string)
     if (list.length === 0) {
       const url = request.nextUrl.clone()
-      url.pathname = '/account/dashboard'
+      // Keep staff access failures inside the staff portal. Sending an
+      // authenticated user to the guest dashboard makes an admin link look
+      // like it silently changed portals and hides the missing role grant.
+      url.pathname = '/staff/login'
+      url.searchParams.set('error', 'staff-access-required')
       return NextResponse.redirect(url)
     }
     const isSuperAdmin = list.includes('super_admin')
     const isManager = list.includes('manager')
-    if (!isSuperAdmin && !isManager) {
+    const isReceptionRoomOperations = pathname === '/admin/room-operations' || pathname.startsWith('/admin/room-operations/')
+    if (!isSuperAdmin && !isManager && !(isReceptionRoomOperations && list.includes('reception'))) {
       if (needsPermissionCheck) {
         const rows = (sectionPermRows ?? []).filter((r: any) => list.includes(r.role))
         if (rows.length > 0 && !rows.some((r: any) => r.allowed)) {

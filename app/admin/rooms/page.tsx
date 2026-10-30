@@ -11,6 +11,7 @@ import type { RoomType } from '../../../data/mock'
 // (rooms.image_url / rooms.images still exist in the database for older records, but nothing here
 // reads or writes them any more.)
 type Unit = { id:string; room_number:string; room_type_id:string; floor:string; status:string; name:string; slug:string }
+type RoomTask = { id:string; room:string; room_id?:string|null; status:string; assigned_to:string; issue?:string; notes?:string }
 type TypeDraft = { name:string; price:string; guests:string; bedType:string; sizeSqm:string; description:string; amenities:string; images:string[]; active:boolean }
 type UnitDraft = { number:string; floor:string; name:string }
 type DeleteTarget = { kind:'type'; item:RoomType; childCount:number } | { kind:'unit'; item:Unit } | null
@@ -22,6 +23,9 @@ const emptyUnit:UnitDraft = { number:'', floor:'1', name:'' }
 export default function RoomManagement(){
   const [types,setTypes] = useState<RoomType[]>([])
   const [units,setUnits] = useState<Unit[]>([])
+  const [dailyStatuses,setDailyStatuses] = useState<any[]>([])
+  const [housekeepingTasks,setHousekeepingTasks] = useState<RoomTask[]>([])
+  const [maintenanceTickets,setMaintenanceTickets] = useState<RoomTask[]>([])
   const [open,setOpen] = useState<string|null>(null)
   const [typeModal,setTypeModal] = useState(false)
   const [editingType,setEditingType] = useState<string|null>(null)
@@ -34,15 +38,27 @@ export default function RoomManagement(){
   const [deleteTarget,setDeleteTarget] = useState<DeleteTarget>(null)
 
   const load = async () => {
-    const [{data:t,error:te},{data:r,error:re}] = await Promise.all([
+    const [{data:t,error:te},{data:r,error:re},{data:daily,error:de},{data:hk,error:he},{data:mt,error:me}] = await Promise.all([
       supabase.from('room_types').select('*').order('price'),
       supabase.from('rooms').select('*').order('room_number'),
+      supabase.from('room_daily_statuses').select('*'),
+      supabase.from('housekeeping_tasks').select('*').neq('status','completed'),
+      supabase.from('maintenance_tickets').select('*').not('status','in','(resolved,closed,completed)'),
     ])
-    if(te || re){ setMessage(te?.message || re?.message || 'Could not load rooms.'); return }
+    if(te || re || de || he || me){ setMessage(te?.message || re?.message || de?.message || he?.message || me?.message || 'Could not load rooms.'); return }
     setTypes((t??[]).map((x:any)=>({...x,bedType:x.bed_type,sizeSqm:x.size_sqm})) as RoomType[])
     setUnits((r??[]) as Unit[])
+    setDailyStatuses(daily ?? [])
+    setHousekeepingTasks(hk ?? [])
+    setMaintenanceTickets(mt ?? [])
   }
-  useEffect(()=>{ void load() },[])
+  useEffect(()=>{
+    void load()
+    const refresh=(e:Event)=>{const table=(e as CustomEvent).detail?.table;if(!table||['rooms','room_daily_statuses','housekeeping_tasks','maintenance_tickets'].includes(table))void load()}
+    window.addEventListener('bluepair:database-change',refresh)
+    return()=>window.removeEventListener('bluepair:database-change',refresh)
+  },[])
+
 
   function startCreateType(){ setEditingType(null); setDraft({...emptyType}); setTypeModal(true); setMessage(null) }
   function startEditType(t:RoomType){ setEditingType(t.id); setDraft({name:t.name,price:String(t.price),guests:String(t.guests),bedType:t.bedType,sizeSqm:String(t.sizeSqm),description:t.description,amenities:t.amenities.join(', '),images:t.images??[],active:t.active}); setTypeModal(true); setMessage(null) }
@@ -108,7 +124,21 @@ export default function RoomManagement(){
     {message&&<div className="mb-5 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">{message}</div>}
     <div className="space-y-5">{types.map(t=>{const children=units.filter(u=>u.room_type_id===t.id);const is=open===t.id;return <section key={t.id} className="card overflow-hidden">
       <div className="p-3 sm:p-4 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-4"><button onClick={()=>setOpen(is?null:t.id)} className="contents text-left"><img loading="lazy" decoding="async" src={t.images?.[0]} className="w-14 h-12 sm:w-16 sm:h-14 rounded-lg object-cover shrink-0" alt=""/><div className="min-w-0"><b className="block truncate text-base">{t.name}</b><div className="text-xs text-navy-400 mt-1 truncate">₦{Number(t.price).toLocaleString()} / night · max {t.guests} guests · {children.length} room{children.length!==1?'s':''}</div></div></button><div className="flex items-center gap-1.5 col-start-3 row-start-1"><span className={`hidden sm:inline-flex ${t.active?'pill-green':'pill-red'}`}>{t.active?'Active':'Disabled'}</span><span aria-label={t.active?'Active':'Disabled'} title={t.active?'Active':'Disabled'} className={`sm:hidden w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${t.active?'bg-emerald-500':'bg-red-500'}`} /><div className="flex items-center gap-0.5"><button title="Edit room type" className="p-1.5 rounded-lg hover:bg-cream-100" onClick={()=>startEditType(t)}><Pencil size={14}/></button><button title={t.active?'Disable room type':'Enable room type'} className="p-1.5 rounded-lg hover:bg-cream-100" onClick={()=>toggleType(t)}><Power size={14}/></button><button title="Delete room type" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600" onClick={()=>requestDeleteType(t)}><Trash2 size={14}/></button><button onClick={()=>setOpen(is?null:t.id)} className="p-1.5">{is?<ChevronDown size={17}/>:<ChevronRight size={17}/>}</button></div></div></div>
-      {is&&<div className="border-t border-black/5 bg-cream-50/50 p-3 sm:p-4"><div className="grid md:grid-cols-2 gap-3">{children.map(r=><div key={r.id} className="bg-white border border-black/5 rounded-xl p-2.5 sm:p-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5"><img loading="lazy" decoding="async" src={t.images?.[0]} className="w-12 h-11 sm:w-14 sm:h-12 rounded-lg object-cover" alt=""/><div className="min-w-0"><b className="text-sm block truncate">{r.name}</b><div className="text-xs text-navy-400 truncate">Room {r.room_number} · Floor {r.floor}</div></div><div className="flex items-center gap-0.5"><span className={`hidden sm:inline-flex ${r.status==='available'?'pill-green':'pill-red'}`}>{r.status.replace('_',' ')}</span><span aria-label={r.status.replace('_',' ')} title={r.status.replace('_',' ')} className={`sm:hidden w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-white ${r.status==='available'?'bg-emerald-500':'bg-red-500'}`} /><button title="Edit room" className="p-1.5 rounded-lg hover:bg-cream-100" onClick={()=>startEditUnit(t.id,r)}><Pencil size={13}/></button><button title="Delete room" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600" onClick={()=>setDeleteTarget({kind:'unit',item:r})}><Trash2 size={13}/></button></div></div>)}</div><button className="btn-outline btn-sm mt-4" onClick={()=>startAddUnit(t.id)}><Plus size={13}/>Add room to {t.name}</button></div>}
+      {is&&<div className="border-t border-black/5 bg-cream-50/50 p-3 sm:p-4"><div className="grid md:grid-cols-2 gap-3">{children.map(r=>{
+        const housekeeping=housekeepingTasks.find(task=>(task.room_id===r.id||task.room===r.room_number)&&task.status!=='completed')
+        const maintenance=maintenanceTickets.find(ticket=>ticket.room===r.room_number&&!['resolved','closed','completed'].includes(ticket.status))
+        const daily=dailyStatuses.find(row=>row.room_id===r.id)
+        const currentStatus=maintenance?'maintenance':daily?.status||r.status
+        const roomStatusLabel=String(currentStatus).replace(/_/g,' ')
+        return <div key={r.id} className="bg-white border border-black/5 rounded-xl p-2.5 sm:p-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5">
+          <img loading="lazy" decoding="async" src={t.images?.[0]} className="w-12 h-11 sm:w-14 sm:h-12 rounded-lg object-cover" alt=""/>
+          <div className="min-w-0"><b className="text-sm block truncate">{r.name}</b><div className="text-xs text-navy-400 truncate">Room {r.room_number} · Floor {r.floor}</div><span className={`mt-1 inline-flex ${currentStatus==='available'?'pill-green':'pill-amber'}`}>{roomStatusLabel}</span>
+            {housekeeping&&<div className="mt-2 rounded-lg bg-cream-50 p-2"><div className="text-xs font-semibold">Cleaning · {housekeeping.status.replace('_',' ')}</div><div className="text-[11px] text-navy-500">{housekeeping.assigned_to&&housekeeping.assigned_to!=='Unassigned'?`Cleaner: ${housekeeping.assigned_to}`:'Waiting for cleaner'}</div></div>}
+            {maintenance&&<div className="mt-2 rounded-lg bg-amber-50 p-2"><div className="text-xs font-semibold">Maintenance · {maintenance.status.replace('_',' ')}</div><div className="text-[11px] text-navy-500">{maintenance.assigned_to&&maintenance.assigned_to!=='Unassigned'?`Technician: ${maintenance.assigned_to}`:'Waiting for technician'}</div></div>}
+          </div>
+          <div className="flex items-center gap-0.5"><button title="Edit room" className="p-1.5 rounded-lg hover:bg-cream-100" onClick={()=>startEditUnit(t.id,r)}><Pencil size={13}/></button><button title="Delete room" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600" onClick={()=>setDeleteTarget({kind:'unit',item:r})}><Trash2 size={13}/></button></div>
+        </div>
+      })}</div><button className="btn-outline btn-sm mt-4" onClick={()=>startAddUnit(t.id)}><Plus size={13}/>Add room to {t.name}</button></div>}
     </section>})}</div>
     {types.length===0&&<div className="card p-12 text-center text-sm text-navy-400">No room types yet. Create your first one.</div>}
 

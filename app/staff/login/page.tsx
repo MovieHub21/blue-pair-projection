@@ -10,6 +10,7 @@ console.info('[BP-AUTH][staff] login module loaded')
 function StaffLoginForm() {
   const router = useRouter()
   const params = useSearchParams()
+  const accessError = params.get('error') === 'staff-access-required'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -97,6 +98,7 @@ function StaffLoginForm() {
           <ShieldCheck size={18} className="text-gold-500" />Blue Pair Staff Portal
         </div>
         <p className="text-sm text-navy-400 mb-7">Sign in with your staff credentials</p>
+        {accessError && <div role="alert" className="mb-4 text-xs font-medium text-amber-800 bg-amber-50 rounded-lg px-3.5 py-2.5">This account does not have staff access assigned. Ask an administrator to add your staff role, then try again.</div>}
         {error && <div className="mb-4 text-xs font-medium text-red-600 bg-red-50 rounded-lg px-3.5 py-2.5">{error}</div>}
         <label className="field-label">Work email</label>
         <input type="email" name="email" required value={email} onChange={e => setEmail(e.target.value)} className="field-input mb-4" placeholder="you@bluepairhotel.com" />

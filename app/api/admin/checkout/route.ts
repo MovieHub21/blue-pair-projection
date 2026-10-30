@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 import { checkoutThankYouEmail } from '../../../../lib/email/templates'
 import { getGoogleReviewFallbackUrl } from '../../../../lib/googleReviews'
+import { resolveDepartmentStaff } from '../../../../lib/staffRecipients'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,10 +99,7 @@ export async function POST(request: Request) {
       .eq('id', booking.room_id).in('status', ['available', 'occupied'])
     if (roomUpdateError) throw roomUpdateError
 
-    const { data: staff } = await db.from('staff').select('email,department,role').eq('status', 'active')
-    const recipients = (staff ?? [])
-      .filter((member: any) => `${member.department ?? ''} ${member.role ?? ''}`.toLowerCase().includes('housekeeping'))
-      .map((member: any) => String(member.email || '').trim().toLowerCase()).filter(Boolean)
+    const recipients = (await resolveDepartmentStaff(db, 'housekeeping')).map(member => member.email).filter(Boolean)
     const staffEmail = {
       subject: `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`,
       html: `<div style="font-family:Arial,sans-serif"><h2>Guest checkout</h2><p>Room <strong>${room?.room_number || '—'}</strong> has checked out and is now marked <strong>Cleaning Required</strong> for ${date}.</p><p>Guest: ${customer?.name || 'Guest'}</p><p>Booking: ${booking.reference}</p></div>`,

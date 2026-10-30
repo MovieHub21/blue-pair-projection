@@ -1,6 +1,7 @@
 import { buildMetadata } from '../../../lib/buildMetadata'
 import AmenityPage from '../../../components/ui/AmenityPage'
 import JsonLd from '../../../components/JsonLd'
+import Link from 'next/link'
 import { getClubEvents, getSiteContent } from '../../../lib/data'
 import { resolveAmenityConfig } from '../../../lib/amenity'
 import { formatDate } from '../../../lib/format'
@@ -22,14 +23,12 @@ export default async function ClubPage() {
   const config = await resolveAmenityConfig('club', {
     name: 'Club', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: 'https://www.bluepairsignature.com/images/CLUB2.jpg',
-    description: 'Edo State\u2019s after-dark address — resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
+    description: 'Edo State\u2019s after-dark address resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [
-      'https://www.bluepairsignature.com/images/club2.png',
-      'https://www.bluepairsignature.com/images/club3.png',
       'https://www.bluepairsignature.com/images/CLUB2.jpg',
       'images/lawson.jpg',
     ],
-    hours: 'Thursday – Sunday, 9:00 PM – 4:00 AM',
+    hours: 'Friday & Sunday, 10pm',
     facilities: ['Resident & guest DJs', 'Bottle service', 'VIP table booths', 'Outdoor terrace', 'Dedicated security & valet', 'Live performances on weekends'],
     pricingNote: 'Entry: ₦10,000 (redeemable at the bar). VIP tables from ₦150,000.',
     ctaLabel: 'Book a VIP table',
@@ -45,6 +44,11 @@ export default async function ClubPage() {
             </div>
           ))}
         </div>
+        <p className="mt-4 text-sm leading-6 text-navy-500">
+          The Club can also be booked for bachelorette parties, birthdays, and other private celebrations outside its regular club nights.{' '}
+          <Link href="/contact" className="font-semibold text-navy-900 underline underline-offset-4 hover:text-gold-700">Contact the hotel</Link>{' '}
+          to discuss availability and arrangements.
+        </p>
       </div>
     )
   })

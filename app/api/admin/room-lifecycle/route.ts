@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
-import { sendResendEmail } from '../../../../lib/email/resend'
 import { reservationReadyEmail } from '../../../../lib/email/templates'
-import { resolveDepartmentStaff } from '../../../../lib/staffRecipients'
-import { notifyStaff } from '../../../../lib/staffNotifications'
 import { notifyGuestRequest } from '../../../../lib/staffEvents'
+import { notifyRoomTask } from '../../../../lib/roomTaskNotifications'
 
 export const dynamic = 'force-dynamic'
 type Action = 'status' | 'checkout' | 'maintenance_request' | 'guest_request'
@@ -20,16 +18,26 @@ async function requireStaff() {
   return user
 }
 
-const DEPARTMENT_PAGE = { housekeeping: '/admin/housekeeping/tasks', maintenance: '/admin/maintenance/tickets' } as const
-
 // Emails the department AND puts the same message in its staff notifications. Both use the same
 // department staff list (lib/staffRecipients.ts), so a message only ever reaches the team it is for.
-async function sendToDepartment(department: 'housekeeping' | 'maintenance', subject: string, html: string, text: string) {
+async function sendToDepartment(department: 'housekeeping' | 'maintenance', subject: string, html: string, text: string, dedupeKey: string) {
   const admin = createSupabaseAdminClient()
-  const recipients = (await resolveDepartmentStaff(admin, department)).map(member => member.email).filter(Boolean)
-  await Promise.all(recipients.map(to => sendResendEmail({ to, subject, html, text }).catch(error => { console.error(`[room-lifecycle] ${department} notification failed`, error); return null })))
-  await notifyStaff(admin, { audiences: [{ department, href: DEPARTMENT_PAGE[department] }], type: department, title: subject, body: text })
-  return recipients.length
+  return notifyRoomTask({ admin, department, subject, html, text, dedupeKey })
+}
+
+async function ensureMaintenanceRequestTicket(admin: ReturnType<typeof createSupabaseAdminClient>, requestRow: { id: string; room: string | null; guest_name: string | null; message: string | null; booking_ref: string | null }) {
+  const requestNote = `Request ID: ${requestRow.id}`
+  const { data: existing, error: lookupError } = await admin.from('maintenance_tickets').select('id').ilike('notes', `%${requestNote}%`).maybeSingle()
+  if (lookupError) throw lookupError
+  if (existing) return existing.id
+  const { data: created, error } = await admin.from('maintenance_tickets').insert({
+    room: requestRow.room || '—',
+    issue: `Guest request: ${String(requestRow.message || 'Maintenance request').slice(0, 160)}`,
+    priority: 'Medium', assigned_to: 'Unassigned', date_reported: new Date().toISOString().slice(0, 10), status: 'open',
+    notes: `Guest: ${requestRow.guest_name || 'Guest'} · Booking: ${requestRow.booking_ref || '—'} · ${requestNote}`,
+  }).select('id').maybeSingle()
+  if (error) throw error
+  return created?.id
 }
 
 async function notifyReadyReservations(admin: ReturnType<typeof createSupabaseAdminClient>, roomId: string) {
@@ -79,7 +87,8 @@ export async function POST(request: Request) {
       if (!owner || owner.id !== requestRow.customer_id) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
       if (String(requestRow.type).toLowerCase() === 'maintenance') {
         const room = escapeHtml(requestRow.room || '—'), guest = escapeHtml(requestRow.guest_name || 'Guest'), message = escapeHtml(requestRow.message || 'No additional details.')
-        const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}`)
+        await ensureMaintenanceRequestTicket(admin, requestRow)
+        const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}`, `maintenance-guest-request:${requestRow.id}`)
         return NextResponse.json({ ok: true, notified: count })
       }
       await notifyGuestRequest(admin, { requestId: requestRow.id, type: requestRow.type, room: requestRow.room, guestName: requestRow.guest_name, message: requestRow.message })
@@ -91,7 +100,8 @@ export async function POST(request: Request) {
       if (!requestRow) return NextResponse.json({ error: 'Request not found.' }, { status: 404 })
       if (String(requestRow.type).toLowerCase() !== 'maintenance') return NextResponse.json({ ok: true, notified: 0 })
       const room = escapeHtml(requestRow.room || '—'), guest = escapeHtml(requestRow.guest_name || 'Guest'), message = escapeHtml(requestRow.message || 'No additional details.')
-      const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}. Booking: ${requestRow.booking_ref || '—'}.`)
+      await ensureMaintenanceRequestTicket(admin, requestRow)
+      const count = await sendToDepartment('maintenance', `Maintenance request — Room ${requestRow.room || '—'}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance request</h2><p><strong>Room:</strong> ${room}</p><p><strong>Guest:</strong> ${guest}</p><p><strong>Details:</strong><br>${message}</p><p><strong>Booking:</strong> ${escapeHtml(requestRow.booking_ref || '—')}</p></div>`, `New maintenance request. Room: ${requestRow.room || '—'}. Guest: ${requestRow.guest_name || 'Guest'}. Details: ${requestRow.message || 'No additional details.'}. Booking: ${requestRow.booking_ref || '—'}.`, `maintenance-guest-request:${requestRow.id}`)
       return NextResponse.json({ ok: true, notified: count })
     }
     const user = await requireStaff(); if (!user) return NextResponse.json({ error: 'Not allowed.' }, { status: 403 })
@@ -107,11 +117,21 @@ export async function POST(request: Request) {
         const { data: existing } = await admin.from('housekeeping_tasks').select('id').eq('room_id', room.id).neq('status', 'completed').maybeSingle()
         if (!existing) {
           const roomType = (await admin.from('room_types').select('name').eq('id', room.room_type_id).maybeSingle()).data
-          await admin.from('housekeeping_tasks').insert({ id: `hk_${Date.now()}`, room: room.room_number, room_type: roomType?.name || '', checkout_time: new Date().toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }), priority: 'High', assigned_to: 'Unassigned', status: 'pending', notes: 'Room manually marked for cleaning.', room_id: room.id })
+          const { data: task, error: taskError } = await admin.from('housekeeping_tasks').insert({ id: `hk_${crypto.randomUUID()}`, room: room.room_number, room_type: roomType?.name || '', checkout_time: new Date().toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }), priority: 'High', assigned_to: 'Unassigned', status: 'pending', notes: 'Room manually marked for cleaning.', room_id: room.id }).select('id').maybeSingle()
+          if (taskError) throw taskError
+          if (task) notified = await sendToDepartment('housekeeping', `Room ${room.room_number} requires housekeeping`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New housekeeping task</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> is waiting for a cleaner.</p></div>`, `Room ${room.room_number} is waiting for housekeeping.`, `housekeeping-task:${task.id}`)
         }
-        notified = await sendToDepartment('housekeeping', `Room ${room.room_number} requires housekeeping`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Housekeeping required</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>cleaning</strong>.</p><p>Please attend to the room and mark the housekeeping task complete when ready.</p></div>`, `Room ${room.room_number} has been marked cleaning. Please attend to it and mark the housekeeping task complete when ready.`)
       }
-      if (body.status === 'maintenance') notified = await sendToDepartment('maintenance', `Maintenance required — Room ${room.room_number}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Room sent to maintenance</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked <strong>maintenance</strong>.</p></div>`, `Room ${room.room_number} has been marked maintenance. Please inspect it.`)
+      if (body.status === 'maintenance') {
+        let { data: ticket, error: ticketError } = await admin.from('maintenance_tickets').select('id').eq('room', room.room_number).not('status', 'in', '(resolved,closed,completed)').order('date_reported', { ascending: false }).limit(1).maybeSingle()
+        if (ticketError) throw ticketError
+        if (!ticket) {
+          const created = await admin.from('maintenance_tickets').insert({ room: room.room_number, issue: 'Room marked for maintenance', priority: 'Medium', assigned_to: 'Unassigned', date_reported: new Date().toISOString().slice(0, 10), status: 'open', notes: 'Created when room status was changed to maintenance.' }).select('id').maybeSingle()
+          if (created.error) throw created.error
+          ticket = created.data
+        }
+        if (ticket) notified = await sendToDepartment('maintenance', `Maintenance required — Room ${room.room_number}`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>New maintenance task</h2><p>Room <strong>${escapeHtml(room.room_number)}</strong> has been marked for maintenance. A technician can accept it or reception can assign it.</p></div>`, `Room ${room.room_number} has been marked for maintenance. A technician can accept it or reception can assign it.`, `maintenance-task:${ticket.id}`)
+      }
       if (body.status === 'available') return NextResponse.json({ ok: true, status: body.status, notified, reservationsReady: previousStatus !== 'available' ? await notifyReadyReservations(admin, room.id) : 0 })
       return NextResponse.json({ ok: true, status: body.status, notified })
     }
@@ -124,7 +144,7 @@ export async function POST(request: Request) {
     await admin.from('rooms').update({ status: 'cleaning_required' }).eq('id', booking.room_id)
     const room = (await admin.from('rooms').select('room_number').eq('id', booking.room_id).maybeSingle()).data
     const customer = (await admin.from('customers').select('name').eq('id', booking.customer_id).maybeSingle()).data
-    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now marked <strong>Cleaning Required</strong>.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`)
+    const notified = await sendToDepartment('housekeeping', `Guest checkout — Room ${room?.room_number || '—'} requires cleaning`, `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#0a1229"><h2>Guest checkout</h2><p>Room <strong>${escapeHtml(room?.room_number || '—')}</strong> has just been checked out.</p><p><strong>Guest:</strong> ${escapeHtml(customer?.name || 'Guest')}</p><p>The room is now waiting for a cleaner.</p></div>`, `Guest checkout. Room ${room?.room_number || '—'} requires cleaning. Guest: ${customer?.name || 'Guest'}. Booking: ${booking.reference}.`, `housekeeping-checkout:${booking.id}`)
     return NextResponse.json({ ok: true, notified })
   } catch (error: any) {
     console.error('[room-lifecycle]', error)

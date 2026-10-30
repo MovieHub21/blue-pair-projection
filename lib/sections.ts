@@ -3,6 +3,7 @@ export const SECTION_PREFIXES: [prefix: string, section: string][] = [
   ['/admin/dashboard', 'dashboard'],
   ['/admin/bookings', 'bookings'],
   ['/admin/rooms', 'rooms'],
+  ['/admin/room-operations', 'rooms'],
   ['/admin/availability', 'availability'],
   ['/admin/checkins', 'checkins'],
   ['/admin/checkouts', 'checkouts'],

@@ -27,6 +27,7 @@ export const getStaffPortalContext = cache(async () => {
       name: 'Staff',
       roleLabel: 'Staff',
       roles: [] as AppRole[],
+      canAssignRoomTasks: false,
       allowed: (_section: string) => false,
     }
   }
@@ -39,6 +40,8 @@ export const getStaffPortalContext = cache(async () => {
   ])
   const roles = (roleRows ?? []).map((r: any) => r.role as AppRole)
   const isSuperAdmin = roles.includes('super_admin')
+  const canAssignRoomTasks = roles.some(role => ['super_admin', 'manager', 'reception'].includes(role)) ||
+    (permRows ?? []).some((row: any) => row.section === 'rooms' && row.allowed && roles.includes(row.role as AppRole))
 
   let allowed: (section: string) => boolean
   if (isSuperAdmin || roles.length === 0) {
@@ -62,6 +65,7 @@ export const getStaffPortalContext = cache(async () => {
     name: profile?.name || user.email || 'Staff',
     roleLabel: primary ? ROLE_LABELS[primary] : 'Staff',
     roles,
+    canAssignRoomTasks,
     allowed,
   }
 })

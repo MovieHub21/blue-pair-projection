@@ -15,8 +15,8 @@ export type StaffRecipient = { userId: string | null; email: string; name: strin
 
 const DEPARTMENT_KEYWORDS: Record<Exclude<StaffDepartment, 'management'>, string[]> = {
   reception: ['reception', 'front desk'],
-  housekeeping: ['housekeeping'],
-  maintenance: ['maintenance'],
+  housekeeping: ['housekeeping', 'house keeping', 'cleaner'],
+  maintenance: ['maintenance', 'engineering', 'technician'],
   restaurant: ['restaurant', 'kitchen'],
   bar: ['bar staff', 'bartender'],
   annex: ['annex'],

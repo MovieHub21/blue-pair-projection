@@ -16,7 +16,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { userId, name, roleLabel, allowed } = await getStaffPortalContext()
+  const { userId, name, roleLabel, canAssignRoomTasks, allowed } = await getStaffPortalContext()
+  const navAllowed = (section: string) => section === 'room_operations'
+    ? canAssignRoomTasks
+    : allowed(section)
 
   return (
     <>
@@ -26,7 +29,7 @@ export default async function AdminLayout({
         portalTag="Hotel Management"
         userName={name}
         userRole={roleLabel}
-        groups={filterGroups(MANAGEMENT_GROUPS, allowed)}
+        groups={filterGroups(MANAGEMENT_GROUPS, navAllowed)}
       >
         {children}
       </PortalShell>

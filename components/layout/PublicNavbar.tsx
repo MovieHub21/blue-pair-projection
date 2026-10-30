@@ -22,6 +22,7 @@ const explore = [
 export default function PublicNavbar() {
   const [open, setOpen] = useState(false); const [exploreOpen, setExploreOpen] = useState(false); const [accountOpen, setAccountOpen] = useState(false)
   const auth = useAuth(); const firstName = (auth.profile?.name || auth.customer?.name || '').split(' ')[0]
+  const showAdminPortal = auth.roles.length > 0
   async function handleSignOut() { setAccountOpen(false); await auth.signOut() }
   return (
     <nav className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-black/5">
@@ -44,7 +45,7 @@ export default function PublicNavbar() {
           <Link href="/contact" aria-label="Contact support" title="Contact support" className="w-9 h-9 rounded-full border border-black/10 flex items-center justify-center text-navy-800 hover:bg-cream-100 transition-colors"><Headset size={17} /></Link>
           {auth.loading ? <div className="w-24 h-8 rounded-lg bg-black/5 animate-pulse" /> : auth.userId ? <div className="relative" onMouseEnter={() => setAccountOpen(true)} onMouseLeave={() => setAccountOpen(false)}><button className="flex items-center gap-2 text-[13.5px] font-semibold text-navy-800"><span className="w-7 h-7 rounded-full bg-navy-900 text-gold-400 text-[11px] font-bold flex items-center justify-center">{initials(firstName || 'G')}</span>{firstName || 'Account'} <ChevronDown size={14} /></button>{accountOpen && <div className="absolute top-full right-0 pt-3 w-52"><div className="card p-2 grid gap-0.5">
             <Link href="/account/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100"><LayoutGrid size={14} />Guest Portal</Link>
-          <Link href="/admin/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100"><LayoutGrid size={14} />Admin Portal</Link>
+          {showAdminPortal && <Link href="/admin/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100"><LayoutGrid size={14} />Admin Portal</Link>}
           <Link href="/account/profile" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100"><User size={14} />Profile</Link><button onClick={handleSignOut} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-cream-100 text-left text-red-600"><LogOut size={14} />Sign out</button></div></div>}</div> : <Link href="/account/login" className="text-[13.5px] font-semibold text-navy-800">Sign in</Link>}
           <Link href="/booking" className="btn-gold btn-sm">Book a room</Link>
         </div>
@@ -59,7 +60,7 @@ export default function PublicNavbar() {
         {explore.map(e => <Link key={e.href} href={e.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">{e.label}</Link>)}
         <Link href="/offers" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Offers</Link><Link href="/blog" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Blog</Link><Link href="/gallery" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Gallery</Link><Link href="/contact" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Contact</Link>
         {auth.userId && <Link href="/account/dashboard" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5">Guest Portal{firstName ? ` — ${firstName}` : ''}</Link>}
-        {auth.userId && <Link href="/admin/dashboard" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5 font-semibold text-navy-900">Admin Portal</Link>}
+        {showAdminPortal && <Link href="/admin/dashboard" onClick={() => setOpen(false)} className="py-2.5 border-b border-black/5 font-semibold text-navy-900">Admin Portal</Link>}
         
         <div className="flex gap-2 mt-4">{auth.userId ? <button onClick={() => { setOpen(false); handleSignOut() }} className="btn-outline btn-sm flex-1 justify-center">Sign out</button> : <Link href="/account/login" onClick={() => setOpen(false)} className="btn-outline btn-sm flex-1 justify-center">Sign in</Link>}<Link href="/booking" onClick={() => setOpen(false)} className="btn-gold btn-sm flex-1 justify-center">Book a room</Link></div>
       </div>}

@@ -11,7 +11,9 @@ export default async function AccountShellLayout({ children }: { children: React
   const { user, profile } = await getCurrentUser(); const userName = profile?.name || user?.email || 'Guest'
   const supabase = createSupabaseServerClient()
   const { data: roleRows } = user ? await supabase.from('user_roles').select('role').eq('user_id', user.id) : { data: [] as { role: string }[] }
-  const showAdminPortal = (roleRows ?? []).some((row: any) => ['super_admin', 'manager', 'admin'].includes(row.role))
+  // Any assigned staff role grants access to the staff portal; section-level
+  // permissions decide which pages are available once inside.
+  const showAdminPortal = (roleRows ?? []).length > 0
   return <PortalShell portalName="My Account" portalTag="Customer Portal" userName={userName} userRole="Guest" showAdminPortal={showAdminPortal} groups={[{ items: [
     { href:'/account/dashboard', label:'Dashboard', icon:<LayoutGrid size={16}/>, end:true },
     { href:'/account/bookings', label:'My Bookings', icon:<CalendarCheck size={16}/> },
