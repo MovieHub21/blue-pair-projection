@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { reservationReadyEmail } from '../../../../lib/email/templates'
+import { sendResendEmail } from '../../../../lib/email/resend'
 import { notifyGuestRequest } from '../../../../lib/staffEvents'
 import { notifyRoomTask } from '../../../../lib/roomTaskNotifications'
 

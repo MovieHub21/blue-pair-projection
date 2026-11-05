@@ -45,7 +45,7 @@ async function handleGet(request: Request) {
   const { data, error } = await context.admin.from('staff').select('id,user_id,name,email,role,department').eq('status', 'active')
   if (error) return NextResponse.json({ error: 'Unable to load department staff.' }, { status: 500 })
   const recipients = (data ?? [])
-    .filter((member: any) => staffBelongsTo(member, department as StaffDepartment))
+    .filter((member: any) => staffBelongsTo(member, department))
     .map((member: any) => ({ id: String(member.id), userId: member.user_id ? String(member.user_id) : null, name: String(member.name || member.email || 'Staff') }))
   return NextResponse.json({ staff: recipients, canAssign })
 }
