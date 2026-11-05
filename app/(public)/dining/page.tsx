@@ -9,7 +9,7 @@ import type { MenuItem } from '../../../data/mock'
 export const metadata = buildMetadata({
   title: 'Restaurant & Bar in Uromi, Edo State | Blue Pair Dining',
   description: 'Explore dining at Blue Pair Signature in Uromi, Edo State, with Nigerian and continental dishes, an outdoor eatery and drinks menu.',
-  keywords: 'restaurant in Uromi, restaurant menu Uromi, hotel restaurant Uromi, Nigerian food Uromi, Blue Pair Restaurant',
+  keywords: 'restaurants in uromi, blue pair signature uromi, blue pair signature restaurant, eateries in uromi, best restaurant in uromi, caviar fine dining uromi, rodelia restaurant uromi, crunchies uromi, crunchies fried chicken uromi, hommix unique fast food, decruise lounge and bar, tk mega palace uromi, gods time fast food uromi, dining in uromi, where to eat in uromi, places to eat in uromi edo state, uromi outdoor eatery, fast food in uromi, local dishes in uromi, continental dishes uromi, small chops uromi, barbecue fish uromi, uromi hotel restaurant, fine dining uromi, uwalor road restaurant, local government road eatery, uromi lounges, food delivery uromi, restaurants near me uromi, best food in uromi town',
   path: '/dining',
 })
 

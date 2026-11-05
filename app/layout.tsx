@@ -58,6 +58,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-Y43DHJ0FKM');
           `}
         </Script>
+
+        
         <Suspense fallback={null}><RouteProgress /></Suspense>
         <GuestEmailWatcher />
         <RealtimeBridge />

@@ -7,7 +7,7 @@ import Link from 'next/link'
 export const metadata = buildMetadata({
   title: 'Hotel Gym & Fitness Centre in Uromi, Edo State | Blue Pair Signature',
   description: 'A full-equipment fitness studio at Blue Pair Signature in Uromi, with daily morning and evening sessions and membership options for local visitors.',
-  keywords: 'gym in Uromi, hotel gym Uromi, fitness centre Uromi, Blue Pair Signature gym',
+  keywords: 'gym in uromi, uromi fitness center, best gym in uromi, fitness center in uromi, joels ultimate gym uromi, blue pair signature gym uromi, citadel fitness centre uromi, gyms in edo state, cino universal gym, gymo2 dynamic ekpoma, charlies gym ekpoma, uromi gym center, affordable gym in uromi, gym in uromi edo state, bodybuilding gym uromi, weights gym uromi, fitness club uromi, uromi aerobics class, gym near uromi nova road, personal trainer uromi, uromi sports and fitness, gym center near me uromi, fitness centers in esan north east',
   path: '/gym',
 })
 

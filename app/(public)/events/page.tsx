@@ -9,7 +9,7 @@ import { Users, Calendar, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import ReserveSpotButton from './ReserveSpotButton'
 
-export const metadata = buildMetadata({ title: 'Events & Event Hall in Uromi, Edo State | Blue Pair Signature', description: 'Find upcoming hotel events and enquire about the Blue Pair event hall in Uromi for meetings, corporate events, birthdays, weddings and church programmes. Venue capacity varies by seating arrangement.', keywords: 'events Uromi, event hall Uromi, event venue Uromi, wedding venue Uromi, meeting venue Uromi, corporate event space Uromi, hotel events Uromi, event reservations Uromi, Blue Pair Signature events', path: '/events' })
+export const metadata = buildMetadata({ title: 'Events & Event Hall in Uromi, Edo State | Blue Pair Signature', description: 'Find upcoming hotel events and enquire about the Blue Pair event hall in Uromi for meetings, corporate events, birthdays, weddings and church programmes. Venue capacity varies by seating arrangement.', keywords: 'shortlets in uromi, event centers in uromi, wedding halls in uromi, shortlet apartments in uromi edo state, wedding event center uromi, rent apartment for weekend in uromi, shortlet rooms in uromi town, blue pair signature event hall, event centers near me uromi, biggest wedding hall in uromi, halls for hire in uromi, 2 bedroom shortlet uromi, luxury shortlet apartments in uromi, corporate meeting halls in uromi, reception halls in esan north east', path: '/events' })
 const breadcrumbs = [{name:'Home',path:'/'},{name:'Events',path:'/events'}]
 
 export default async function EventsPage() {
