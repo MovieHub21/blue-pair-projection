@@ -5,7 +5,7 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 export const metadata = buildMetadata({
   title: 'Indoor Swimming Pool in Uromi, Edo State | Blue Pair Signature',
   description: "Visit the indoor swimming pool at Blue Pair Signature in Uromi. Day entry is available for adults and children, with special-event access arranged by enquiry.",
-  keywords: 'indoor swimming pool Uromi, hotel with swimming pool Uromi, swimming pool in Uromi, Blue Pair Signature pool',
+  keywords: 'indoor swimming pool Uromi, hangout spots in uromi, where to swim in uromi, pool party venue in uromi, top hotels for staycation in uromi, blue pair signature lounge, hotel restaurant and bar uromi, weekend getaway hotels in uromi, fine dining hotel uromi, hotel buffet in uromi, uromi nightlife spots, where to chill in uromi edo state, premium lodging in uromi, hotel with outdoor bar uromi, hotel with swimming pool Uromi, swimming pool in Uromi, Blue Pair Signature pool',
   path: '/pool',
 })
 

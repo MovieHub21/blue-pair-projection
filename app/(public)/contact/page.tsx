@@ -12,7 +12,7 @@ export async function generateMetadata() {
   return buildMetadata({
     title: 'Contact Blue Pair Signature | Uromi, Edo State',
     description: `Get in touch with Blue Pair Signature, ${address}. Phone, email and directions.`,
-    keywords: 'blue pair Signature contact, hotel uromi address, hotel phone number edo state, hotel near me uromi, hotel booking uromi, hotel reservations nigeria',
+    keywords: 'blue pair Signature contact, how can i contact blue pair, contact blue pair hotel, contact blue pair, hotel reservation, hotel uromi address, hotel phone number edo state, hotel near me uromi, hotel booking uromi, hotel reservations nigeria',
     path: '/contact',
   })
 }

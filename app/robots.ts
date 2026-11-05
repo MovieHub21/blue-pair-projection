@@ -6,7 +6,18 @@ export default function robots(): MetadataRoute.Robots {
     rules: [{
       userAgent: '*',
       allow: '/',
-      disallow: ['/account/', '/admin/', '/reception/', '/housekeeping/', '/maintenance/'],
+      disallow: [
+        '/account/',
+        '/admin/',
+        '/reception/',
+        '/housekeeping/',
+        '/maintenance/',
+        '/api/',
+        '/booking*',
+        '/*?*checkin=*',
+        '/*?*checkout=*',
+        '/*?*guests=*',
+      ],
     }],
     sitemap: `${SITE_URL}/sitemap.xml`,
   }

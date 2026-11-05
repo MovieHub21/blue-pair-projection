@@ -10,8 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: { path: string; priority: number; lastModified?: Date }[] = [
     { path: '/', priority: 1.0 }, 
     { path: '/about', priority: 0.7 }, 
-    { path: '/rooms', priority: 0.9 }, 
-    { path: '/booking', priority: 0.6 },
+    { path: '/rooms', priority: 0.9 },
     { path: '/dining', priority: 0.8 }, 
     { path: '/vip-lounge', priority: 0.6 }, 
     { path: '/gym', priority: 0.6 }, 

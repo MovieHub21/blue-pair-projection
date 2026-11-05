@@ -5,7 +5,7 @@ import { resolveAmenityConfig } from '../../../lib/amenity'
 export const metadata = buildMetadata({
   title: 'VIP bar in Uromi, Edo State | Blue Pair Signature',
   description: 'Private VIP bar at Blue Pair Signature, Uromi, Edo State — booth seating, premium spirits and a dedicated host. Reserve a table for your next night out in Uromi.',
-  keywords: 'VIP bar Uromi, private bar Uromi, VIP lounge Uromi, hotel bar Uromi, Blue Pair Signature VIP bar',
+  keywords: 'VIP bar Uromi, hangout spots in uromi, where to swim in uromi, pool party venue in uromi, top hotels for staycation in uromi, blue pair signature lounge, hotel restaurant and bar uromi, weekend getaway hotels in uromi, fine dining hotel uromi, hotel buffet in uromi, uromi nightlife spots, where to chill in uromi edo state, premium lodging in uromi, hotel with outdoor bar uromi, private bar Uromi, VIP lounge Uromi, hotel bar Uromi, Blue Pair Signature VIP bar',
   path: '/vip-lounge',
 })
 
