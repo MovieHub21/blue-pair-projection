@@ -38,7 +38,7 @@ export default async function ContactPage() {
           <div>
             <h3 className="text-2xl font-semibold mb-3">Send us a message</h3>
             <p className="text-sm text-navy-500 leading-relaxed mb-6">{intro}</p>
-            <ContactForm />
+            <ContactForm contactEmail={email} />
           </div>
           <div className="flex flex-col gap-5">
             <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="card p-6 flex items-center gap-4 hover:border-gold-400 transition-colors"><MapPin className="text-gold-500" /><div className="flex-1"><b className="block text-sm">Address</b><span className="text-sm text-navy-500">{address}</span></div><ExternalLink size={16} className="text-navy-400" /></a>

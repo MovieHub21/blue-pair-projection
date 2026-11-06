@@ -38,11 +38,11 @@ export async function POST(request: Request) {
 
     const server = createSupabaseServerClient()
     const { data: { user } } = await server.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Please sign in to send a message.' }, { status: 401 })
     const admin = createSupabaseAdminClient()
-    const isGuestWithoutAccount = !user
 
     const { data: conversation, error: conversationError } = await admin.from('contact_conversations').insert({
-      user_id: user?.id ?? null,
+      user_id: user.id,
       guest_name: name,
       guest_email: email,
       guest_phone: phone || null,
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }).select('*').single()
     if (conversationError) throw conversationError
 
-    const { data: savedMessage, error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user?.id ?? null, message }).select('id').single()
+    const { data: savedMessage, error: messageError } = await admin.from('contact_messages').insert({ conversation_id: conversation.id, sender_type: 'guest', sender_user_id: user.id, message }).select('id').single()
     if (messageError) throw messageError
 
     await notifyContactMessage(admin, { conversationId: conversation.id, guestName: name, subject, isReply: false })
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     try {
       job = await enqueueBackgroundJob({
         type: 'contact_message_email',
-        userId: user?.id ?? null,
+        userId: user.id,
         payload: { conversation_id: conversation.id, message_id: savedMessage.id, is_initial_message: true },
         idempotencyKey: `contact-message:${savedMessage.id}`,
         maxAttempts: 5,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Your message is saved, but email delivery could not be queued. Please try again later.', conversationId: conversation.id }, { status: 503 })
     }
 
-    return NextResponse.json({ success: true, conversationId: conversation.id, guestAccountRequired: isGuestWithoutAccount, jobId: job.id })
+    return NextResponse.json({ success: true, conversationId: conversation.id, jobId: job.id })
   } catch (error: any) {
     console.error('[contact-conversation-create]', error)
     return NextResponse.json({ error: error?.message || 'Unable to start the conversation.' }, { status: 500 })
