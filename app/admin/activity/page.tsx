@@ -105,9 +105,9 @@ export default function ActivityPage() {
         customerIds.length ? supabase.from('customers').select('id,email').in('id', customerIds) : Promise.resolve({ data: [] as any[] }),
         roomIds.length ? supabase.from('rooms').select('id,room_number').in('id', roomIds) : Promise.resolve({ data: [] as any[] }),
       ])
-      const profileById = new Map((profiles.data ?? []).map((profile: any) => [profile.id, profile]))
-      const emailByCustomer = new Map((customers.data ?? []).map((customer: any) => [customer.id, customer.email]))
-      const roomById = new Map((rooms.data ?? []).map((room: any) => [room.id, room.room_number]))
+      const profileById = new Map<string, any>((profiles.data ?? []).map((profile: any) => [String(profile.id), profile]))
+      const emailByCustomer = new Map<string, string>((customers.data ?? []).map((customer: any) => [String(customer.id), String(customer.email ?? '')]))
+      const roomById = new Map<string, string>((rooms.data ?? []).map((room: any) => [String(room.id), String(room.room_number ?? '')]))
       const enriched = logs.map(row => {
         const profile: any = profileById.get(row.actor_user_id ?? '')
         return { ...row, actor_email: profile?.email ?? null, actor_name: profile?.name ?? null, friendly_description: friendlyDescription(row, emailByCustomer, roomById) }

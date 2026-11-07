@@ -8,13 +8,6 @@ export function formatDate(iso: string): string {
   return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function formatDateTime(iso?: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-}
-
 export function nightsBetween(checkIn: string, checkOut: string): number {
   const a = new Date(checkIn).getTime()
   const b = new Date(checkOut).getTime()
@@ -34,8 +27,10 @@ export function addDaysISO(days: number, from: string = todayISO()): string {
 }
 
 /** Full date + time, for invoices and receipts. */
-export function formatDateTime(value: string | Date): string {
+export function formatDateTime(value?: string | Date | null): string {
+  if (!value) return '—'
   const d = typeof value === 'string' ? new Date(value.length === 10 ? value + 'T00:00:00' : value) : value
+  if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleString('en-NG', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos',
