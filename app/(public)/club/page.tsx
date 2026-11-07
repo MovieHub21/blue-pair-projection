@@ -21,7 +21,7 @@ export default async function ClubPage() {
     location: { '@type': 'Place', name: 'The Club at Blue Pair Signature', address },
   }))
   const config = await resolveAmenityConfig('club', {
-    name: 'Club', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
+    name: 'Club Lawson', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
     heroImage: 'https://www.bluepairsignature.com/images/CLUB2.jpg',
     description: 'Edo State\u2019s after-dark address resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [

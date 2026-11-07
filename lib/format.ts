@@ -3,8 +3,16 @@ export function naira(amount: number): string {
 }
 
 export function formatDate(iso: string): string {
-  const d = new Date(iso + 'T00:00:00')
+  const d = new Date(iso.includes('T') ? iso : `${iso}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+export function formatDateTime(iso?: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
 export function nightsBetween(checkIn: string, checkOut: string): number {

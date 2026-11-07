@@ -14,7 +14,7 @@ import { fetchBookingsPage } from '../../../lib/adminQueries'
 import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '../../../lib/mappers'
 import type { Booking, Customer, Room, RoomType, ShortLet } from '../../../data/mock'
 
-type PaymentMethod = 'Transfer' | 'Cash' | 'POS'
+type PaymentMethod = 'Transfer' | 'POS'
 type ExtraService = { id: string; name: string; price: number }
 type LiveAvailabilityRoom = { id: string; room_type_id: string; room_number: string; name?: string | null; floor?: string | null; guest_status: string }
 
@@ -536,11 +536,10 @@ export default function BookingManagement() {
       <Modal open={!!confirmingPayment} onClose={() => !savingPayment && setConfirmingPayment(null)} title="Choose payment method" subtitle={confirmingPayment ? `${confirmingPayment.reference} · ${naira(confirmingPayment.amount)}` : undefined}>
         <div className="space-y-5">
           <div className="rounded-xl bg-amber-50 text-amber-800 p-4 text-sm">
-            Choose how the walk-in guest is paying. Cash, Transfer and POS are confirmed by reception. Transfer is shown here for the walk-in workflow, while the payment record continues to use the existing Paystack label used elsewhere in Blue Pair.
+            Choose how the walk-in guest is paying. Blue Pair accepts Transfer and POS payments only. Transfer is shown here for the walk-in workflow, while the payment record continues to use the existing Paystack label used elsewhere in Blue Pair.
           </div>
-          <div className="grid sm:grid-cols-3 gap-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             <button onClick={() => setPaymentMethod('Transfer')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'Transfer' ? 'border-gold-500 bg-gold-50' : 'border-black/10'}`}><Banknote size={22} />Transfer</button>
-            <button onClick={() => setPaymentMethod('Cash')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'Cash' ? 'border-navy-950 bg-navy-50' : 'border-black/10'}`}><Banknote size={22} />Cash</button>
             <button onClick={() => setPaymentMethod('POS')} className={`rounded-2xl border-2 p-5 flex flex-col items-center gap-2 text-sm font-semibold ${paymentMethod === 'POS' ? 'border-navy-950 bg-navy-50' : 'border-black/10'}`}><CreditCard size={22} />POS</button>
           </div>
           {error && <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3">{error}</div>}

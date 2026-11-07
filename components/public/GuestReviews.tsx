@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowRight, ExternalLink, Star } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GoogleReviewsData } from '../../lib/googleReviews'
 
 function Stars({ rating }: { rating: number }) {
@@ -14,17 +14,35 @@ function Stars({ rating }: { rating: number }) {
 export default function GuestReviews({ mapsProfileUrl }: { mapsProfileUrl: string }) {
   const [data, setData] = useState<GoogleReviewsData | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const trackRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
 
-  useEffect(() => {
-    let active = true
-    fetch('/api/google-reviews').then(response => response.ok ? response.json() : null)
-      .then(result => { if (active) setData(result?.data ?? null) })
-      .catch(() => { if (active) setData(null) })
-      .finally(() => { if (active) setLoaded(true) })
-    return () => { active = false }
+  const refreshReviews = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const response = await fetch('/api/google-reviews', { cache: 'no-store' })
+      const result = response.ok ? await response.json() : null
+      if (result?.data) setData(result.data)
+    } catch {
+      // Keep the last successful response visible if a later refresh fails.
+    } finally {
+      setLoaded(true)
+      setRefreshing(false)
+    }
   }, [])
+
+  useEffect(() => {
+    void refreshReviews()
+    // Keep this section current while it is open; reload again when visitors return to the tab.
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refreshReviews() }, 5 * 60 * 1000)
+    const onFocus = () => { if (document.visibilityState === 'visible') void refreshReviews() }
+    window.addEventListener('focus', onFocus)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [refreshReviews])
 
   const mapsUrl = data?.googleMapsUri || mapsProfileUrl
   const reviews = data?.reviews ?? []
@@ -99,8 +117,11 @@ export default function GuestReviews({ mapsProfileUrl }: { mapsProfileUrl: strin
           </div>
           <p className="mt-4 text-[11px] text-navy-400">Google reviews shown here are ordered by relevance. Google checks reviews for policy violations; reviews are not individually verified by Google.</p>
         </> : <div className="mt-8 rounded-2xl border border-black/5 bg-white p-6 text-sm text-navy-500">
-          {loaded ? data ? 'There are no Google review excerpts available to display right now.' : 'See the latest rating and guest reviews on our Google Business Profile.' : 'Loading Google reviews…'}
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center gap-1 font-semibold text-navy-900 underline underline-offset-4">Open Google Maps <ExternalLink size={12} /></a>
+          <p>{loaded ? data ? 'There are no Google review excerpts available to display right now.' : 'Google reviews could not be loaded right now.' : 'Loading Google reviews…'}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <button type="button" onClick={() => void refreshReviews()} disabled={refreshing} className="font-semibold text-navy-900 underline underline-offset-4 disabled:opacity-60">{refreshing ? 'Refreshing…' : 'Refresh reviews'}</button>
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-navy-900 underline underline-offset-4">Open Google Maps <ExternalLink size={12} /></a>
+          </div>
         </div>}
 
         <div className="mt-6 flex justify-end"><Link href="/booking" className="btn-outline inline-flex items-center gap-2">Plan your stay <ArrowRight size={15} /></Link></div>

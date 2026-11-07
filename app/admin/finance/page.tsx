@@ -14,6 +14,9 @@ interface Transaction {
   reference?: string | null
   description: string
   occurred_at: string
+  created_by_name?: string | null
+  created_by_email?: string | null
+  customer_email?: string | null
 }
 
 interface Expense {
@@ -25,6 +28,8 @@ interface Expense {
   amount: number | string
   method: string
   incurred_at: string
+  created_by_name?: string | null
+  created_by_email?: string | null
 }
 
 interface FinanceData {
@@ -34,7 +39,8 @@ interface FinanceData {
   expenses: Expense[]
 }
 
-const emptyForm = { category: '', vendor: '', description: '', amount: '', method: 'Bank Transfer', incurredAt: new Date().toISOString().slice(0, 10) }
+const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+const emptyForm = { category: '', vendor: '', description: '', amount: '', method: 'Bank Transfer', incurredAt: lagosToday() }
 
 export default function FinancePage() {
   const [data, setData] = useState<FinanceData | null>(null)
@@ -43,12 +49,24 @@ export default function FinancePage() {
   const [showExpense, setShowExpense] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [preset, setPreset] = useState<'day' | 'week' | 'month' | 'custom'>('day')
+  const [from, setFrom] = useState(lagosToday)
+  const [to, setTo] = useState(lagosToday)
+
+  function setRange(next: 'day' | 'week' | 'month' | 'custom') {
+    setPreset(next)
+    const today = lagosToday()
+    if (next === 'day') setFrom(today)
+    if (next === 'week') { const d = new Date(`${today}T12:00:00+01:00`); const diff = d.getDay() === 0 ? -6 : 1 - d.getDay(); d.setDate(d.getDate() + diff); setFrom(d.toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })) }
+    if (next === 'month') setFrom(`${today.slice(0, 7)}-01`)
+    if (next !== 'custom') setTo(today)
+  }
 
   const load = async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/admin/finance', { cache: 'no-store' })
+      const response = await fetch(`/api/admin/finance?from=${from}&to=${to}`, { cache: 'no-store' })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Unable to load finance data.')
       setData(payload)
@@ -59,7 +77,7 @@ export default function FinancePage() {
     }
   }
 
-  useEffect(() => { load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return()=>window.removeEventListener('bluepair:database-change',refresh) }, [])
+  useEffect(() => { load(); const refresh=()=>void load(); window.addEventListener('bluepair:database-change',refresh); return()=>window.removeEventListener('bluepair:database-change',refresh) }, [from, to])
 
   const netTone = useMemo(() => (data?.summary.net ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-700', [data])
 
@@ -100,6 +118,11 @@ export default function FinancePage() {
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
+      <div className="card flex flex-wrap items-center gap-2 p-4">
+        {(['day', 'week', 'month', 'custom'] as const).map(item => <button key={item} onClick={() => setRange(item)} className={`rounded-full px-3 py-2 text-xs font-semibold capitalize ${preset === item ? 'bg-navy-950 text-white' : 'bg-navy-50 text-navy-600'}`}>{item === 'day' ? 'Today · 24 hours' : item === 'custom' ? 'Custom dates' : `This ${item}`}</button>)}
+        {preset === 'custom' && <div className="ml-auto flex flex-wrap items-center gap-3 text-xs text-navy-500"><label>From <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input ml-1" /></label><label>To <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input ml-1" /></label></div>}
+      </div>
+
       {loading && !data ? (
         <div className="card flex min-h-48 items-center justify-center"><Loader2 className="animate-spin text-navy-500" /></div>
       ) : data ? (
@@ -119,13 +142,13 @@ export default function FinancePage() {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
-                  <thead><tr className="border-b border-black/5 text-left text-xs text-navy-400"><th className="px-5 py-3">Reference</th><th className="px-5 py-3">Description</th><th className="px-5 py-3">Method</th><th className="px-5 py-3">Date</th><th className="px-5 py-3 text-right">Amount</th></tr></thead>
+                  <thead><tr className="border-b border-black/5 text-left text-xs text-navy-400"><th className="px-5 py-3">Activity</th><th className="px-5 py-3">Details</th><th className="px-5 py-3">Method</th><th className="px-5 py-3">Date</th><th className="px-5 py-3 text-right">Amount</th></tr></thead>
                   <tbody>
                     {data.transactions.map((t) => {
                       const debit = t.direction === 'debit'
                       return <tr key={t.id} className="border-b border-black/5 last:border-0">
-                        <td className="px-5 py-3 font-medium">{t.reference || '—'}</td>
-                        <td className="max-w-[280px] px-5 py-3 text-navy-500">{t.description}</td>
+                        <td className="px-5 py-3 font-medium">{t.transaction_type === 'sale' ? 'Payment received' : t.transaction_type === 'refund' ? 'Refund issued' : t.transaction_type === 'expense' ? 'Expense recorded' : 'Account adjustment'}</td>
+                        <td className="max-w-[280px] px-5 py-3 text-navy-500"><span className="block">{t.description}</span>{t.customer_email && <span className="mt-1 block text-[11px] text-navy-500">Guest: {t.customer_email}</span>}<span className="mt-1 block text-[11px] text-navy-400">{t.created_by_name || t.created_by_email ? `Recorded by ${t.created_by_name || t.created_by_email}` : 'Recorded automatically'}</span>{t.reference && <span className="mt-1 block text-[11px] text-navy-400">Ref: {t.reference}</span>}</td>
                         <td className="px-5 py-3 text-navy-500">{t.method || '—'}</td>
                         <td className="px-5 py-3 text-navy-500">{formatDate(t.occurred_at)}</td>
                         <td className={`px-5 py-3 text-right font-semibold ${debit ? 'text-red-700' : 'text-emerald-700'}`}>{debit ? '−' : '+'}{naira(Number(t.amount))}</td>
@@ -152,7 +175,7 @@ export default function FinancePage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead><tr className="border-b border-black/5 text-left text-xs text-navy-400"><th className="px-5 py-3">Reference</th><th className="px-5 py-3">Category</th><th className="px-5 py-3">Vendor</th><th className="px-5 py-3">Method</th><th className="px-5 py-3">Date</th><th className="px-5 py-3 text-right">Amount</th></tr></thead>
-                <tbody>{data.expenses.map((expense) => <tr key={expense.id} className="border-b border-black/5 last:border-0"><td className="px-5 py-3 font-medium">{expense.reference}</td><td className="px-5 py-3">{expense.category}</td><td className="px-5 py-3 text-navy-500">{expense.vendor || '—'}</td><td className="px-5 py-3 text-navy-500">{expense.method}</td><td className="px-5 py-3 text-navy-500">{formatDate(expense.incurred_at)}</td><td className="px-5 py-3 text-right font-semibold text-red-700">−{naira(Number(expense.amount))}</td></tr>)}</tbody>
+                <tbody>{data.expenses.map((expense) => <tr key={expense.id} className="border-b border-black/5 last:border-0"><td className="px-5 py-3 font-medium">{expense.reference}<span className="mt-1 block text-[11px] font-normal text-navy-400">{expense.created_by_name || expense.created_by_email ? `Recorded by ${expense.created_by_name || expense.created_by_email}` : 'Staff not recorded'}</span></td><td className="px-5 py-3">{expense.category}</td><td className="px-5 py-3 text-navy-500">{expense.vendor || '—'}</td><td className="px-5 py-3 text-navy-500">{expense.method}</td><td className="px-5 py-3 text-navy-500">{formatDate(expense.incurred_at)}</td><td className="px-5 py-3 text-right font-semibold text-red-700">−{naira(Number(expense.amount))}</td></tr>)}</tbody>
               </table>
             </div>
           </section>
@@ -170,7 +193,7 @@ export default function FinancePage() {
             <Field label="Description"><input required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="What was paid for?" /></Field>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Amount"><input required min="0.01" step="0.01" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="0.00" /></Field>
-              <Field label="Method"><select value={form.method} onChange={e => setForm({ ...form, method: e.target.value })}><option>Bank Transfer</option><option>Cash</option><option>POS</option><option>Card</option></select></Field>
+              <Field label="Method"><select value={form.method} onChange={e => setForm({ ...form, method: e.target.value })}><option>Bank Transfer</option><option>POS</option><option>Card</option></select></Field>
               <Field label="Date"><input required type="date" value={form.incurredAt} onChange={e => setForm({ ...form, incurredAt: e.target.value })} /></Field>
             </div>
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setShowExpense(false)} className="rounded-xl border border-black/10 px-4 py-2.5 text-sm font-semibold text-navy-600">Cancel</button><button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving && <Loader2 size={15} className="animate-spin" />} Save expense</button></div>

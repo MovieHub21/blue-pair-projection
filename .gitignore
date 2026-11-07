@@ -9,6 +9,8 @@ supabase/*
 !supabase/migrations/
 supabase/migrations/*
 !supabase/migrations/20261030110000_room_maintenance_tasks.sql
+!supabase/migrations/20261107150000_newsletter_campaigns.sql
+!supabase/migrations/20261107160000_seed_november_december_events.sql
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*

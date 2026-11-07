@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 
 const STAFF_ROLES = new Set(['super_admin', 'manager', 'reception'])
-const PAYMENT_METHODS = new Set(['Paystack', 'Cash', 'POS'])
+const PAYMENT_METHODS = new Set(['Paystack', 'POS'])
 
 export async function POST(request: Request) {
   try {
@@ -32,14 +32,18 @@ export async function POST(request: Request) {
     const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
     const paymentReference = `INV-${booking.reference.replace(/^BPH-/, '')}`
     const { data: existingPayment } = await admin.from('payments').select('id').eq('booking_ref', booking.reference).maybeSingle()
+    let paymentId = existingPayment?.id
 
     if (existingPayment) {
       const { error } = await admin.from('payments').update({ customer_id: customer.id, amount: booking.amount, method, status: 'success', date: paidOn }).eq('id', existingPayment.id)
       if (error) throw error
     } else {
-      const { error } = await admin.from('payments').insert({ id: `pay_${Date.now()}`, reference: paymentReference, booking_ref: booking.reference, customer_id: customer.id, customer: customer.name, amount: booking.amount, method, status: 'success', date: paidOn })
+      paymentId = `pay_${Date.now()}`
+      const { error } = await admin.from('payments').insert({ id: paymentId, reference: paymentReference, booking_ref: booking.reference, customer_id: customer.id, customer: customer.name, amount: booking.amount, method, status: 'success', date: paidOn })
       if (error) throw error
     }
+
+    if (paymentId) await admin.from('financial_transactions').update({ created_by: user.id }).eq('source_type', 'payment').eq('source_id', paymentId)
 
     const { error: updateError } = await admin.from('bookings').update({ payment_status: 'paid', status: 'confirmed' }).eq('id', booking.id)
     if (updateError) throw updateError

@@ -2,7 +2,7 @@ import {
   LayoutGrid, CalendarCheck, BedDouble, Grid3x3, LogIn, LogOut, Users, CreditCard, WalletCards,
   UtensilsCrossed, Martini, ClipboardList, Building2, PartyPopper, MonitorPlay, Car, Tag,
   Image, FileCode, UserCog, ShieldCheck, BarChart3, Wrench, MessageSquare, Sparkles, Activity,
-  Newspaper, ShoppingBag, Bell, Code2,
+  Newspaper, ShoppingBag, Bell, Code2, Send,
 } from 'lucide-react'
 import type { PortalNavGroup } from '../components/layout/PortalShell'
 import { sectionForPath } from './permissionSections'
@@ -34,7 +34,8 @@ export const MANAGEMENT_GROUPS: PortalNavGroup[] = [
   ] },
   { label: 'Content', items: [{ href: '/admin/gallery', label: 'Gallery', icon: <Image size={16} /> }, 
     { href: '/admin/website', label: 'Website Content', icon: <FileCode size={16} /> }, 
-    { href: '/admin/blog', label: 'Blog & Stories', icon: <Newspaper size={16} /> }] },
+    { href: '/admin/blog', label: 'Blog & Stories', icon: <Newspaper size={16} /> },
+    { href: '/admin/newsletter', label: 'Newsletter', icon: <Send size={16} /> }] },
   { label: 'Team', items: [{ href: '/admin/staff', label: 'Staff Management', icon: <UserCog size={16} /> }, 
     { href: '/admin/permissions', label: 'Permissions', icon: <ShieldCheck size={16} /> }] },
   { label: 'Developer', items: [{ href: '/admin/developer', label: 'Developer', icon: <Code2 size={16} /> }] },

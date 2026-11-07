@@ -15,6 +15,9 @@ type ActivityRow = {
   description: string
   metadata: Record<string, any>
   created_at: string
+  actor_email?: string | null
+  actor_name?: string | null
+  friendly_description?: string
 }
 
 function startOfWeekISO() {
@@ -37,6 +40,27 @@ function actionTone(action: string) {
   if (action === 'insert') return 'bg-emerald-50 text-emerald-700'
   if (action === 'delete') return 'bg-red-50 text-red-700'
   return 'bg-blue-50 text-blue-700'
+}
+
+function friendlyAction(action: string) {
+  return action === 'insert' ? 'Created' : action === 'delete' ? 'Removed' : 'Updated'
+}
+
+function friendlyDescription(row: ActivityRow, emailByCustomer: Map<string, string>, roomById: Map<string, string>) {
+  const data = row.metadata?.row ?? {}
+  const guestEmail = emailByCustomer.get(String(data.customer_id ?? '')) || String(data.email ?? data.customer_email ?? '')
+  const who = guestEmail || 'A guest'
+  const id = String(data.reference ?? data.booking_ref ?? row.entity_id ?? '')
+  const room = roomById.get(String(data.room_id ?? '')) || String(data.room ?? '')
+  const entity = row.entity_type
+  if (entity === 'bookings' && row.action === 'insert') return `${who} booked ${room ? `room ${room}` : 'a room'}${id ? ` · ${id}` : ''}`
+  if (entity === 'room_service_orders' && row.action === 'insert') return `${who} ordered room service${id ? ` · Order ${id}` : ''}${room ? ` · Room ${room}` : ''}`
+  if (entity === 'bar_orders' && row.action === 'insert') return `${who} placed an order${id ? ` · Order ${id}` : ''}`
+  if (entity === 'payments') return row.action === 'insert' ? `Payment recorded for ${who}${data.booking_ref ? ` · Booking ${data.booking_ref}` : id ? ` · ${id}` : ''}` : row.action === 'update' ? `Payment status or details changed${id ? ` · ${id}` : ''}` : `Payment record removed${id ? ` · ${id}` : ''}`
+  if (entity === 'financial_transactions') return row.action === 'insert' ? `Finance entry recorded${id ? ` · ${id}` : ''}` : row.action === 'update' ? `Finance entry changed${id ? ` · ${id}` : ''}` : `Finance entry removed${id ? ` · ${id}` : ''}`
+  const subject = ({ bookings: 'booking', customers: 'guest profile', rooms: 'room', guest_requests: 'guest request', housekeeping_tasks: 'housekeeping task', maintenance_tickets: 'maintenance request', bar_orders: 'order', room_service_orders: 'room service order', financial_expenses: 'expense', staff: 'staff profile', menu_items: 'menu item', drinks: 'drink', short_lets: 'short-let', events: 'event', offers: 'offer', gallery_images: 'gallery image', amenities: 'amenity', room_types: 'room type', billboards: 'billboard' } as Record<string, string>)[entity] || entity.replace(/_/g, ' ')
+  const label = data.name || data.title || data.category || data.room_number || data.room || id
+  return `${friendlyAction(row.action)} ${subject}${label ? ` · ${label}` : ''}`
 }
 
 export default function ActivityPage() {
@@ -69,10 +93,27 @@ export default function ActivityPage() {
         .select('id, actor_user_id, action, entity_type, entity_id, description, metadata, created_at')
         .gte('created_at', start)
         .lte('created_at', end)
+        .or('entity_type.neq.rooms,action.neq.update')
         .order('created_at', { ascending: false })
         .limit(1000)
+      const logs = (data ?? []) as ActivityRow[]
+      const actorIds = Array.from(new Set(logs.map(row => row.actor_user_id).filter(Boolean))) as string[]
+      const customerIds = Array.from(new Set(logs.map(row => String(row.metadata?.row?.customer_id ?? '')).filter(Boolean)))
+      const roomIds = Array.from(new Set(logs.map(row => String(row.metadata?.row?.room_id ?? '')).filter(Boolean)))
+      const [profiles, customers, rooms] = await Promise.all([
+        actorIds.length ? supabase.from('profiles').select('id,name,email').in('id', actorIds) : Promise.resolve({ data: [] as any[] }),
+        customerIds.length ? supabase.from('customers').select('id,email').in('id', customerIds) : Promise.resolve({ data: [] as any[] }),
+        roomIds.length ? supabase.from('rooms').select('id,room_number').in('id', roomIds) : Promise.resolve({ data: [] as any[] }),
+      ])
+      const profileById = new Map((profiles.data ?? []).map((profile: any) => [profile.id, profile]))
+      const emailByCustomer = new Map((customers.data ?? []).map((customer: any) => [customer.id, customer.email]))
+      const roomById = new Map((rooms.data ?? []).map((room: any) => [room.id, room.room_number]))
+      const enriched = logs.map(row => {
+        const profile: any = profileById.get(row.actor_user_id ?? '')
+        return { ...row, actor_email: profile?.email ?? null, actor_name: profile?.name ?? null, friendly_description: friendlyDescription(row, emailByCustomer, roomById) }
+      })
       if (!cancelled) {
-        setRows((data ?? []) as ActivityRow[])
+        setRows(enriched)
         setLoading(false)
       }
     }
@@ -88,7 +129,7 @@ export default function ActivityPage() {
       if (entity !== 'all' && row.entity_type !== entity) return false
       if (action !== 'all' && row.action !== action) return false
       if (!q) return true
-      return [row.description, row.entity_type, row.entity_id, row.actor_user_id].some(v => String(v ?? '').toLowerCase().includes(q))
+      return [row.friendly_description, row.description, row.entity_type, row.entity_id, row.actor_user_id, row.actor_email].some(v => String(v ?? '').toLowerCase().includes(q))
     })
   }, [rows, search, entity, action])
 
@@ -102,7 +143,7 @@ export default function ActivityPage() {
   const download = () => {
     const header = ['Date', 'Action', 'Area', 'Record', 'Description', 'Actor']
     const lines = [header, ...filtered.map(r => [
-      new Date(r.created_at).toLocaleString('en-NG'), r.action, prettyEntity(r.entity_type), r.entity_id ?? '', r.description, r.actor_user_id ?? 'System',
+      new Date(r.created_at).toLocaleString('en-NG'), friendlyAction(r.action), prettyEntity(r.entity_type), r.entity_id ?? '', r.friendly_description ?? r.description, r.actor_email ?? r.actor_user_id ?? 'System',
     ])].map(row => row.map(csvEscape).join(','))
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -147,7 +188,7 @@ export default function ActivityPage() {
 
       <div className="card overflow-hidden">
         <div className="p-5 border-b border-black/5 flex items-center justify-between"><div><h2 className="font-semibold">Operational timeline</h2><p className="text-xs text-navy-400 mt-1">Newest activity appears first.</p></div><Activity size={18} className="text-gold-600" /></div>
-        {loading ? <div className="p-10 text-center text-sm text-navy-400">Loading activity…</div> : filtered.length === 0 ? <div className="p-10 text-center"><Activity size={24} className="mx-auto text-navy-200" /><p className="text-sm text-navy-500 mt-3">No activity matches these filters.</p></div> : <div className="divide-y divide-black/5">{filtered.map(row => <div key={row.id} className="p-5 flex gap-4 items-start hover:bg-navy-50/40 transition-colors"><div className="w-9 h-9 rounded-xl bg-gold-50 flex items-center justify-center shrink-0"><Activity size={15} className="text-gold-600" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${actionTone(row.action)}`}>{row.action}</span><span className="text-xs font-semibold text-navy-700">{prettyEntity(row.entity_type)}</span>{row.entity_id && <span className="text-[11px] text-navy-300">#{row.entity_id}</span>}</div><p className="text-sm text-navy-700 mt-2">{row.description}</p><p className="text-[11px] text-navy-400 mt-1">{new Date(row.created_at).toLocaleString('en-NG')} · {row.actor_user_id ? `Staff ${row.actor_user_id.slice(0, 8)}…` : 'System / server action'}</p></div></div>)}</div>}
+        {loading ? <div className="p-10 text-center text-sm text-navy-400">Loading activity…</div> : filtered.length === 0 ? <div className="p-10 text-center"><Activity size={24} className="mx-auto text-navy-200" /><p className="text-sm text-navy-500 mt-3">No activity matches these filters.</p></div> : <div className="divide-y divide-black/5">{filtered.map(row => <div key={row.id} className="p-5 flex gap-4 items-start hover:bg-navy-50/40 transition-colors"><div className="w-9 h-9 rounded-xl bg-gold-50 flex items-center justify-center shrink-0"><Activity size={15} className="text-gold-600" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${actionTone(row.action)}`}>{friendlyAction(row.action)}</span><span className="text-xs font-semibold text-navy-700">{prettyEntity(row.entity_type)}</span></div><p className="text-sm text-navy-700 mt-2">{row.friendly_description || row.description}</p><p className="text-[11px] text-navy-400 mt-1">{new Date(row.created_at).toLocaleString('en-NG')} · {row.actor_user_id ? row.actor_email || row.actor_name || 'Staff member' : 'System / automated action'}</p></div></div>)}</div>}
       </div>
 
       <div className="card p-5 bg-navy-950 text-white"><div className="flex items-start justify-between gap-4"><div><span className="text-[10px] uppercase tracking-[0.2em] text-gold-400">Owner note</span><h3 className="font-semibold mt-1">Use this as the hotel’s operational diary.</h3><p className="text-sm text-white/60 mt-2 max-w-2xl">The log is database-triggered, so it continues recording changes made by the app and future integrations. Combine it with the Reports page for financial totals and with the dashboard for today’s operating position.</p></div><Link href="/admin/reports/revenue" className="text-xs font-semibold text-gold-300 flex items-center gap-1 whitespace-nowrap">Open reports <ArrowRight size={13} /></Link></div></div>
