@@ -1,0 +1,538 @@
+diff --git a/app/api/paystack/callback/route.ts b/app/api/paystack/callback/route.ts
+index 997ce90..599e126 100644
+--- a/app/api/paystack/callback/route.ts
++++ b/app/api/paystack/callback/route.ts
+@@ -1,19 +1,13 @@
+ import { NextResponse } from 'next/server'
+ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+-import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
+-import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
+ import { SITE_URL } from '../../../../lib/siteConfig'
+-import { isRoomServiceReference } from '../../../../lib/roomServicePayments'
+-import { notifyBookingPaid } from '../../../../lib/staffEvents'
++import { settleBookingPayment } from '../../../../lib/payments/settleBooking'
+ 
+-function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
+-
+-async function releaseAbandonedPayment(admin: ReturnType<typeof createSupabaseAdminClient>, bookingId: string, paymentId: string) {
+-  await admin.from('payments').update({ status: 'failed' }).eq('id', paymentId).neq('status', 'success')
+-  await admin.from('payment_holds').delete().eq('booking_id', bookingId)
+-  await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).eq('id', bookingId).eq('status', 'pending').neq('payment_status', 'paid')
+-}
++export const dynamic = 'force-dynamic'
+ 
++// Where the guest lands after Paystack. This page is only a convenience: the webhook confirms payments on its own.
++// The redirect never changes a payment to "failed" and never cancels a booking. It asks the shared settlement
++// function to verify the transaction with Paystack, then shows the guest what the server found.
+ export async function GET(request: Request) {
+   const url = new URL(request.url)
+   const reference = String(url.searchParams.get('reference') || url.searchParams.get('trxref') || '').trim()
+@@ -21,98 +15,39 @@ export async function GET(request: Request) {
+   const adminUrl = `${baseUrl}/admin/bookings`
+   const guestUrl = `${baseUrl}/booking`
+   const guestDashboard = `${baseUrl}/account/bookings`
++  const pending = () => NextResponse.redirect(`${guestUrl}?payment=pending&reference=${encodeURIComponent(reference)}`)
+   if (!reference) return NextResponse.redirect(`${guestUrl}?payment=missing`)
+ 
+   try {
+     const secret = process.env.PAYSTACK_SECRET_KEY
+     if (!secret) return NextResponse.redirect(`${guestUrl}?payment=not-configured`)
+-    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, { headers: { Authorization: `Bearer ${secret}` }, cache: 'no-store' })
+-    const result = await response.json()
+-    const transaction = result?.data
+-
+-    const admin = createSupabaseAdminClient()
+-    const { data: payment, error: paymentLookupError } = await admin.from('payments').select('id,booking_ref,amount,customer_id,status').eq('reference', reference).maybeSingle()
+-    if (paymentLookupError) throw paymentLookupError
+-    if (!payment) return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
+-    // Room-service payments belong to a room-service order, not to a booking: use the room-service callback.
+-    if (isRoomServiceReference(payment.booking_ref)) return NextResponse.redirect(`${baseUrl}/api/room-service/callback?reference=${encodeURIComponent(reference)}`)
+-
+-    const { data: booking, error: bookingLookupError } = await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,status,payment_status,reservation_expires_at').eq('reference', payment.booking_ref).maybeSingle()
+-    if (bookingLookupError) throw bookingLookupError
+-    if (!booking) return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
+-
+-    if (!response.ok || !result?.status) {
+-      await releaseAbandonedPayment(admin, booking.id, payment.id)
+-      return NextResponse.redirect(`${guestUrl}?payment=failed`)
+-    }
+-
+-    if (transaction?.status !== 'success') {
+-      const status = String(transaction?.status || 'failed')
+-      console.log('[paystack-callback] non-success transaction', { reference, bookingId: booking.id, status })
+-      if (['abandoned', 'failed', 'reversed', 'timeout'].includes(status)) {
+-        await releaseAbandonedPayment(admin, booking.id, payment.id)
+-        return NextResponse.redirect(`${guestUrl}?payment=cancelled`)
+-      }
+-      return NextResponse.redirect(`${guestUrl}?payment=pending&reference=${encodeURIComponent(reference)}`)
+-    }
+-
+-    if (Number(transaction.amount) !== Math.round(Number(payment.amount) * 100)) return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
+-
+-    if (booking.payment_status === 'paid' && booking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
+-    if (!booking.room_id && !booking.short_let_id) return NextResponse.redirect(`${guestUrl}?payment=property-missing`)
+-    if (booking.short_let_id) {
+-      if (!booking.reservation_expires_at || new Date(booking.reservation_expires_at).getTime() <= Date.now()) {
+-        await releaseAbandonedPayment(admin, booking.id, payment.id)
+-        return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
+-      }
+-    } else {
+-      const { data: paymentHold, error: holdError } = await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id', booking.id).maybeSingle()
+-      if (holdError) throw holdError
+-      const ownsActiveHold = paymentHold?.room_id === booking.room_id && !!paymentHold?.expires_at && new Date(paymentHold.expires_at).getTime() > Date.now()
+-      if (!ownsActiveHold) {
+-        const { data: refreshedBooking } = await admin.from('bookings').select('status,payment_status').eq('id', booking.id).maybeSingle()
+-        if (refreshedBooking?.payment_status === 'paid' && refreshedBooking.status === 'confirmed') return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
+-        await releaseAbandonedPayment(admin, booking.id, payment.id)
+-        return NextResponse.redirect(`${guestUrl}?payment=failed&reason=payment-window-expired`)
+-      }
+-    }
+-
+-    const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+-    if (payment.status !== 'success') {
+-      const { error } = await admin.from('payments').update({ status: 'success', method: 'Paystack', date: paidOn }).eq('id', payment.id).eq('status', 'pending')
+-      if (error) throw error
+-    }
+-    const { error: bookingUpdateError } = await admin.from('bookings').update({ payment_status: 'paid', status: 'confirmed', reservation_expires_at: null }).eq('id', booking.id).in('status', ['pending', 'confirmed']).neq('payment_status', 'paid')
+-    if (bookingUpdateError) throw bookingUpdateError
+-    if (booking.room_id) {
+-      const { error: holdClearError } = await admin.from('payment_holds').delete().eq('booking_id', booking.id)
+-      if (holdClearError) throw holdClearError
+-      const { data: competitors, error: competitorError } = await admin.from('bookings').select('id,check_in,check_out').eq('room_id', booking.room_id).eq('status', 'pending').neq('payment_status', 'paid')
+-      if (competitorError) throw competitorError
+-      const losers = (competitors ?? []).filter(item => overlaps(booking.check_in, booking.check_out, item.check_in, item.check_out)).map(item => item.id)
+-      if (losers.length) await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).in('id', losers)
+-    }
+ 
+-    await notifyBookingPaid(admin, booking, reference)
+-    const { data: customer, error: customerError } = await admin.from('customers').select('id,user_id,name,email').eq('id', payment.customer_id).maybeSingle()
+-    if (customerError) throw customerError
+-    if (customer?.user_id) {
+-      const { data: existingNotification } = await admin.from('guest_notifications').select('id').eq('user_id', customer.user_id).eq('type', 'payment').contains('metadata', { payment_reference: reference }).limit(1).maybeSingle()
+-      if (!existingNotification) {
+-        const { data: roomType } = booking.room_type_id ? await admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle() : { data: null }
+-        const { data: shortLet } = booking.short_let_id ? await admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle() : { data: null }
+-        if (customer.email) {
+-          try {
+-            const email = paymentSuccessfulEmail({ guestName: customer.name || 'Guest', reference: booking.reference, roomName: shortLet?.name || roomType?.name || 'Short-let', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount), paymentReference: reference })
+-            await enqueueBackgroundEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, include_account_cta: false, queueKey: `booking-payment-confirmation:${booking.id}` })
+-          } catch (emailError) { console.error('[paystack-callback] confirmation email failed', emailError) }
+-        }
+-        await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: reference, status: 'confirmed' } })
++    const result = await settleBookingPayment(createSupabaseAdminClient(), secret, reference)
++    if (result.ok === true) return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
++
++    switch (result.reason) {
++      // Room-service payments belong to a room-service order, not to a booking: use the room-service callback.
++      case 'room_service': return NextResponse.redirect(`${baseUrl}/api/room-service/callback?reference=${encodeURIComponent(reference)}`)
++      case 'payment_not_found': return NextResponse.redirect(`${adminUrl}?payment=unmatched`)
++      case 'booking_not_found': return NextResponse.redirect(`${guestUrl}?payment=booking-not-found`)
++      case 'amount_mismatch':
++      case 'currency_mismatch': return NextResponse.redirect(`${guestUrl}?payment=amount-mismatch`)
++      case 'not_success': {
++        // Paystack itself says this transaction did not succeed (yet). Nothing is changed in our records.
++        const status = String(result.status || '')
++        if (['abandoned', 'failed', 'reversed', 'timeout'].includes(status)) return NextResponse.redirect(`${guestUrl}?payment=cancelled`)
++        return pending()
+       }
++      case 'refunded': return NextResponse.redirect(`${guestUrl}?payment=failed&reason=room-no-longer-available`)
++      // Paystack unreachable or a temporary database problem: the payment is neither failed nor confirmed yet.
++      case 'unavailable':
++      case 'refund_failed': return pending()
++      default:
++        console.error('[paystack-callback] not settled', { reference, reason: result.reason, detail: result.detail })
++        return result.transient ? pending() : NextResponse.redirect(`${guestUrl}?payment=error`)
+     }
+-    return NextResponse.redirect(`${guestDashboard}?payment=success&reference=${encodeURIComponent(reference)}`)
+   } catch (error) {
+     console.error('[paystack-callback]', error)
+-    return NextResponse.redirect(`${guestUrl}?payment=error`)
++    return pending()
+   }
+ }
+diff --git a/app/api/paystack/webhook/route.ts b/app/api/paystack/webhook/route.ts
+index 14ae35c..78313e7 100644
+--- a/app/api/paystack/webhook/route.ts
++++ b/app/api/paystack/webhook/route.ts
+@@ -1,37 +1,67 @@
+ import crypto from 'crypto'
+ import { NextResponse } from 'next/server'
+ import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
+-import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
+-import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
+-import { isRoomServiceReference, settleRoomServicePayment } from '../../../../lib/roomServicePayments'
+-import { notifyBookingPaid } from '../../../../lib/staffEvents'
++import { settleRoomServicePayment } from '../../../../lib/roomServicePayments'
++import { settleBookingPayment, verifyPaystackTransaction } from '../../../../lib/payments/settleBooking'
+ 
+-function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
+-async function refundPaystackTransaction(secret: string, transactionId: unknown) { if (!transactionId) return false; try { const response = await fetch('https://api.paystack.co/refund',{method:'POST',headers:{Authorization:`Bearer ${secret}`,'Content-Type':'application/json'},body:JSON.stringify({transaction:transactionId}),cache:'no-store'}); const result=await response.json().catch(()=>null); if(!response.ok||!result?.status){console.error('[paystack-webhook] refund failed',result?.message||response.status);return false} return true } catch(error){console.error('[paystack-webhook] refund request failed',error);return false} }
++export const dynamic = 'force-dynamic'
+ 
++function validSignature(rawBody: string, signature: string, secret: string) {
++  if (!signature) return false
++  const expected = crypto.createHmac('sha512', secret).update(rawBody).digest('hex')
++  const a = Buffer.from(signature.trim().toLowerCase())
++  const b = Buffer.from(expected)
++  return a.length === b.length && crypto.timingSafeEqual(a, b)
++}
++
++/**
++ * Paystack webhook. This is the primary way a payment is confirmed: it works even if the guest never returns
++ * to the site. Status codes matter because Paystack retries any non-2xx delivery (every few minutes, then hourly):
++ *  - 401: bad signature (never retried successfully, by design)
++ *  - 5xx: temporary problem (Paystack unreachable, database error, refund not yet possible) -> Paystack retries
++ *  - 200: handled, or permanently not ours / not actionable (logged)
++ */
+ export async function POST(request: Request) {
+- const secret=process.env.PAYSTACK_SECRET_KEY; if(!secret)return NextResponse.json({error:'Paystack is not configured.'},{status:503})
+- const rawBody=await request.text(); const signature=request.headers.get('x-paystack-signature')||''; const expected=crypto.createHmac('sha512',secret).update(rawBody).digest('hex'); if(!signature||signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return NextResponse.json({error:'Invalid signature.'},{status:401})
+- try{
+-  const event=JSON.parse(rawBody); if(event?.event!=='charge.success'||event?.data?.status!=='success')return NextResponse.json({received:true}); const reference=String(event.data.reference||'').trim(); if(!reference)return NextResponse.json({received:true})
+-  const admin=createSupabaseAdminClient(); const {data:payment}=await admin.from('payments').select('id,booking_ref,amount,status,customer_id').eq('reference',reference).maybeSingle(); if(!payment)return NextResponse.json({received:true}); if(Number(event.data.amount)!==Math.round(Number(payment.amount)*100)){console.error('[paystack-webhook] amount mismatch',reference);return NextResponse.json({received:true})}
+-  if(isRoomServiceReference(payment.booking_ref)){await settleRoomServicePayment(admin,reference,Number(event.data.amount));return NextResponse.json({received:true})}
+-  const {data:paidBooking}=await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,status,payment_status,reservation_expires_at').eq('reference',payment.booking_ref).maybeSingle(); if(!paidBooking)return NextResponse.json({received:true})
+-  if(!paidBooking.room_id && !paidBooking.short_let_id){await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:'failed'}).eq('id',payment.id);return NextResponse.json({received:true})}
+-  if(paidBooking.payment_status==='paid'&&paidBooking.status==='confirmed')return NextResponse.json({received:true})
+-  if(paidBooking.short_let_id){
+-   if(!paidBooking.reservation_expires_at || new Date(paidBooking.reservation_expires_at).getTime()<=Date.now()){console.warn('[paystack-webhook] short-let reservation expired; refunding',{reference,bookingId:paidBooking.id});const refunded=await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:refunded?'failed':'pending'}).eq('id',payment.id);return NextResponse.json({received:true})}
+-  } else {
+-   const {data:paymentHold}=await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id',paidBooking.id).maybeSingle()
+-   const ownsActiveHold=paymentHold?.room_id===paidBooking.room_id&&paymentHold?.expires_at&&new Date(paymentHold.expires_at).getTime()>Date.now()
+-   if(!ownsActiveHold){console.warn('[paystack-webhook] payment arrived without active date-aware hold; refunding',{reference,bookingId:paidBooking.id,roomId:paidBooking.room_id});const refunded=await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:refunded?'failed':'pending'}).eq('id',payment.id);return NextResponse.json({received:true})}
++  const secret = process.env.PAYSTACK_SECRET_KEY
++  if (!secret) return NextResponse.json({ error: 'Paystack is not configured.' }, { status: 503 })
++
++  // The signature is computed over the exact raw bytes, so read the text body before any JSON parsing.
++  const rawBody = await request.text()
++  const signature = request.headers.get('x-paystack-signature') || request.headers.get('paystack-signature') || ''
++  if (!validSignature(rawBody, signature, secret)) return NextResponse.json({ error: 'Invalid signature.' }, { status: 401 })
++
++  let event: any
++  try { event = JSON.parse(rawBody) } catch { return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 }) }
++  if (event?.event !== 'charge.success') return NextResponse.json({ received: true })
++
++  const reference = String(event?.data?.reference || '').trim()
++  if (!reference) return NextResponse.json({ received: true })
++
++  // Annex bar/food checkouts are still fulfilled by their own callback (see hardening plan item B5).
++  if (reference.startsWith('ANXPAY-')) return NextResponse.json({ received: true, deferred: 'annex-order' })
++
++  try {
++    const admin = createSupabaseAdminClient()
++    const result = await settleBookingPayment(admin, secret, reference)
++    if (result.ok === true) return NextResponse.json({ received: true, state: result.state })
++
++    if (result.reason === 'room_service') {
++      const verification = await verifyPaystackTransaction(secret, reference)
++      if (verification.kind === 'unavailable') { console.error('[paystack-webhook] room-service verify unavailable', { reference, detail: verification.detail }); return NextResponse.json({ error: 'Verification unavailable.' }, { status: 503 }) }
++      if (verification.kind !== 'success') { console.error('[paystack-webhook] room-service charge.success not confirmed by verify', { reference, status: verification.status }); return NextResponse.json({ error: 'Not yet confirmed.' }, { status: 503 }) }
++      if (String(verification.transaction.currency || '').toUpperCase() !== 'NGN') { console.error('[paystack-webhook] room-service currency mismatch', { reference }); return NextResponse.json({ received: true, settled: false, reason: 'currency_mismatch' }) }
++      const settled = await settleRoomServicePayment(admin, reference, Number(verification.transaction.amount))
++      if (settled.ok === true) return NextResponse.json({ received: true, state: settled.alreadyPaid ? 'already_paid' : 'settled' })
++      console.error('[paystack-webhook] room-service not settled', { reference, reason: settled.reason })
++      return NextResponse.json({ received: true, settled: false, reason: settled.reason }, { status: settled.reason === 'update_failed' ? 500 : 200 })
++    }
++
++    console.error('[paystack-webhook] booking payment not settled', { reference, reason: result.reason, status: result.status, detail: result.detail })
++    // Retry when it can still succeed: Paystack/database trouble, or Paystack says charge.success but verify has not caught up.
++    const retry = result.transient || result.reason === 'not_success'
++    return NextResponse.json({ received: !retry, settled: false, reason: result.reason }, { status: retry ? 500 : 200 })
++  } catch (error) {
++    console.error('[paystack-webhook]', error)
++    return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 })
+   }
+-  const paidOn=new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Lagos'}); const {error:paymentError}=await admin.from('payments').update({status:'success',method:'Paystack',date:paidOn}).eq('id',payment.id).eq('status','pending'); if(paymentError)throw paymentError
+-  const {error:bookingError}=await admin.from('bookings').update({payment_status:'paid',status:'confirmed',reservation_expires_at:null}).eq('reference',payment.booking_ref).eq('payment_status','pending'); if(bookingError)throw bookingError
+-
+-  await notifyBookingPaid(admin,paidBooking,reference)
+-  const {data:customer}=await admin.from('customers').select('id,user_id,name,email').eq('id',payment.customer_id).maybeSingle()
+-  if(customer?.user_id){const {data:existingNotification}=await admin.from('guest_notifications').select('id').eq('user_id',customer.user_id).eq('type','payment').contains('metadata',{payment_reference:reference}).limit(1).maybeSingle(); if(!existingNotification){const {data:roomType}=paidBooking.room_type_id?await admin.from('room_types').select('name').eq('id',paidBooking.room_type_id).maybeSingle():{data:null}; const {data:shortLet}=paidBooking.short_let_id?await admin.from('short_lets').select('name').eq('id',paidBooking.short_let_id).maybeSingle():{data:null}; if(customer.email){try{const email=paymentSuccessfulEmail({guestName:customer.name||'Guest',reference:paidBooking.reference,roomName:shortLet?.name||roomType?.name||'Short-let',checkIn:paidBooking.check_in,checkOut:paidBooking.check_out,total:Number(paidBooking.amount),paymentReference:reference});await enqueueBackgroundEmail({to:customer.email,subject:email.subject,html:email.html,text:email.text,include_account_cta:false,queueKey:`booking-payment-confirmation:${paidBooking.id}`})}catch(emailError){console.error('[paystack-webhook] confirmation email failed',emailError)}} await admin.from('guest_notifications').insert({user_id:customer.user_id,type:'payment',title:'Booking confirmed',body:`Payment for ${paidBooking.reference} was verified. Your reservation is now confirmed.`,href:'/account/bookings',metadata:{booking_id:paidBooking.id,reference:paidBooking.reference,payment_reference:reference,status:'confirmed'}})}}
+-  return NextResponse.json({received:true})
+- }catch(error){console.error('[paystack-webhook]',error);return NextResponse.json({error:'Webhook processing failed.'},{status:500})}
+ }
+diff --git a/middleware.ts b/middleware.ts
+index 43bf720..abc3437 100644
+--- a/middleware.ts
++++ b/middleware.ts
+@@ -25,12 +25,16 @@ function rateLimit(request: NextRequest) {
+   // several staff/guests behind one IP don't exhaust the shared API quota.
+   const isAvailabilityRead = method === 'GET' && (pathname === '/api/public/availability' || pathname === '/api/public/room-calendar')
+ 
++  // Paystack's webhook is server-to-server from a few shared IPs: it must never be throttled like a guest-facing payment call.
++  const isPaystackWebhook = method === 'POST' && pathname === '/api/paystack/webhook'
++
+   let limit = 120
+-  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname) || pathname === '/api/rate-limit-test') limit = 5
++  if (isPaystackWebhook) limit = 600
++  else if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname) || pathname === '/api/rate-limit-test') limit = 5
+   else if (isAvailabilityRead) limit = 600
+   else if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) limit = 40
+ 
+-  const bucket = isAvailabilityRead ? 'availability' : pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : pathname === '/api/rate-limit-test' ? 'rate-limit-test' : 'api'
++  const bucket = isPaystackWebhook ? 'paystack-webhook' : isAvailabilityRead ? 'availability' : pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : pathname === '/api/rate-limit-test' ? 'rate-limit-test' : 'api'
+   const key = `${ip}:${bucket}`
+   const now = Date.now()
+   const current = rateLimitStore.get(key)
+diff --git a/lib/payments/settleBooking.ts b/lib/payments/settleBooking.ts
+new file mode 100644
+index 0000000..2d23db0
+--- /dev/null
++++ b/lib/payments/settleBooking.ts
+@@ -0,0 +1,256 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++import { enqueueBackgroundEmail } from '../backgroundJobs'
++import { paymentSuccessfulEmail } from '../email/templates'
++import { isRoomServiceReference } from '../roomServicePayments'
++import { notifyBookingPaid } from '../staffEvents'
++
++/**
++ * One server-side place that turns a Paystack transaction into a paid booking.
++ * The Paystack callback (guest redirect), the webhook and any reconciliation job all call
++ * settleBookingPayment(), so it does not matter which one arrives first or whether both arrive.
++ *
++ * Rules:
++ *  - Nothing is trusted from the browser or the webhook body: the transaction is always verified
++ *    with Paystack's server-side verify API (status, exact amount in kobo, currency, booking).
++ *  - A payment is never marked failed because of a timeout, an HTTP error, an "abandoned" status
++ *    or a redirect that never arrived. Only a verified success changes state.
++ *  - The booking "unpaid -> paid" update is the single gate. Only the caller that wins it runs the
++ *    one-time side effects (hold cleanup, staff/guest notification, email), so repeats do nothing.
++ */
++
++const EXPECTED_CURRENCY = 'NGN'
++const PAYSTACK_TIMEOUT_MS = 8000
++
++export type PaystackVerification =
++  | { kind: 'success'; transaction: any }
++  | { kind: 'not_success'; status: string; transaction: any }
++  | { kind: 'unavailable'; detail: string }
++
++export type SettleBookingResult =
++  | { ok: true; state: 'settled' | 'already_paid'; booking: any }
++  | {
++      ok: false
++      reason:
++        | 'payment_not_found'
++        | 'room_service'
++        | 'booking_not_found'
++        | 'booking_mismatch'
++        | 'amount_mismatch'
++        | 'currency_mismatch'
++        | 'invalid_booking_state'
++        | 'duplicate_payment'
++        | 'not_success'
++        | 'unavailable'
++        | 'refunded'
++        | 'refund_failed'
++        | 'error'
++      /** True when retrying later can succeed (Paystack unreachable, database hiccup, refund failed). */
++      transient: boolean
++      status?: string
++      detail?: string
++    }
++
++const fail = (reason: Extract<SettleBookingResult, { ok: false }>['reason'], transient: boolean, extra?: { status?: string; detail?: string }): SettleBookingResult => ({ ok: false, reason, transient, ...extra })
++
++const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
++
++/** Ask Paystack for the real state of a transaction. Any HTTP/network problem is "unavailable", never "failed". */
++export async function verifyPaystackTransaction(secret: string, reference: string): Promise<PaystackVerification> {
++  const controller = new AbortController()
++  const timer = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS)
++  try {
++    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
++      headers: { Authorization: `Bearer ${secret}` },
++      cache: 'no-store',
++      signal: controller.signal,
++    })
++    const result = await response.json().catch(() => null)
++    if (!response.ok || !result?.status || !result?.data) return { kind: 'unavailable', detail: `HTTP ${response.status}: ${result?.message || 'no body'}` }
++    const status = String(result.data.status || '').toLowerCase()
++    if (status === 'success') return { kind: 'success', transaction: result.data }
++    return { kind: 'not_success', status: status || 'unknown', transaction: result.data }
++  } catch (error: any) {
++    return { kind: 'unavailable', detail: error?.name === 'AbortError' ? 'Paystack verify timed out' : String(error?.message || error) }
++  } finally {
++    clearTimeout(timer)
++  }
++}
++
++async function refundPaystackTransaction(secret: string, transactionId: unknown) {
++  if (!transactionId) return false
++  const controller = new AbortController()
++  const timer = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS)
++  try {
++    const response = await fetch('https://api.paystack.co/refund', {
++      method: 'POST',
++      headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
++      body: JSON.stringify({ transaction: transactionId }),
++      cache: 'no-store',
++      signal: controller.signal,
++    })
++    const result = await response.json().catch(() => null)
++    if (!response.ok || !result?.status) { console.error('[settle-booking] refund failed', result?.message || response.status); return false }
++    return true
++  } catch (error) {
++    console.error('[settle-booking] refund request failed', error)
++    return false
++  } finally {
++    clearTimeout(timer)
++  }
++}
++
++const BOOKING_COLUMNS = 'id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,status,payment_status,reservation_expires_at'
++
++/** Idempotent: make sure the payment row says success. Never touches a refunded payment. */
++async function ensurePaymentSuccess(admin: SupabaseClient, paymentId: string) {
++  const { error } = await admin.from('payments').update({ status: 'success', method: 'Paystack', date: lagosToday() }).eq('id', paymentId).in('status', ['pending', 'failed'])
++  return error
++}
++
++/** Only called by the single caller that flipped the booking from unpaid to paid. */
++async function runPaidSideEffects(admin: SupabaseClient, booking: any, paymentCustomerId: string | null, reference: string) {
++  if (booking.room_id) {
++    try {
++      const { error: holdError } = await admin.from('payment_holds').delete().eq('booking_id', booking.id)
++      if (holdError) console.error('[settle-booking] hold cleanup failed', holdError.message)
++      const { data: competitors, error: competitorError } = await admin.from('bookings').select('id')
++        .eq('room_id', booking.room_id).eq('status', 'pending').neq('payment_status', 'paid').neq('id', booking.id)
++        .lt('check_in', booking.check_out).gt('check_out', booking.check_in)
++      if (competitorError) console.error('[settle-booking] competitor lookup failed', competitorError.message)
++      const losers = (competitors ?? []).map((item: any) => item.id)
++      if (losers.length) await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).in('id', losers)
++    } catch (error) { console.error('[settle-booking] room cleanup failed', error) }
++  }
++
++  await notifyBookingPaid(admin, booking, reference)
++
++  try {
++    const { data: customer } = await admin.from('customers').select('id,user_id,name,email').eq('id', paymentCustomerId || booking.customer_id).maybeSingle()
++    if (!customer?.user_id) return
++    const { data: existingNotification } = await admin.from('guest_notifications').select('id').eq('user_id', customer.user_id).eq('type', 'payment').contains('metadata', { payment_reference: reference }).limit(1).maybeSingle()
++    if (existingNotification) return
++    const [{ data: roomType }, { data: shortLet }] = await Promise.all([
++      booking.room_type_id ? admin.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle() : Promise.resolve({ data: null }),
++      booking.short_let_id ? admin.from('short_lets').select('name').eq('id', booking.short_let_id).maybeSingle() : Promise.resolve({ data: null }),
++    ])
++    if (customer.email) {
++      try {
++        const email = paymentSuccessfulEmail({ guestName: customer.name || 'Guest', reference: booking.reference, roomName: (shortLet as any)?.name || (roomType as any)?.name || 'Short-let', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount), paymentReference: reference })
++        await enqueueBackgroundEmail({ to: customer.email, subject: email.subject, html: email.html, text: email.text, include_account_cta: false, queueKey: `booking-payment-confirmation:${booking.id}` })
++      } catch (emailError) { console.error('[settle-booking] confirmation email failed', emailError) }
++    }
++    await admin.from('guest_notifications').insert({ user_id: customer.user_id, type: 'payment', title: 'Booking confirmed', body: `Payment for ${booking.reference} was verified. Your reservation is now confirmed.`, href: '/account/bookings', metadata: { booking_id: booking.id, reference: booking.reference, payment_reference: reference, status: 'confirmed' } })
++  } catch (error) { console.error('[settle-booking] guest notification failed', error) }
++}
++
++/** Paid, but the room/short-let can no longer be given to this guest: money goes back, booking stays cancelled. */
++async function refundUnfulfillable(admin: SupabaseClient, secret: string, payment: any, booking: any, transaction: any, why: string): Promise<SettleBookingResult> {
++  console.warn('[settle-booking] verified payment cannot be fulfilled; refunding', { reference: payment.reference, bookingId: booking.id, why })
++  const refunded = await refundPaystackTransaction(secret, transaction?.id)
++  if (!refunded) return fail('refund_failed', true, { detail: why })
++  await admin.from('payments').update({ status: 'failed' }).eq('id', payment.id).in('status', ['pending', 'failed'])
++  await admin.from('bookings').update({ status: 'cancelled', reservation_expires_at: null }).eq('id', booking.id).eq('status', 'pending').neq('payment_status', 'paid')
++  await admin.from('payment_holds').delete().eq('booking_id', booking.id)
++  return fail('refunded', false, { detail: why })
++}
++
++/**
++ * Verify a Paystack transaction and, if (and only if) it is a real, exactly-matching success, make the booking paid.
++ * Safe to call any number of times, from any number of concurrent requests.
++ */
++export async function settleBookingPayment(admin: SupabaseClient, secret: string, reference: string): Promise<SettleBookingResult> {
++  try {
++    let { data: payment, error: paymentError } = await admin.from('payments').select('id,reference,booking_ref,amount,customer_id,status').eq('reference', reference).maybeSingle()
++    if (paymentError) return fail('error', true, { detail: paymentError.message })
++    // Room-service payments are settled by their own (already atomic) logic.
++    if (payment && isRoomServiceReference(payment.booking_ref)) return fail('room_service', false)
++
++    const verification = await verifyPaystackTransaction(secret, reference)
++    if (verification.kind === 'unavailable') return fail('unavailable', true, { detail: verification.detail })
++    if (verification.kind === 'not_success') return fail('not_success', false, { status: verification.status })
++    const transaction = verification.transaction
++
++    // A guest who started payment twice has only the newest reference on the payment row.
++    // Paystack metadata (written by our server at initialization) tells us which booking this payment is for.
++    const metadataBookingRef = String(transaction?.metadata?.booking_reference || '').trim()
++    if (!payment) {
++      if (!metadataBookingRef) return fail('payment_not_found', false)
++      const { data: byBooking, error: byBookingError } = await admin.from('payments').select('id,reference,booking_ref,amount,customer_id,status').eq('booking_ref', metadataBookingRef).limit(1).maybeSingle()
++      if (byBookingError) return fail('error', true, { detail: byBookingError.message })
++      if (!byBooking) return fail('payment_not_found', false)
++      if (byBooking.status === 'success') return fail('duplicate_payment', false, { detail: `booking ${metadataBookingRef} is already paid under ${byBooking.reference}` })
++      const { error: rebindError } = await admin.from('payments').update({ reference }).eq('id', byBooking.id).in('status', ['pending', 'failed'])
++      if (rebindError) return fail('error', true, { detail: rebindError.message })
++      payment = { ...byBooking, reference }
++    }
++    if (!payment) return fail('payment_not_found', false)
++
++    if (metadataBookingRef && metadataBookingRef !== payment.booking_ref) return fail('booking_mismatch', false)
++    if (Number(transaction.amount) !== Math.round(Number(payment.amount) * 100)) return fail('amount_mismatch', false, { detail: `paid ${transaction.amount}, expected ${Math.round(Number(payment.amount) * 100)}` })
++    if (String(transaction.currency || '').toUpperCase() !== EXPECTED_CURRENCY) return fail('currency_mismatch', false, { detail: String(transaction.currency || '') })
++
++    const { data: booking, error: bookingError } = await admin.from('bookings').select(BOOKING_COLUMNS).eq('reference', payment.booking_ref).maybeSingle()
++    if (bookingError) return fail('error', true, { detail: bookingError.message })
++    if (!booking) return fail('booking_not_found', false)
++
++    // Already processed (by the webhook, the callback, an admin, or an earlier retry): make sure the payment row agrees and stop.
++    if (booking.payment_status === 'paid') {
++      const error = await ensurePaymentSuccess(admin, payment.id)
++      if (error) return fail('error', true, { detail: error.message })
++      return { ok: true, state: 'already_paid', booking }
++    }
++
++    if (!booking.room_id && !booking.short_let_id) return refundUnfulfillable(admin, secret, payment, booking, transaction, 'booking has no room or short-let')
++    if (!['pending', 'cancelled', 'confirmed'].includes(String(booking.status))) return fail('invalid_booking_state', false, { detail: String(booking.status) })
++
++    // Is the reservation window still held for this guest?
++    let holdActive = false
++    if (booking.status === 'pending') {
++      if (booking.short_let_id) {
++        holdActive = !!booking.reservation_expires_at && new Date(booking.reservation_expires_at).getTime() > Date.now()
++      } else {
++        const { data: hold, error: holdError } = await admin.from('payment_holds').select('room_id,expires_at').eq('booking_id', booking.id).maybeSingle()
++        if (holdError) return fail('error', true, { detail: holdError.message })
++        holdActive = hold?.room_id === booking.room_id && !!hold?.expires_at && new Date(hold.expires_at).getTime() > Date.now()
++      }
++    }
++
++    // Late payment (hold expired, or booking was released): a verified payment still confirms the booking
++    // if nobody else has taken the room/short-let for these dates; otherwise the guest is refunded.
++    if (!holdActive) {
++      const resourceColumn = booking.short_let_id ? 'short_let_id' : 'room_id'
++      const resourceId = booking.short_let_id || booking.room_id
++      const { data: clash, error: clashError } = await admin.from('bookings').select('id').eq(resourceColumn, resourceId).neq('id', booking.id)
++        .eq('payment_status', 'paid').in('status', ['confirmed', 'checked_in']).lt('check_in', booking.check_out).gt('check_out', booking.check_in).limit(1)
++      if (clashError) return fail('error', true, { detail: clashError.message })
++      if (clash?.length) return refundUnfulfillable(admin, secret, payment, booking, transaction, 'dates already taken by another paid booking')
++      if (booking.room_id) {
++        const { data: otherHold, error: otherHoldError } = await admin.from('payment_holds').select('id').eq('room_id', booking.room_id).neq('booking_id', booking.id)
++          .gt('expires_at', new Date().toISOString()).lt('check_in', booking.check_out).gt('check_out', booking.check_in).limit(1)
++        if (otherHoldError) return fail('error', true, { detail: otherHoldError.message })
++        if (otherHold?.length) return refundUnfulfillable(admin, secret, payment, booking, transaction, 'room is being held by another guest')
++      }
++    }
++
++    // The single gate: only one concurrent caller can move this booking from unpaid to paid.
++    const { data: flipped, error: flipError } = await admin.from('bookings')
++      .update({ payment_status: 'paid', status: 'confirmed', reservation_expires_at: null })
++      .eq('id', booking.id).neq('payment_status', 'paid').in('status', ['pending', 'cancelled', 'confirmed'])
++      .select(BOOKING_COLUMNS).maybeSingle()
++    if (flipError) {
++      // 23P01 = the database's own overlap protection refused the confirmation: someone else owns those dates.
++      if ((flipError as any).code === '23P01') return refundUnfulfillable(admin, secret, payment, booking, transaction, 'database overlap protection')
++      return fail('error', true, { detail: flipError.message })
++    }
++
++    const paymentUpdateError = await ensurePaymentSuccess(admin, payment.id)
++    if (paymentUpdateError) return fail('error', true, { detail: paymentUpdateError.message })
++
++    if (!flipped) return { ok: true, state: 'already_paid', booking } // another request won the gate a moment ago
++    await runPaidSideEffects(admin, flipped, payment.customer_id ?? null, reference)
++    return { ok: true, state: 'settled', booking: flipped }
++  } catch (error: any) {
++    console.error('[settle-booking] unexpected error', error)
++    return fail('error', true, { detail: String(error?.message || error) })
++  }
++}

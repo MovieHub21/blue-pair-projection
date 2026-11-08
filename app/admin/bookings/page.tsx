@@ -6,7 +6,7 @@ import { pushToast } from '../../../components/ui/Toast'
 import { naira, formatDate, nightsBetween, todayISO, addDaysISO } from '../../../lib/format'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import Modal from '../../../components/ui/Modal'
-import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Plus, Check, ChevronDown } from 'lucide-react'
+import { Search, UserRoundPlus, CreditCard, Banknote, Loader2, Check, ChevronDown } from 'lucide-react'
 import { sendGuestTransactionalEmail } from '../../../components/GuestEmailWatcher'
 import { useAuth } from '../../../lib/useAuth'
 import { supabase } from '../../../lib/supabase/client'
@@ -15,19 +15,11 @@ import { mapBooking, mapCustomer, mapRoom, mapRoomType } from '../../../lib/mapp
 import type { Booking, Customer, Room, RoomType, ShortLet } from '../../../data/mock'
 
 type PaymentMethod = 'Transfer' | 'POS'
-type ExtraService = { id: string; name: string; price: number }
 type LiveAvailabilityRoom = { id: string; room_type_id: string; room_number: string; name?: string | null; floor?: string | null; guest_status: string }
-
-const EXTRA_SERVICES: ExtraService[] = [
-  { id: 'laundry', name: 'Laundry Service', price: 5000 },
-  { id: 'feeding', name: 'Full stay Feeding', price: 17000 },
-  { id: 'gym', name: 'Gym House', price: 1500 },
-  { id: 'game', name: 'Game House', price: 5000 },
-]
 
 const BOOKINGS_PAGE_SIZE = 50
 
-const emptyWalkIn = { name: '', email: '', phone: '', roomTypeId: '', roomId: '', checkIn: todayISO(), checkOut: addDaysISO(1), adults: 1, children: 0, specialRequests: '', extraServices: [] as ExtraService[] }
+const emptyWalkIn = { name: '', email: '', phone: '', roomTypeId: '', roomId: '', checkIn: todayISO(), checkOut: addDaysISO(1), adults: 1, children: 0, specialRequests: '' }
 
 export default function BookingManagement() {
   const auth = useAuth()
@@ -158,14 +150,12 @@ export default function BookingManagement() {
   const walkInRoom = roomTypes.find(r => r.id === walkIn.roomTypeId)
   const walkInNights = walkInRoom ? nightsBetween(walkIn.checkIn, walkIn.checkOut) : 0
   const walkInSubtotal = (walkInRoom?.price ?? 0) * walkInNights
-  const walkInExtrasTotal = walkIn.extraServices.reduce((sum, item) => sum + Number(item.price), 0)
-  const walkInTax = Math.round((walkInSubtotal + walkInExtrasTotal) * 0.075)
-  const walkInTotal = walkInSubtotal + walkInExtrasTotal + walkInTax
+  const walkInTax = Math.round(walkInSubtotal * 0.075)
+  const walkInTotal = walkInSubtotal + walkInTax
   const walkInAvailableRooms = (roomTypeId: string) => { const liveIds = new Set(walkInAvailability.filter(room => room.room_type_id === roomTypeId).map(room => room.id)); return rooms.filter(room => room.roomTypeId === roomTypeId && liveIds.has(room.id)) }
 
   function selectWalkInType(roomTypeId: string) { setWalkIn(current => ({ ...current, roomTypeId, roomId: current.roomTypeId === roomTypeId ? current.roomId : '' })); setExpandedWalkInType(current => current === roomTypeId ? null : roomTypeId); setError(null) }
   function selectWalkInRoom(roomTypeId: string, roomId: string) { setWalkIn(current => ({ ...current, roomTypeId, roomId })); setExpandedWalkInType(roomTypeId); setError(null) }
-  function toggleWalkInExtra(service: ExtraService) { setWalkIn(current => ({ ...current, extraServices: current.extraServices.some(x => x.id === service.id) ? current.extraServices.filter(x => x.id !== service.id) : [...current.extraServices, service] })) }
   function openWalkIn() { setError(null); const firstType = roomTypes.find(r => r.active)?.id ?? ''; setWalkIn({ ...emptyWalkIn, roomTypeId: firstType, roomId: '' }); setExpandedWalkInType(firstType || null); setWalkInAvailability([]); setShowWalkIn(true) }
   function openBooking(booking: Booking) { setActive(booking); setError(null) }
 
@@ -370,9 +360,6 @@ export default function BookingManagement() {
                 </div>
               </div>
             )}
-            <div className="rounded-xl bg-navy-50 p-3 text-xs text-navy-500">
-              Extra services are selected during booking creation. The booking details view does not edit the booking total after creation.
-            </div>
           </div>
         )}
       </Modal>
@@ -473,29 +460,6 @@ export default function BookingManagement() {
             </div>
           </div>
           <div>
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <div>
-                <label className="field-label mb-0">Extra services</label>
-                <p className="text-[11px] text-navy-400 mt-1">Choose any services the guest wants before creating the booking.</p>
-              </div>
-              <span className="text-xs font-semibold">{naira(walkInExtrasTotal)}</span>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {EXTRA_SERVICES.map(service => {
-                const selected = walkIn.extraServices.some(x => x.id === service.id)
-                return (
-                  <button key={service.id} type="button" onClick={() => toggleWalkInExtra(service)} className={`rounded-xl border p-3 flex items-center gap-3 text-left transition ${selected ? 'border-navy-950 bg-navy-950 text-white' : 'border-black/10 bg-white hover:border-black/20'}`}>
-                    <span className="flex-1">
-                      <b className="block text-xs">{service.name}</b>
-                      <span className={`text-[10px] ${selected ? 'text-white/60' : 'text-navy-400'}`}>{naira(service.price)}</span>
-                    </span>
-                    {selected ? <Check size={15}/> : <Plus size={15} className="text-navy-400"/>}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          <div>
             <label className="field-label">Special requests</label>
             <textarea value={walkIn.specialRequests} onChange={e => setWalkIn({ ...walkIn, specialRequests: e.target.value })} className="field-input min-h-24" placeholder="Late arrival, room preference, extra towels, etc." />
           </div>
@@ -504,12 +468,6 @@ export default function BookingManagement() {
               <span className="text-navy-500">{walkInNights} night{walkInNights === 1 ? '' : 's'} × {walkIn.roomId ? `Room ${rooms.find(r => r.id === walkIn.roomId)?.roomNumber}` : 'room'}</span>
               <span>{naira(walkInSubtotal)}</span>
             </div>
-            {!!walkInExtrasTotal && (
-              <div className="flex justify-between text-sm">
-                <span className="text-navy-500">Extra services</span>
-                <span>{naira(walkInExtrasTotal)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-sm">
               <span className="text-navy-500">Room rate</span>
               <span>{naira(walkInRoom?.price ?? 0)}/night</span>

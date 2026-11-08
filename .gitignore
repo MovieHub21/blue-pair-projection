@@ -13,6 +13,7 @@ supabase/migrations/*
 !supabase/migrations/20261107160000_seed_november_december_events.sql
 !supabase/migrations/20261107170000_newsletter_audience_mode.sql
 !supabase/migrations/20261108103000_bookings_full_replica_identity.sql
+!supabase/migrations/20261108143000_annex_order_payment_settlement.sql
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*

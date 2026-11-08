@@ -1,37 +1,72 @@
 import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
-import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
-import { paymentSuccessfulEmail } from '../../../../lib/email/templates'
-import { isRoomServiceReference, settleRoomServicePayment } from '../../../../lib/roomServicePayments'
-import { notifyBookingPaid } from '../../../../lib/staffEvents'
+import { settleRoomServicePayment } from '../../../../lib/roomServicePayments'
+import { settleBookingPayment, verifyPaystackTransaction } from '../../../../lib/payments/settleBooking'
+import { settleAnnexCheckout } from '../../../../lib/payments/settleAnnexCheckout'
 
-function overlaps(start: string, end: string, bookingStart: string, bookingEnd: string) { return start < bookingEnd && end > bookingStart }
-async function refundPaystackTransaction(secret: string, transactionId: unknown) { if (!transactionId) return false; try { const response = await fetch('https://api.paystack.co/refund',{method:'POST',headers:{Authorization:`Bearer ${secret}`,'Content-Type':'application/json'},body:JSON.stringify({transaction:transactionId}),cache:'no-store'}); const result=await response.json().catch(()=>null); if(!response.ok||!result?.status){console.error('[paystack-webhook] refund failed',result?.message||response.status);return false} return true } catch(error){console.error('[paystack-webhook] refund request failed',error);return false} }
+export const dynamic = 'force-dynamic'
 
+function validSignature(rawBody: string, signature: string, secret: string) {
+  if (!signature) return false
+  const expected = crypto.createHmac('sha512', secret).update(rawBody).digest('hex')
+  const a = Buffer.from(signature.trim().toLowerCase())
+  const b = Buffer.from(expected)
+  return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
+
+/**
+ * Paystack webhook. This is the primary way a payment is confirmed: it works even if the guest never returns
+ * to the site. Status codes matter because Paystack retries any non-2xx delivery (every few minutes, then hourly):
+ *  - 401: bad signature (never retried successfully, by design)
+ *  - 5xx: temporary problem (Paystack unreachable, database error, refund not yet possible) -> Paystack retries
+ *  - 200: handled, or permanently not ours / not actionable (logged)
+ */
 export async function POST(request: Request) {
- const secret=process.env.PAYSTACK_SECRET_KEY; if(!secret)return NextResponse.json({error:'Paystack is not configured.'},{status:503})
- const rawBody=await request.text(); const signature=request.headers.get('x-paystack-signature')||''; const expected=crypto.createHmac('sha512',secret).update(rawBody).digest('hex'); if(!signature||signature.length!==expected.length||!crypto.timingSafeEqual(Buffer.from(signature),Buffer.from(expected)))return NextResponse.json({error:'Invalid signature.'},{status:401})
- try{
-  const event=JSON.parse(rawBody); if(event?.event!=='charge.success'||event?.data?.status!=='success')return NextResponse.json({received:true}); const reference=String(event.data.reference||'').trim(); if(!reference)return NextResponse.json({received:true})
-  const admin=createSupabaseAdminClient(); const {data:payment}=await admin.from('payments').select('id,booking_ref,amount,status,customer_id').eq('reference',reference).maybeSingle(); if(!payment)return NextResponse.json({received:true}); if(Number(event.data.amount)!==Math.round(Number(payment.amount)*100)){console.error('[paystack-webhook] amount mismatch',reference);return NextResponse.json({received:true})}
-  if(isRoomServiceReference(payment.booking_ref)){await settleRoomServicePayment(admin,reference,Number(event.data.amount));return NextResponse.json({received:true})}
-  const {data:paidBooking}=await admin.from('bookings').select('id,reference,customer_id,room_id,room_type_id,short_let_id,check_in,check_out,amount,status,payment_status,reservation_expires_at').eq('reference',payment.booking_ref).maybeSingle(); if(!paidBooking)return NextResponse.json({received:true})
-  if(!paidBooking.room_id && !paidBooking.short_let_id){await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:'failed'}).eq('id',payment.id);return NextResponse.json({received:true})}
-  if(paidBooking.payment_status==='paid'&&paidBooking.status==='confirmed')return NextResponse.json({received:true})
-  if(paidBooking.short_let_id){
-   if(!paidBooking.reservation_expires_at || new Date(paidBooking.reservation_expires_at).getTime()<=Date.now()){console.warn('[paystack-webhook] short-let reservation expired; refunding',{reference,bookingId:paidBooking.id});const refunded=await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:refunded?'failed':'pending'}).eq('id',payment.id);return NextResponse.json({received:true})}
-  } else {
-   const {data:paymentHold}=await admin.from('payment_holds').select('id,room_id,check_in,check_out,expires_at').eq('booking_id',paidBooking.id).maybeSingle()
-   const ownsActiveHold=paymentHold?.room_id===paidBooking.room_id&&paymentHold?.expires_at&&new Date(paymentHold.expires_at).getTime()>Date.now()
-   if(!ownsActiveHold){console.warn('[paystack-webhook] payment arrived without active date-aware hold; refunding',{reference,bookingId:paidBooking.id,roomId:paidBooking.room_id});const refunded=await refundPaystackTransaction(secret,event.data.id);await admin.from('payments').update({status:refunded?'failed':'pending'}).eq('id',payment.id);return NextResponse.json({received:true})}
-  }
-  const paidOn=new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Lagos'}); const {error:paymentError}=await admin.from('payments').update({status:'success',method:'Paystack',date:paidOn}).eq('id',payment.id).eq('status','pending'); if(paymentError)throw paymentError
-  const {error:bookingError}=await admin.from('bookings').update({payment_status:'paid',status:'confirmed',reservation_expires_at:null}).eq('reference',payment.booking_ref).eq('payment_status','pending'); if(bookingError)throw bookingError
+  const secret = process.env.PAYSTACK_SECRET_KEY
+  if (!secret) return NextResponse.json({ error: 'Paystack is not configured.' }, { status: 503 })
 
-  await notifyBookingPaid(admin,paidBooking,reference)
-  const {data:customer}=await admin.from('customers').select('id,user_id,name,email').eq('id',payment.customer_id).maybeSingle()
-  if(customer?.user_id){const {data:existingNotification}=await admin.from('guest_notifications').select('id').eq('user_id',customer.user_id).eq('type','payment').contains('metadata',{payment_reference:reference}).limit(1).maybeSingle(); if(!existingNotification){const {data:roomType}=paidBooking.room_type_id?await admin.from('room_types').select('name').eq('id',paidBooking.room_type_id).maybeSingle():{data:null}; const {data:shortLet}=paidBooking.short_let_id?await admin.from('short_lets').select('name').eq('id',paidBooking.short_let_id).maybeSingle():{data:null}; if(customer.email){try{const email=paymentSuccessfulEmail({guestName:customer.name||'Guest',reference:paidBooking.reference,roomName:shortLet?.name||roomType?.name||'Short-let',checkIn:paidBooking.check_in,checkOut:paidBooking.check_out,total:Number(paidBooking.amount),paymentReference:reference});await enqueueBackgroundEmail({to:customer.email,subject:email.subject,html:email.html,text:email.text,include_account_cta:false,queueKey:`booking-payment-confirmation:${paidBooking.id}`})}catch(emailError){console.error('[paystack-webhook] confirmation email failed',emailError)}} await admin.from('guest_notifications').insert({user_id:customer.user_id,type:'payment',title:'Booking confirmed',body:`Payment for ${paidBooking.reference} was verified. Your reservation is now confirmed.`,href:'/account/bookings',metadata:{booking_id:paidBooking.id,reference:paidBooking.reference,payment_reference:reference,status:'confirmed'}})}}
-  return NextResponse.json({received:true})
- }catch(error){console.error('[paystack-webhook]',error);return NextResponse.json({error:'Webhook processing failed.'},{status:500})}
+  // The signature is computed over the exact raw bytes, so read the text body before any JSON parsing.
+  const rawBody = await request.text()
+  const signature = request.headers.get('x-paystack-signature') || request.headers.get('paystack-signature') || ''
+  if (!validSignature(rawBody, signature, secret)) return NextResponse.json({ error: 'Invalid signature.' }, { status: 401 })
+
+  let event: any
+  try { event = JSON.parse(rawBody) } catch { return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 }) }
+  if (event?.event !== 'charge.success') return NextResponse.json({ received: true })
+
+  const reference = String(event?.data?.reference || '').trim()
+  if (!reference) return NextResponse.json({ received: true })
+
+  try {
+    const admin = createSupabaseAdminClient()
+    if (reference.startsWith('ANXPAY-')) {
+      const annex = await settleAnnexCheckout(admin, secret, reference)
+      if (annex.ok) return NextResponse.json({ received: true, state: annex.state })
+      console.error('[paystack-webhook] Annex order not settled', { reference, reason: annex.reason })
+      return NextResponse.json({ received: !annex.transient, settled: false, reason: annex.reason }, { status: annex.transient ? 503 : 200 })
+    }
+
+    const result = await settleBookingPayment(admin, secret, reference)
+    if (result.ok === true) return NextResponse.json({ received: true, state: result.state })
+
+    if (result.reason === 'room_service') {
+      const verification = await verifyPaystackTransaction(secret, reference)
+      if (verification.kind === 'unavailable') { console.error('[paystack-webhook] room-service verify unavailable', { reference, detail: verification.detail }); return NextResponse.json({ error: 'Verification unavailable.' }, { status: 503 }) }
+      if (verification.kind !== 'success') { console.error('[paystack-webhook] room-service charge.success not confirmed by verify', { reference, status: verification.status }); return NextResponse.json({ error: 'Not yet confirmed.' }, { status: 503 }) }
+      if (String(verification.transaction.currency || '').toUpperCase() !== 'NGN') { console.error('[paystack-webhook] room-service currency mismatch', { reference }); return NextResponse.json({ received: true, settled: false, reason: 'currency_mismatch' }) }
+      const settled = await settleRoomServicePayment(admin, reference, Number(verification.transaction.amount))
+      if (settled.ok === true) return NextResponse.json({ received: true, state: settled.alreadyPaid ? 'already_paid' : 'settled' })
+      console.error('[paystack-webhook] room-service not settled', { reference, reason: settled.reason })
+      return NextResponse.json({ received: true, settled: false, reason: settled.reason }, { status: settled.reason === 'update_failed' ? 500 : 200 })
+    }
+
+    console.error('[paystack-webhook] booking payment not settled', { reference, reason: result.reason, status: result.status, detail: result.detail })
+    // Retry when it can still succeed: Paystack/database trouble, or Paystack says charge.success but verify has not caught up.
+    const retry = result.transient || result.reason === 'not_success'
+    return NextResponse.json({ received: !retry, settled: false, reason: result.reason }, { status: retry ? 500 : 200 })
+  } catch (error) {
+    console.error('[paystack-webhook]', error)
+    return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 })
+  }
 }

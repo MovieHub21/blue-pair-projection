@@ -25,12 +25,16 @@ function rateLimit(request: NextRequest) {
   // several staff/guests behind one IP don't exhaust the shared API quota.
   const isAvailabilityRead = method === 'GET' && (pathname === '/api/public/availability' || pathname === '/api/public/room-calendar')
 
+  // Paystack's webhook is server-to-server from a few shared IPs: it must never be throttled like a guest-facing payment call.
+  const isPaystackWebhook = method === 'POST' && pathname === '/api/paystack/webhook'
+
   let limit = 120
-  if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname) || pathname === '/api/rate-limit-test') limit = 5
+  if (isPaystackWebhook) limit = 600
+  else if (/^\/api\/(auth\/|paystack\/|admin\/paystack\/)/.test(pathname) || pathname === '/api/rate-limit-test') limit = 5
   else if (isAvailabilityRead) limit = 600
   else if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) limit = 40
 
-  const bucket = isAvailabilityRead ? 'availability' : pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : pathname === '/api/rate-limit-test' ? 'rate-limit-test' : 'api'
+  const bucket = isPaystackWebhook ? 'paystack-webhook' : isAvailabilityRead ? 'availability' : pathname.startsWith('/api/auth/') ? 'auth' : pathname.startsWith('/api/paystack') || pathname.startsWith('/api/admin/paystack') ? 'payment' : pathname === '/api/rate-limit-test' ? 'rate-limit-test' : 'api'
   const key = `${ip}:${bucket}`
   const now = Date.now()
   const current = rateLimitStore.get(key)

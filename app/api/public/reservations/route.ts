@@ -23,9 +23,9 @@ export async function POST(request: Request) {
     }
     log('AUTH_OK', { userId: user.id })
 
-    const body = await readSanitizedJson<{ roomTypeId?: unknown; roomId?: unknown; checkIn?: unknown; checkOut?: unknown; adults?: unknown; children?: unknown; amount?: unknown; specialRequests?: unknown; extraServices?: unknown }>(request)
-    const { roomTypeId, roomId, checkIn, checkOut, adults = 2, children = 0, amount, specialRequests, extraServices } = body ?? {}
-    log('REQUEST_PARSED', { roomTypeId, roomId, checkIn, checkOut, adults, children, hasAmount: amount != null, extraServiceCount: Array.isArray(extraServices) ? extraServices.length : 0 })
+    const body = await readSanitizedJson<{ roomTypeId?: unknown; roomId?: unknown; checkIn?: unknown; checkOut?: unknown; adults?: unknown; children?: unknown; specialRequests?: unknown }>(request)
+    const { roomTypeId, roomId, checkIn, checkOut, adults = 2, children = 0, specialRequests } = body ?? {}
+    log('REQUEST_PARSED', { roomTypeId, roomId, checkIn, checkOut, adults, children })
 
     const today = todayLagosISO()
     if (!roomTypeId || !validDate(checkIn) || !validDate(checkOut) || checkIn < today || checkIn >= checkOut || checkOut <= today) {
@@ -78,13 +78,16 @@ export async function POST(request: Request) {
     }
 
     const nights = Math.max(1, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000))
-    log('CLAIMING_ROOM_RESERVATION', { roomId, roomTypeId, checkIn, checkOut, nights })
+    const subtotal = Number(roomType.price) * nights
+    const tax = Math.round(subtotal * 0.075)
+    const amount = subtotal + tax
+    log('CLAIMING_ROOM_RESERVATION', { roomId, roomTypeId, checkIn, checkOut, nights, amount })
     const { data: booking, error: claimError } = await db.rpc('claim_room_reservation', {
       p_customer_id: customerId, p_room_type_id: String(roomTypeId), p_room_id: roomId ? String(roomId) : null,
       p_check_in: checkIn, p_check_out: checkOut, p_adults: Number(adults) || 2, p_children: Number(children) || 0,
-      p_amount: Number(amount) || Number(roomType.price) * nights,
+      p_amount: amount,
       p_special_requests: typeof specialRequests === 'string' ? specialRequests.trim() || null : null,
-      p_extra_services: Array.isArray(extraServices) ? extraServices : [],
+      p_extra_services: [],
     })
     if (claimError) {
       log('CLAIM_ROOM_RESERVATION_FAILED', { message: claimError.message, code: claimError.code, details: claimError.details, hint: claimError.hint })
