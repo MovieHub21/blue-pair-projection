@@ -39,14 +39,19 @@ export async function GET(request: Request) {
       else if (booking.status === 'checked_out' && diffDays(booking.check_out, today) === 1) event = 'review_request'
       if (!event) continue
 
-      const dedupeKey = `${event}:${booking.id}`
-      const { data: existing } = await supabase.from('email_logs').select('id').eq('dedupe_key', dedupeKey).maybeSingle()
-      if (existing) { skipped++; continue }
-
       const customer = (await supabase.from('customers').select('name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
       const roomType = (await supabase.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle()).data
       const recipient = String(customer?.email || '').trim().toLowerCase()
       if (!recipient) continue
+
+      // Review mail is a one-time request per guest, even if they have more
+      // than one booking that checks out later. Other lifecycle emails remain
+      // deduplicated per booking and event.
+      const dedupeKey = event === 'review_request'
+        ? `review_request:customer:${customer?.id || recipient}`
+        : `${event}:${booking.id}`
+      const { data: existing } = await supabase.from('email_logs').select('id').eq('dedupe_key', dedupeKey).maybeSingle()
+      if (existing) { skipped++; continue }
 
       const base = { guestName: customer?.name || 'Guest', reference: booking.reference, roomName: roomType?.name || 'Your reserved room', checkIn: booking.check_in, checkOut: booking.check_out, total: Number(booking.amount || 0) }
       const email = event === 'pre_arrival'

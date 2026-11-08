@@ -72,9 +72,11 @@ export async function getRooms() {
   const { data } = await db.from('rooms').select('*').order('room_number')
   return (data ?? []).map(mapRoom)
 }
-export async function getRoomsByType(roomTypeId: string) {
+export async function getRoomsByType(roomTypeId: string, availableOnly = false) {
   const db = createSupabasePublicClient()
-  const { data } = await db.from('rooms').select('*').eq('room_type_id', roomTypeId).order('room_number')
+  let query = db.from('rooms').select('*').eq('room_type_id', roomTypeId)
+  if (availableOnly) query = query.eq('status', 'available')
+  const { data } = await query.order('room_number')
   return data ?? []
 }
 export async function getRoomBySlug(roomTypeId: string, slug: string) {

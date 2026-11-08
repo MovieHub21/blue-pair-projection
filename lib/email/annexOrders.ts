@@ -3,7 +3,7 @@ import { sendResendEmail } from './resend'
 import { resolveDepartmentStaff, resolveManagement } from '../staffRecipients'
 import { annexOrderStatusEmail, annexOrderStaffEmail, type AnnexOrderStatus } from './templates'
 
-const CUSTOMER_EMAIL_STATUSES = new Set<AnnexOrderStatus>(['pending', 'accepted', 'ready', 'delivered', 'cancelled'])
+const CUSTOMER_EMAIL_STATUSES = new Set<AnnexOrderStatus>(['pending', 'ready', 'delivered', 'cancelled'])
 
 export type AnnexOrderRecord = {
   id: string

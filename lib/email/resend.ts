@@ -2,6 +2,7 @@ import { SITE_URL } from '../siteConfig'
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
 const FALLBACK_LOGO_URL = 'https://raw.githubusercontent.com/MovieHub21/blue-pair-projection/main/public/icon-192.png'
+const BRAND_NAME = 'Blue Pair Signature Crown Hotel and Suite'
 
 function requiredEnv(name: string) {
   const value = process.env[name]
@@ -9,10 +10,16 @@ function requiredEnv(name: string) {
   return value
 }
 
+function brandedSender() {
+  const configuredSender = requiredEnv('RESEND_FROM_EMAIL').trim()
+  const address = configuredSender.match(/<([^<>]+)>/)?.[1]?.trim() || configuredSender
+  return `${BRAND_NAME} <${address}>`
+}
+
 function addBrandLogo(html: string) {
   const configuredSite = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '')
   const logoUrl = configuredSite ? `${configuredSite}/icon-192.png` : FALLBACK_LOGO_URL
-  const logo = `<div style="text-align:center;padding:0 0 20px"><img src="${logoUrl}" width="76" height="76" alt="Blue Pair Signature" style="display:inline-block;width:76px;height:76px;border-radius:16px;object-fit:cover;border:0" /></div>`
+  const logo = `<div style="text-align:center;padding:0 0 20px"><img src="${logoUrl}" width="76" height="76" alt="Blue Pair Signature Crown Hotel and Suite" style="display:inline-block;width:76px;height:76px;border-radius:16px;object-fit:cover;border:0" /></div>`
   return html.replace(/(<body[^>]*>)/i, `$1${logo}`)
 }
 
@@ -31,7 +38,7 @@ function addBookingAccountCta(html: string, text: string | undefined, subject: s
 
 export async function sendResendEmail(input: { to: string; subject: string; html: string; text?: string; includeAccountCta?: boolean; idempotencyKey?: string }) {
   const bookingAccountCta = addBookingAccountCta(input.html, input.text, input.subject, input.includeAccountCta !== false)
-  const response = await fetch(RESEND_API_URL, { method: 'POST', headers: { Authorization: `Bearer ${requiredEnv('RESEND_API_KEY')}`, 'Content-Type': 'application/json', ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}) }, body: JSON.stringify({ from: requiredEnv('RESEND_FROM_EMAIL'), to: [input.to], subject: input.subject, html: addBrandLogo(bookingAccountCta.html), ...(bookingAccountCta.text ? { text: bookingAccountCta.text } : {}) }), cache: 'no-store' })
+  const response = await fetch(RESEND_API_URL, { method: 'POST', headers: { Authorization: `Bearer ${requiredEnv('RESEND_API_KEY')}`, 'Content-Type': 'application/json', ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}) }, body: JSON.stringify({ from: brandedSender(), to: [input.to], subject: input.subject, html: addBrandLogo(bookingAccountCta.html), ...(bookingAccountCta.text ? { text: bookingAccountCta.text } : {}) }), cache: 'no-store' })
   const body = await response.json().catch(() => null)
   if (!response.ok) { console.error('[resend] send failed', response.status, body); throw new Error('Unable to send email') }
   return body as { id?: string }

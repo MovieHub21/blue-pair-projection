@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { supabase } from '../lib/supabase/client'
 
 export type EventName =
-  | 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified'
+  | 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled'
   | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder'
   | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status'
   | 'support_acknowledged' | 'support_status'
@@ -40,17 +40,6 @@ export default function GuestEmailWatcher() {
           void sendGuestTransactionalEmail('checkin_welcome', { bookingId: current.id })
         } else if (old.status !== 'checked_out' && current.status === 'checked_out') {
           void sendGuestTransactionalEmail('checkout_thank_you', { bookingId: current.id })
-        } else {
-          const changed =
-            old.check_in !== current.check_in ||
-            old.check_out !== current.check_out ||
-            old.room_type_id !== current.room_type_id ||
-            old.room_id !== current.room_id ||
-            old.adults !== current.adults ||
-            old.children !== current.children ||
-            old.amount !== current.amount ||
-            old.special_requests !== current.special_requests
-          if (changed) void sendGuestTransactionalEmail('booking_modified', { bookingId: current.id })
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_requests' }, (payload) => {

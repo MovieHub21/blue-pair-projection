@@ -18,15 +18,14 @@ h1, h2, h3, h4 { @apply font-display; }
   .btn:active { transform: translateY(1px) scale(.975); transition-duration: 100ms; }
   .btn:focus-visible { outline: 2px solid #c79a3e; outline-offset: 3px; }
   .btn svg { transition: transform 220ms cubic-bezier(.22,1,.36,1); }
-  .btn:hover svg:not([data-static-icon]) { transform: translateX(2px); }
+  .btn:hover svg:not([data-static-icon]):not(.animate-spin) { transform: translateX(2px); }
   .btn-primary { @apply btn bg-navy-900 text-white px-6 py-3 hover:bg-navy-800 hover:-translate-y-0.5 shadow-lg shadow-navy-950/10; }
   .btn-gold { @apply btn bg-gold-500 text-navy-950 px-6 py-3 hover:bg-gold-600 hover:-translate-y-0.5 shadow-lg shadow-gold-500/20; }
   .btn-outline { @apply btn border border-navy-900/20 text-navy-900 px-6 py-3 hover:border-gold-500 hover:text-navy-950 hover:bg-gold-50/50; }
   .btn-ghost-light { @apply btn bg-white/10 border border-white/30 text-white px-6 py-3 backdrop-blur-xl hover:bg-white/20 hover:border-white/50; }
   .btn-sm { @apply px-4 py-2 text-xs; }
-  .card { @apply bg-white border border-black/5 shadow-card; border-radius: 0.375rem; transition: transform 300ms cubic-bezier(.22,1,.36,1), box-shadow 300ms ease, border-color 300ms ease; transform: translateZ(0); }
-  .card:hover { @apply shadow-pop; transform: translateY(-3px); }
-  .card:active { transform: translateY(-1px) scale(.997); }
+  .card { @apply bg-white border border-black/5 shadow-card; border-radius: 0.375rem; transition: box-shadow 220ms ease, border-color 220ms ease; }
+  .card:hover { border-color: rgb(7 21 54 / .14); }
   .glass-card { @apply bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg; }
   .glass-light { @apply bg-white/70 backdrop-blur-xl border border-white/60 shadow-card; }
   .glass-blue { @apply bg-navy-950/70 backdrop-blur-xl border border-white/10 shadow-pop; }
@@ -57,15 +56,16 @@ h1, h2, h3, h4 { @apply font-display; }
   .public-site .section h2 { letter-spacing: -0.025em; }
   .public-site .section p { text-wrap: pretty; }
   .public-site .card { border-color: rgb(5 40 100 / 0.08); }
-  .public-site .card:hover { transform: translateY(-4px); border-color: rgb(198 140 33 / 0.28); }
+  .public-site .card:hover { transform: none !important; border-color: rgb(198 140 33 / 0.28); }
+  .public-site article:hover { transform: none !important; }
   .scroll-reveal { opacity: 0; transform: translate3d(0, 28px, 0); transition: opacity 700ms cubic-bezier(.22,1,.36,1), transform 700ms cubic-bezier(.22,1,.36,1); will-change: opacity, transform; }
   .scroll-reveal.is-visible { opacity: 1; transform: translate3d(0, 0, 0); }
   .scroll-reveal:nth-child(2) { transition-delay: 70ms; }
   .scroll-reveal:nth-child(3) { transition-delay: 120ms; }
   .scroll-reveal:nth-child(4) { transition-delay: 170ms; }
   .scroll-reveal:nth-child(5) { transition-delay: 220ms; }
-  .public-site img { transition: transform 700ms cubic-bezier(.22,1,.36,1), filter 500ms ease; max-width: 100%; }
-  .public-site a img:hover, .public-site .group:hover img { transform: scale(1.025); }
+  .public-site img { transition: filter 350ms ease; max-width: 100%; }
+  .public-site a img:hover, .public-site .group:hover img { transform: none !important; }
   .luxury-divider { height: 1px; background: linear-gradient(90deg, transparent, rgb(198 140 33 / .45), transparent); }
   .portal-shell { background: linear-gradient(180deg, #fbfaf7 0%, #f6f3ed 100%); }
   .portal-shell .card { box-shadow: 0 14px 40px rgb(7 21 54 / .055); }
@@ -165,3 +165,18 @@ h1, h2, h3, h4 { @apply font-display; }
 .action-loading:active { opacity: .58 !important; filter: grayscale(.35); cursor: wait !important; transform: none !important; pointer-events: none; box-shadow: none !important; }
 .action-loading::before { content: ''; width: .9rem; height: .9rem; border: 2px solid currentColor; border-right-color: transparent; border-radius: 999px; animation: bp-action-spin .7s linear infinite; flex: 0 0 auto; }
 .action-loading::after { display: none !important; }
+
+button.btn-primary:disabled,
+button.btn-gold:disabled,
+button.btn-outline:disabled,
+button.btn-ghost-light:disabled,
+button.btn-primary:disabled:hover,
+button.btn-gold:disabled:hover,
+button.btn-outline:disabled:hover,
+button.btn-ghost-light:disabled:hover {
+  pointer-events: none;
+  cursor: not-allowed;
+  transform: none !important;
+  transition: none !important;
+  box-shadow: none;
+}

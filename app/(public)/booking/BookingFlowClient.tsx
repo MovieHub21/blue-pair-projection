@@ -59,6 +59,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
   const [guest, setGuest] = useState({ name: '', email: '', phone: '', requests: '' })
+  const [emailStatus, setEmailStatus] = useState<'queued' | 'failed' | null>(null)
   const [payMethod, setPayMethod] = useState<'card'|'transfer'|'paystack'>('paystack')
   const [booking, setBooking] = useState<Booking | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -69,7 +70,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
       setGuest(g => ({
         ...g,
         name: g.name || auth.customer?.name || auth.profile?.name || '',
-        email: g.email || auth.customer?.email || auth.profile?.email || auth.email || '',
+        email: auth.email || g.email || auth.customer?.email || auth.profile?.email || '',
         phone: g.phone || auth.customer?.phone || auth.profile?.phone || '',
       }))
     }
@@ -88,6 +89,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
     if (!auth.userId || !room) return
     setSubmitting(true)
     setSubmitError(null)
+    setEmailStatus(null)
     try {
       const customerId = await ensureCustomer(auth.userId, guest.name, guest.email, guest.phone)
       const b = await createDirectBooking({
@@ -102,7 +104,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            guestEmail: guest.email,
+            guestEmail: auth.email || guest.email,
             guestName: guest.name,
             reference: b.reference,
             roomName: room.name,
@@ -115,11 +117,10 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
           }),
         })
 
-        if (!emailResponse.ok) {
-          console.error('[booking] confirmation email failed', await emailResponse.text())
-        }
+        setEmailStatus(emailResponse.ok ? 'queued' : 'failed')
       } catch (emailError) {
         console.error('[booking] confirmation email request failed', emailError)
+        setEmailStatus('failed')
       }
 
       setBooking(b)
@@ -222,8 +223,9 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
           <h2 className="text-2xl font-semibold mb-6">Guest information</h2>
           <label className="field-label">Full name</label>
           <input value={guest.name} onChange={e => setGuest({...guest, name: e.target.value})} className="field-input mb-4" placeholder="Efosa Aigbe" />
-          <label className="field-label">Email</label>
-          <input value={guest.email} onChange={e => setGuest({...guest, email: e.target.value})} className="field-input mb-4" placeholder="you@email.com" />
+          <label className="field-label">Account email</label>
+          <input value={auth.email || guest.email} readOnly className="field-input mb-1 read-only:bg-navy-50 read-only:text-navy-500" placeholder="you@email.com" />
+          <p className="mb-4 text-xs text-navy-400">Booking confirmations are sent to your signed-in email address.</p>
           <label className="field-label">Phone</label>
           <input value={guest.phone} onChange={e => setGuest({...guest, phone: e.target.value})} className="field-input mb-4" placeholder="+234 800 000 0000" />
           <label className="field-label">Special requests (optional)</label>
@@ -276,7 +278,7 @@ export default function BookingFlowClient({ roomTypes, hotelAddress }: { roomTyp
           <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-5 text-3xl">✓</div>
           <span className="eyebrow">Booking received</span>
           <h2 className="text-2xl font-semibold mt-2 mb-2">You're booked, {guest.name || 'guest'}</h2>
-          <p className="text-sm text-navy-500">A confirmation has been sent to {guest.email || 'your email'}. Payment is <b>pending</b> — our front desk will reach out to confirm it. We look forward to hosting you at Blue Pair, Uromi.</p>
+          <p className="text-sm text-navy-500">{emailStatus === 'queued' ? `Your booking confirmation is queued for ${auth.email || guest.email}; it should arrive shortly.` : emailStatus === 'failed' ? 'Your booking was saved, but the confirmation email could not be queued. Please contact reception with your booking reference.' : 'Your booking was saved.'} Payment is <b>pending</b> — our front desk will reach out to confirm it. We look forward to hosting you at Blue Pair, Uromi.</p>
           <div className="card text-left mt-8 p-6 flex flex-col gap-0.5">
             {[
               ['Booking reference', booking.reference],

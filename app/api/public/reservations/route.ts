@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { readSanitizedJson } from '../../../../lib/security/input'
+import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
+import { bookingPaymentHoldEmail } from '../../../../lib/email/templates'
+import { SITE_URL } from '../../../../lib/siteConfig'
 
 function validDate(value: unknown): value is string { return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) }
 function todayLagosISO(): string { return new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' }) }
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     const db = createSupabaseAdminClient()
-    const { data: roomType, error: roomTypeError } = await db.from('room_types').select('id,price').eq('id', roomTypeId).maybeSingle()
+    const { data: roomType, error: roomTypeError } = await db.from('room_types').select('id,name,price').eq('id', roomTypeId).maybeSingle()
     if (roomTypeError) { log('ROOM_TYPE_QUERY_FAILED', { message: roomTypeError.message, code: roomTypeError.code }); throw roomTypeError }
     if (!roomType) {
       log('ROOM_TYPE_NOT_FOUND', { roomTypeId })
@@ -99,8 +102,62 @@ export async function POST(request: Request) {
       log('BOOKING_CREATED_WITHOUT_ID', { booking })
       return NextResponse.json({ error: 'The payment hold could not be created. Please try again.' }, { status: 500 })
     }
-    log('SUCCESS_HOLD_CREATED', { bookingId: created.id, roomId: created.room_id, expiresAt: created.reservation_expires_at })
-    return NextResponse.json({ booking: created, holdMinutes: HOLD_MINUTES, holdStarted: true }, { status: 201 })
+
+    // The reservation RPC returns only identifiers and hold state, not the amount or stay dates.
+    // Read the persisted booking so the payment email and response use the saved total.
+    const { data: bookingDetails, error: bookingDetailsError } = await db
+      .from('bookings')
+      .select('id,reference,room_id,room_type_id,check_in,check_out,amount,payment_status,status,reservation_expires_at')
+      .eq('id', created.id)
+      .maybeSingle()
+    if (bookingDetailsError) throw bookingDetailsError
+    if (!bookingDetails) {
+      log('CREATED_BOOKING_LOOKUP_FAILED', { bookingId: created.id })
+      return NextResponse.json({ error: 'The payment hold could not be loaded. Please try again.' }, { status: 500 })
+    }
+    log('BOOKING_DETAILS_LOADED', { bookingId: bookingDetails.id, amount: bookingDetails.amount })
+
+    // The payment hold is already durable. Queue its guest email separately so
+    // provider latency cannot undo or delay the reservation response.
+    try {
+      const [{ data: customer, error: customerError }, { data: room }] = await Promise.all([
+        db.from('customers').select('name,email').eq('id', customerId).maybeSingle(),
+        bookingDetails.room_id
+          ? db.from('rooms').select('room_number').eq('id', bookingDetails.room_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ])
+      if (customerError) throw customerError
+      const recipient = String(customer?.email || user.email || '').trim().toLowerCase()
+      if (!recipient || !created.reservation_expires_at) {
+        log('PAYMENT_HOLD_EMAIL_SKIPPED', { hasRecipient: !!recipient, hasExpiry: !!created.reservation_expires_at })
+      } else {
+        const paymentUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || SITE_URL).replace(/\/$/, '')}/account/bookings`
+        const email = bookingPaymentHoldEmail({
+          guestName: customer?.name || String(user.user_metadata?.name || user.user_metadata?.full_name || 'Guest'),
+          reference: bookingDetails.reference,
+          roomName: room?.room_number ? `Room ${room.room_number} · ${roomType.name}` : roomType.name,
+          checkIn: bookingDetails.check_in,
+          checkOut: bookingDetails.check_out,
+          total: Number(bookingDetails.amount || 0),
+          holdMinutes: HOLD_MINUTES,
+          expiresAt: bookingDetails.reservation_expires_at,
+          paymentUrl,
+        })
+        await enqueueBackgroundEmail({
+          to: recipient,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          queueKey: `booking-payment-hold:${bookingDetails.id}`,
+        })
+        log('PAYMENT_HOLD_EMAIL_QUEUED', { bookingId: bookingDetails.id })
+      }
+    } catch (emailError: any) {
+      log('PAYMENT_HOLD_EMAIL_QUEUE_FAILED', { bookingId: bookingDetails.id, message: emailError?.message })
+    }
+
+    log('SUCCESS_HOLD_CREATED', { bookingId: bookingDetails.id, roomId: bookingDetails.room_id, expiresAt: bookingDetails.reservation_expires_at })
+    return NextResponse.json({ booking: bookingDetails, holdMinutes: HOLD_MINUTES, holdStarted: true }, { status: 201 })
   } catch (error: any) {
     console.error(`[public-payment-hold][${requestId}] UNHANDLED_ERROR`, { message: error?.message, code: error?.code, details: error?.details, hint: error?.hint, stack: error?.stack })
     if (error?.message === 'REQUEST_BODY_TOO_LARGE') return NextResponse.json({ error: 'Request is too large.' }, { status: 413 })

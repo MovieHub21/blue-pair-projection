@@ -3,9 +3,9 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { enqueueBackgroundEmail } from '../../../../lib/backgroundJobs'
 import { getGoogleReviewFallbackUrl } from '../../../../lib/googleReviews'
-import { bookingConfirmationEmail, paymentSuccessfulEmail, paymentFailedEmail, bookingCancelledEmail, bookingModifiedEmail, preArrivalEmail, checkInReminderEmail, checkInWelcomeEmail, checkoutReminderEmail, checkoutThankYouEmail, reviewRequestEmail, serviceRequestReceivedEmail, serviceRequestStatusEmail, supportTicketEmail } from '../../../../lib/email/templates'
+import { bookingConfirmationEmail, paymentSuccessfulEmail, paymentFailedEmail, bookingCancelledEmail, preArrivalEmail, checkInReminderEmail, checkInWelcomeEmail, checkoutReminderEmail, checkoutThankYouEmail, reviewRequestEmail, serviceRequestReceivedEmail, serviceRequestStatusEmail, supportTicketEmail } from '../../../../lib/email/templates'
 
-type EventName = 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'booking_modified' | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder' | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status' | 'support_acknowledged' | 'support_status'
+type EventName = 'booking_confirmation' | 'payment_successful' | 'payment_failed' | 'booking_cancelled' | 'pre_arrival' | 'checkin_reminder' | 'checkin_welcome' | 'checkout_reminder' | 'checkout_thank_you' | 'review_request' | 'service_request_received' | 'service_request_status' | 'support_acknowledged' | 'support_status'
 const staffRoles = new Set(['admin', 'manager', 'reception', 'front_desk', 'super_admin'])
 
 export async function POST(request: Request) {
@@ -72,7 +72,6 @@ export async function POST(request: Request) {
       case 'payment_successful': email = paymentSuccessfulEmail({ ...base, paymentReference: body.paymentReference ? String(body.paymentReference) : undefined }); break
       case 'payment_failed': email = paymentFailedEmail({ ...base, reason: body.reason ? String(body.reason) : undefined }); break
       case 'booking_cancelled': email = bookingCancelledEmail({ ...base, reason: body.reason ? String(body.reason) : undefined }); break
-      case 'booking_modified': email = bookingModifiedEmail({ ...base, changes: body.changes ? String(body.changes) : undefined }); break
       case 'pre_arrival': email = preArrivalEmail(base); break
       case 'checkin_reminder': email = checkInReminderEmail(base); break
       case 'checkin_welcome': email = checkInWelcomeEmail(base); break
@@ -86,11 +85,31 @@ export async function POST(request: Request) {
       default: return NextResponse.json({ error: 'Unsupported email event' }, { status: 400 })
     }
 
-    const providerKey = event === 'payment_successful' && booking?.id ? `booking-payment-confirmation:${booking.id}` : event === 'booking_confirmation' && reference ? `booking-confirmation:${reference}` : event === 'checkin_welcome' && booking?.id ? `booking-checkin-welcome:${booking.id}` : event === 'checkout_thank_you' && booking?.id ? `booking-checkout-thank-you:${booking.id}` : undefined
-    const queueKey = event === 'checkout_thank_you' && booking?.id
-      ? `checkout-thank-you:${booking.id}`
-      : providerKey || `guest-transactional:${requestId}`
-    const result = await enqueueBackgroundEmail({ to: recipient, subject: email.subject, html: email.html, text: email.text, queueKey, ...(providerKey ? { idempotency_key: providerKey } : {}) })
+    const bookingEventKeys: Partial<Record<EventName, string>> = {
+      booking_confirmation: booking?.id ? `booking-confirmation:${booking.id}` : undefined,
+      payment_successful: booking?.id ? `booking-payment-confirmation:${booking.id}` : undefined,
+      payment_failed: booking?.id ? `booking-payment-failed:${booking.id}` : undefined,
+      booking_cancelled: booking?.id ? `booking-cancelled:${booking.id}` : undefined,
+      checkin_welcome: booking?.id ? `booking-checkin-welcome:${booking.id}` : undefined,
+      checkout_thank_you: booking?.id ? `booking-checkout-thank-you:${booking.id}` : undefined,
+    }
+    const requestEventKey = requestRow?.id
+      ? event === 'service_request_received' || event === 'support_acknowledged'
+        ? `guest-request-received:${requestRow.id}`
+        : event === 'service_request_status' || event === 'support_status'
+          ? `guest-request-status:${requestRow.id}:${requestRow.status}`
+          : undefined
+      : undefined
+    const idempotencyKey = bookingEventKeys[event] || requestEventKey
+    const queueKey = idempotencyKey || `guest-transactional:${requestId}`
+    const result = await enqueueBackgroundEmail({
+      to: recipient,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+      queueKey,
+      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+    })
     console.log('[guest-transactional-email]', requestId, 'queued', { event, recipient, jobId: result.id })
     return NextResponse.json({ ok: true, jobId: result.id, event, recipient })
   } catch (error: any) {

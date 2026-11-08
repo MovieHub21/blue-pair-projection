@@ -16,7 +16,8 @@ export async function dispatchNewsletterBatch() {
         text: recipient.content_html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
         queueKey: `newsletter:${recipient.id}`,
       })
-      await admin.from('newsletter_recipients').update({ status: 'queued', background_job_id: jobId, error: null }).eq('id', recipient.id)
+      const { error: updateError } = await admin.from('newsletter_recipients').update({ status: 'queued', background_job_id: jobId, error: null }).eq('id', recipient.id)
+      if (updateError) throw updateError
       return true
     } catch (error: any) {
       await admin.from('newsletter_recipients').update({ status: 'pending', error: String(error?.message || 'Unable to queue email').slice(0, 500) }).eq('id', recipient.id)

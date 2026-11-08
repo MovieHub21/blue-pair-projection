@@ -2,7 +2,6 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import { supabase } from '../../../lib/supabase/client'
 
 export default function CancelBookingButton({ bookingId, className }: { bookingId: string; className?: string }) {
   const router = useRouter()
@@ -13,10 +12,16 @@ export default function CancelBookingButton({ bookingId, className }: { bookingI
   async function cancel() {
     if (!confirm('Cancel this booking?')) return
     setSubmitting(true)
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', bookingId)
-    setSubmitting(false)
-    if (error) { alert('Could not cancel booking: ' + error.message); return }
-    startTransition(() => router.refresh())
+    try {
+      const response = await fetch(`/api/account/bookings/${encodeURIComponent(bookingId)}/cancel`, { method: 'POST' })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'Could not cancel booking.')
+      startTransition(() => router.refresh())
+    } catch (error: any) {
+      alert(error?.message || 'Could not cancel booking.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

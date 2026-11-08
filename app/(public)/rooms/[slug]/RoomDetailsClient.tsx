@@ -22,20 +22,19 @@ export default function RoomDetailsClient({room,units,others,availability}:{room
  const params=useSearchParams()
  const [checkIn,setCheckIn]=useState(params.get('checkin')||todayISO()); const [checkOut,setCheckOut]=useState(params.get('checkout')||addDaysISO(2)); const [liveUnits,setLiveUnits]=useState<AvailabilityUnit[]>(() => units.map(u => ({...u,guest_status:initialGuestStatus(u)}))); const [checking,setChecking]=useState(false)
  const nights=Math.max(1,Math.round((new Date(checkOut).getTime()-new Date(checkIn).getTime())/86400000)); const total=room.price*nights; const tax=Math.round(total*.075)
- const [roomFilter, setRoomFilter] = useState<'available' | 'all'>('available');
 const [showAllRooms, setShowAllRooms] = useState(false);
 const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
 
  useEffect(()=>{
   if(!checkIn||!checkOut||checkIn>=checkOut)return
   setChecking(true)
-  fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'})
+  fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&availableOnly=true&_=${Date.now()}`,{cache:'no-store'})
    .then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms);}).catch(()=>{}).finally(()=>setChecking(false))
-  const refresh=()=>{setChecking(true);fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&_=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms)}).catch(()=>{}).finally(()=>setChecking(false))}
+  const refresh=()=>{setChecking(true);fetch(`/api/public/availability?checkin=${encodeURIComponent(checkIn)}&checkout=${encodeURIComponent(checkOut)}&roomTypeId=${encodeURIComponent(room.id)}&availableOnly=true&_=${Date.now()}`,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(data?.rooms)setLiveUnits(data.rooms)}).catch(()=>{}).finally(()=>setChecking(false))}
   return onAvailabilityChange(refresh)
  },[checkIn,checkOut,room.id])
 
- const availableCount=liveUnits.filter(u=>u.guest_status==='available').length
+ const availableCount=liveUnits.length
  const breakfastCount=complimentaryBreakfastCount(room.name)
 
  return <div className="container-w w-full min-w-0 max-w-7xl overflow-x-clip px-4 sm:px-6 md:px-10 py-8">
@@ -57,54 +56,14 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
       <p className="text-sm text-navy-400 mt-1">
         {checking
           ? 'Checking dates…'
-          : `${availableCount} of ${liveUnits.length} rooms available for your dates`}
+          : `${availableCount} room${availableCount === 1 ? '' : 's'} available for your dates`}
       </p>
     </div>
 
-    {/* Room filter */}
-    <div className="inline-flex items-center self-start sm:self-auto rounded-full bg-navy-50 p-1">
-      <button
-        type="button"
-        onClick={() => {
-          setRoomFilter('available');
-          setShowAllRooms(false);
-          setMobileRoomIndex(0);
-        }}
-        className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
-          roomFilter === 'available'
-            ? 'bg-navy-900 text-white shadow-sm'
-            : 'text-navy-500 hover:text-navy-800'
-        }`}
-      >
-        Available
-      </button>
-
-      <button
-        type="button"
-        onClick={() => {
-          setRoomFilter('all');
-          setShowAllRooms(false);
-          setMobileRoomIndex(0);
-        }}
-        className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
-          roomFilter === 'all'
-            ? 'bg-navy-900 text-white shadow-sm'
-            : 'text-navy-500 hover:text-navy-800'
-        }`}
-      >
-        All rooms
-      </button>
-    </div>
   </div>
 
   {(() => {
-    const filteredUnits = liveUnits.filter(u => {
-      const state = u.guest_status || initialGuestStatus(u);
-
-      return roomFilter === 'available'
-        ? state === 'available'
-        : true;
-    });
+    const filteredUnits = liveUnits;
 
     const visibleUnits = showAllRooms
       ? filteredUnits
@@ -333,9 +292,7 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
           </>
         ) : (
           <div className="py-10 text-center text-sm text-navy-400">
-            {roomFilter === 'available'
-              ? 'No rooms are available for these dates.'
-              : 'No rooms found.'}
+            'No rooms are available for these dates.'
           </div>
         )}
 
@@ -350,8 +307,8 @@ const [mobileRoomIndex, setMobileRoomIndex] = useState(0);
               className="text-sm font-medium text-navy-700 hover:text-gold-600 transition-colors"
             >
               {showAllRooms
-                ? 'Show fewer rooms'
-                : `See all ${filteredUnits.length} rooms`}
+                ? 'Show fewer available rooms'
+                : `See all ${filteredUnits.length} available rooms`}
             </button>
           </div>
         )}

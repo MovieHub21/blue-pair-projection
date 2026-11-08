@@ -20,7 +20,7 @@ export async function generateMetadata({params}:{params:{slug:string}}):Promise<
 }
 export default async function RoomDetailsPage({params}:{params:{slug:string}}){
  const room=await getRoomTypeBySlug(params.slug); if(!room)notFound()
- const [units,allRooms]=await Promise.all([getRoomsByType(room.id),getRooms()])
+ const [units,allRooms]=await Promise.all([getRoomsByType(room.id,true),getRooms()])
  const others=(await getRoomTypes()).filter(r=>r.id!==room.id&&r.active).slice(0,3)
  const availability=Object.fromEntries(others.map(r=>[r.id,allRooms.filter((u:any)=>u.roomTypeId===r.id&&u.status==='available').length]))
  const breadcrumbs=[{name:'Home',path:'/'},{name:'Rooms & Suites',path:'/rooms'},{name:room.name,path:`/rooms/${room.slug}`}]
