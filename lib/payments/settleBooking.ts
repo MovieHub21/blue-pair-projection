@@ -193,8 +193,13 @@ export async function settleBookingPayment(admin: SupabaseClient, secret: string
     if (bookingError) return fail('error', true, { detail: bookingError.message })
     if (!booking) return fail('booking_not_found', false)
 
-    // Already processed (by the webhook, the callback, an admin, or an earlier retry): make sure the payment row agrees and stop.
+    // Already processed (by the webhook, the callback, an admin, or an earlier retry): only
+    // mark this attempt successful if it is the payment that actually settled the booking.
     if (booking.payment_status === 'paid') {
+      const { data: settledPayment, error: settledPaymentError } = await admin.from('payments')
+        .select('id,reference').eq('booking_ref', booking.reference).eq('status', 'success').neq('id', payment.id).limit(1).maybeSingle()
+      if (settledPaymentError) return fail('error', true, { detail: settledPaymentError.message })
+      if (settledPayment) return refundUnfulfillable(admin, secret, payment, booking, transaction, `booking already settled by ${settledPayment.reference}`)
       const error = await ensurePaymentSuccess(admin, payment.id)
       if (error) return fail('error', true, { detail: error.message })
       return { ok: true, state: 'already_paid', booking }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import { createSupabaseServerClient } from '../../../../lib/supabase/server'
 import { createSupabaseAdminClient } from '../../../../lib/supabase/admin'
 import { SITE_URL } from '../../../../lib/siteConfig'
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
     if (!customer.email) { log('CUSTOMER_EMAIL_MISSING', { customerId: customer.id }); return NextResponse.json({ error: 'A customer email is required for Paystack.' }, { status: 400 }) }
     if (!booking.room_id && !booking.short_let_id) { log('BOOKING_RESOURCE_MISSING', { bookingId: booking.id }); return NextResponse.json({ error: 'This booking has no property assigned.' }, { status: 409 }) }
     if (booking.reservation_expires_at && new Date(booking.reservation_expires_at).getTime() <= Date.now()) return NextResponse.json({ error: 'This reservation has expired. Please start the booking again.' }, { status: 409 })
+    const amount = Number(booking.amount)
+    if (!Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: 'The booking total is invalid.' }, { status: 409 })
     log('CUSTOMER_OK', { customerId: customer.id, email: customer.email })
 
     let lockResult: any = null
@@ -50,8 +53,12 @@ export async function POST(request: Request) {
       }
     }
 
-    const reference = `BPH-${booking.reference.replace(/^BPH-/,'')}-PS-${Date.now()}`
+    const reference = `BPH-${booking.reference.replace(/^BPH-/,'')}-PS-${Date.now()}-${randomUUID().slice(0, 8)}`
     const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || SITE_URL}/api/paystack/callback`
+    const paymentId = `pay_${randomUUID()}`
+    const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+    const { error: paymentInsertError } = await admin.from('payments').insert({ id: paymentId, reference, booking_ref: booking.reference, customer_id: customer.id, customer: customer.name, amount, method: 'Paystack', status: 'pending', date: paidOn })
+    if (paymentInsertError) throw paymentInsertError
     log('PAYSTACK_INITIALIZE_REQUEST', { bookingId: booking.id, reference, amount: Math.round(Number(booking.amount) * 100), currency: 'NGN' })
     try {
       const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
@@ -62,27 +69,17 @@ export async function POST(request: Request) {
       })
       const result = await paystackResponse.json()
       log('PAYSTACK_RESPONSE', { httpStatus: paystackResponse.status, ok: paystackResponse.ok, status: result?.status, message: result?.message, hasAuthorizationUrl: Boolean(result?.data?.authorization_url), reference })
-      if (!paystackResponse.ok || !result?.status || !result?.data?.authorization_url) throw new Error(result?.message || 'Paystack could not initialize the payment.')
-
-      const paidOn = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
-      const { data: existingPayment, error: existingPaymentError } = await admin.from('payments').select('id').eq('booking_ref', booking.reference).maybeSingle()
-      if (existingPaymentError) { log('PAYMENT_RECORD_LOOKUP_FAILED', { message: existingPaymentError.message, code: existingPaymentError.code }); throw existingPaymentError }
-      if (existingPayment) {
-        log('UPDATING_PAYMENT_RECORD', { paymentId: existingPayment.id, bookingReference: booking.reference })
-        const { error } = await admin.from('payments').update({ customer_id: customer.id, amount: booking.amount, reference, method: 'Paystack', status: 'pending', date: paidOn }).eq('id', existingPayment.id)
-        if (error) { log('PAYMENT_RECORD_UPDATE_FAILED', { message: error.message, code: error.code, details: error.details }); throw error }
-      } else {
-        log('CREATING_PAYMENT_RECORD', { bookingReference: booking.reference })
-        const { error } = await admin.from('payments').insert({ id: `pay_${Date.now()}`, reference, booking_ref: booking.reference, customer_id: customer.id, customer: customer.name, amount: booking.amount, method: 'Paystack', status: 'pending', date: paidOn })
-        if (error) { log('PAYMENT_RECORD_INSERT_FAILED', { message: error.message, code: error.code, details: error.details }); throw error }
+      if (!paystackResponse.ok || !result?.status || !result?.data?.authorization_url) {
+        await admin.from('payments').update({ status: 'failed' }).eq('id', paymentId).eq('status', 'pending')
+        if (booking.room_id && lockResult?.reason === 'acquired') await admin.rpc('release_payment_lock', { p_booking_id: booking.id })
+        return NextResponse.json({ error: result?.message || 'Paystack could not initialize the payment.' }, { status: 502 })
       }
       log('SUCCESS_AUTHORIZATION_URL_CREATED', { bookingId: booking.id, reference, lockExpiresAt: lockResult.expires_at })
       return NextResponse.json({ authorizationUrl: result.data.authorization_url, reference, lockExpiresAt: lockResult.expires_at })
     } catch (error: any) {
       log('PAYSTACK_INITIALIZATION_FAILED', { message: error?.message, code: error?.code, stack: error?.stack })
-      const { error: releaseError } = booking.room_id ? await admin.rpc('release_payment_lock', { p_booking_id: booking.id }) : { error: null }
-      if (releaseError) log('PAYMENT_LOCK_RELEASE_FAILED', { message: releaseError.message, code: releaseError.code })
-      else log('PAYMENT_LOCK_RELEASED_AFTER_FAILURE', { bookingId: booking.id })
+      // On a network/timeout error, Paystack may already have created the transaction.
+      // Preserve its pending reference and reservation hold so a later callback/webhook can settle it.
       throw error
     }
   } catch (error: any) {
