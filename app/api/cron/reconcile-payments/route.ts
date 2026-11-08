@@ -60,8 +60,8 @@ export async function GET(request: Request) {
     if (bookingPaymentsResult.error) throw bookingPaymentsResult.error
     if (roomServicePaymentsResult.error) throw roomServicePaymentsResult.error
 
-    const bookingRefs = [...new Set((bookingPaymentsResult.data ?? []).map((row: any) => String(row.reference || '')).filter(Boolean))]
-    const roomServiceRefs = [...new Set((roomServicePaymentsResult.data ?? []).map((row: any) => String(row.reference || '')).filter(Boolean))]
+    const bookingRefs = Array.from(new Set<string>((bookingPaymentsResult.data ?? []).map((row: any) => String(row.reference || '')).filter((reference: string) => Boolean(reference))))
+    const roomServiceRefs = Array.from(new Set<string>((roomServicePaymentsResult.data ?? []).map((row: any) => String(row.reference || '')).filter((reference: string) => Boolean(reference))))
 
     let settled = 0
     let alreadySettled = 0
@@ -71,13 +71,13 @@ export async function GET(request: Request) {
     await Promise.all([
       forEachLimited(bookingRefs, CONCURRENCY, async reference => {
         const result = await settleBookingPayment(admin, secret, reference)
-        if (result.ok) {
+        if (result.ok === true) {
           if (result.state === 'settled') settled++
           else alreadySettled++
           return
         }
-        if (result.transient || result.reason === 'not_success') deferred++
-        else {
+        if (result.ok === false && (result.transient || result.reason === 'not_success')) deferred++
+        else if (result.ok === false) {
           // A verified but invalid/mismatched payment remains pending for staff investigation;
           // reconciliation never converts it to failed.
           console.error('[payment-reconcile] booking payment not settled', { reference, reason: result.reason, detail: result.detail })
@@ -94,22 +94,22 @@ export async function GET(request: Request) {
           return
         }
         const result = await settleRoomServicePayment(admin, reference, Number(verification.transaction.amount))
-        if (result.ok) {
+        if (result.ok === true) {
           if (result.alreadyPaid) alreadySettled++
           else settled++
-        } else if (result.reason === 'update_failed') deferred++
-        else {
+        } else if (result.ok === false && result.reason === 'update_failed') deferred++
+        else if (result.ok === false) {
           console.error('[payment-reconcile] room-service payment not settled', { reference, reason: result.reason })
           failed++
         }
       }),
       forEachLimited(annexReferences, CONCURRENCY, async reference => {
         const result = await settleAnnexCheckout(admin, secret, reference)
-        if (result.ok) {
+        if (result.ok === true) {
           if (result.state === 'settled') settled++
           else alreadySettled++
-        } else if (result.transient) deferred++
-        else {
+        } else if (result.ok === false && result.transient) deferred++
+        else if (result.ok === false) {
           console.error('[payment-reconcile] Annex checkout not settled', { reference, reason: result.reason })
           failed++
         }

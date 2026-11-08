@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       else if (booking.status === 'checked_out' && diffDays(booking.check_out, today) === 1) event = 'review_request'
       if (!event) continue
 
-      const customer = (await supabase.from('customers').select('name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
+      const customer = (await supabase.from('customers').select('id,name,email,user_id').eq('id', booking.customer_id).maybeSingle()).data
       const roomType = (await supabase.from('room_types').select('name').eq('id', booking.room_type_id).maybeSingle()).data
       const recipient = String(customer?.email || '').trim().toLowerCase()
       if (!recipient) continue

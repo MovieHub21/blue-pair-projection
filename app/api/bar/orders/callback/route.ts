@@ -21,8 +21,12 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${base}/annex/order/success?reference=${encodeURIComponent(result.orderReference)}`)
     }
 
-    if (!result.ok && result.transient) return errorUrl('payment_pending')
-    return errorUrl(result.reason)
+    if (result.ok === false) {
+      if (result.transient) return errorUrl('payment_pending')
+      return errorUrl(result.reason)
+    }
+
+    return errorUrl('payment_pending')
   } catch (error) {
     console.error('[annex-order-payment-callback]', error)
     return errorUrl('order_creation_failed')

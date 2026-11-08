@@ -42,9 +42,12 @@ export async function POST(request: Request) {
     const admin = createSupabaseAdminClient()
     if (reference.startsWith('ANXPAY-')) {
       const annex = await settleAnnexCheckout(admin, secret, reference)
-      if (annex.ok) return NextResponse.json({ received: true, state: annex.state })
-      console.error('[paystack-webhook] Annex order not settled', { reference, reason: annex.reason })
-      return NextResponse.json({ received: !annex.transient, settled: false, reason: annex.reason }, { status: annex.transient ? 503 : 200 })
+      if (annex.ok === true) return NextResponse.json({ received: true, state: annex.state })
+      if (annex.ok === false) {
+        console.error('[paystack-webhook] Annex order not settled', { reference, reason: annex.reason })
+        return NextResponse.json({ received: !annex.transient, settled: false, reason: annex.reason }, { status: annex.transient ? 503 : 200 })
+      }
+      return NextResponse.json({ received: true })
     }
 
     const result = await settleBookingPayment(admin, secret, reference)
