@@ -57,7 +57,7 @@ export default function PublicNavbar() {
           aria-label="Open payment safety notice"
         >
           <ShieldAlert size={15} className="shrink-0 text-amber-700" aria-hidden="true" />
-          Safety: Never pay into a personal account. 
+          Safety: Only Social Media Handle @bluepairsignaturecrown, Others are fake.
         </button>
       </div>
       <div className="w-full flex items-center justify-between py-3.5 px-5 md:px-10">
