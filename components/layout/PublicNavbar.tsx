@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Menu, X, ChevronDown, User, LayoutGrid, LogOut, Headset, ArrowRight } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Menu, X, ChevronDown, User, LayoutGrid, LogOut, Headset, ArrowRight, ShieldAlert } from 'lucide-react'
 import { useAuth } from '../../lib/useAuth'
 import { initials } from '../../lib/format'
 import NotificationBell from '../account/NotificationBell'
@@ -20,15 +21,44 @@ const explore = [
 ]
 
 export default function PublicNavbar() {
-  const [open, setOpen] = useState(false); const [exploreOpen, setExploreOpen] = useState(false); const [accountOpen, setAccountOpen] = useState(false)
+  const [open, setOpen] = useState(false); const [exploreOpen, setExploreOpen] = useState(false); const [accountOpen, setAccountOpen] = useState(false); const [showPaymentNotice, setShowPaymentNotice] = useState(false)
   const auth = useAuth(); const firstName = (auth.profile?.name || auth.customer?.name || '').split(' ')[0]
   const showAdminPortal = auth.roles.length > 0
+
+  useEffect(() => {
+    if (sessionStorage.getItem('bluePairPaymentSafetyNoticeShown') === 'true') return
+    sessionStorage.setItem('bluePairPaymentSafetyNoticeShown', 'true')
+    setShowPaymentNotice(true)
+  }, [])
+
+  useEffect(() => {
+    if (!showPaymentNotice) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowPaymentNotice(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [showPaymentNotice])
+
   async function handleSignOut() { setAccountOpen(false); await auth.signOut() }
   return (
+    <>
     <nav className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-black/5">
       <div className="flex items-center justify-between gap-3 bg-navy-950 px-4 py-2 md:px-10">
         <p className="min-w-0 text-[9px] font-medium leading-tight text-white/85 sm:text-xs">Looking for a more budget-friendly stay?</p>
         <Link href="/annex" className="btn-gold btn-sm flex shrink-0 items-center gap-1.5 !px-3 !py-1.5 text-[10px] sm:text-xs">Try the Annex <ArrowRight size={12} /></Link>
+      </div>
+      <div className="flex justify-center border-b border-gold-500/20 bg-amber-50 px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setShowPaymentNotice(true)}
+          className="inline-flex items-center gap-2 text-center text-[11px] font-semibold leading-4 text-navy-900 hover:text-navy-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-600 sm:text-xs"
+          aria-haspopup="dialog"
+          aria-label="Open payment safety notice"
+        >
+          <ShieldAlert size={15} className="shrink-0 text-amber-700" aria-hidden="true" />
+          Safety: Never pay into a personal account. Verify payment details with Blue Pair first.
+        </button>
       </div>
       <div className="w-full flex items-center justify-between py-3.5 px-5 md:px-10">
         <Link href="/" aria-label={COMPANY_NAME} className="flex items-center gap-2.5 shrink-0 min-w-0">
@@ -65,5 +95,29 @@ export default function PublicNavbar() {
         <div className="flex gap-2 mt-4">{auth.userId ? <button onClick={() => { setOpen(false); handleSignOut() }} className="btn-outline btn-sm flex-1 justify-center">Sign out</button> : <Link href="/account/login" onClick={() => setOpen(false)} className="btn-outline btn-sm flex-1 justify-center">Sign in</Link>}<Link href="/booking" onClick={() => setOpen(false)} className="btn-gold btn-sm flex-1 justify-center">Book a room</Link></div>
       </div>}
     </nav>
+    {showPaymentNotice && typeof document !== 'undefined' && createPortal(
+      <div
+        className="fixed inset-0 z-[100] flex cursor-pointer items-center justify-center bg-navy-950/75 p-4 backdrop-blur-md sm:p-8"
+        onClick={() => setShowPaymentNotice(false)}
+        role="presentation"
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Blue Pair payment safety notice"
+          className="relative max-h-[92vh] max-w-3xl cursor-pointer overflow-auto rounded-xl shadow-2xl"
+          onClick={() => setShowPaymentNotice(false)}
+        >
+          <img
+            src="/images/alert.png"
+            alt="Payment safety notice: Never pay money to a personal account. Before sending payment, confirm the account is an official Blue Pair Signature business account using the contact details on this website."
+            className="block h-auto max-h-[92vh] w-auto max-w-full object-contain"
+          />
+          <span className="sr-only">Tap or click anywhere to close this notice.</span>
+        </div>
+      </div>,
+      document.body,
+    )}
+    </>
   )
 }

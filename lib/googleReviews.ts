@@ -51,7 +51,17 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
       signal: AbortSignal.timeout(4500),
     })
     if (!response.ok) {
-      console.error('[google-reviews] Places API returned', response.status)
+      const errorBody = await response.text()
+      let errorDetails = errorBody
+      try {
+        const parsed = JSON.parse(errorBody)
+        const status = parsed.error?.status
+        const message = parsed.error?.message
+        errorDetails = [status, message].filter(Boolean).join(': ') || errorBody
+      } catch {
+        // Keep the response text when Google returns a non-JSON error.
+      }
+      console.error('[google-reviews] Places API returned', response.status, errorDetails)
       return null
     }
 

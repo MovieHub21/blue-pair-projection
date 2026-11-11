@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Blue Pair Signature payment safety notice</title>
+  <desc id="desc">Never pay money to a personal account. Confirm an official Blue Pair Signature business account using contact details on this website.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111b33"/>
+      <stop offset="1" stop-color="#07101f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5d68d"/>
+      <stop offset="1" stop-color="#c89b47"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" rx="28" fill="url(#background)"/>
+  <rect x="18" y="18" width="1164" height="864" rx="20" fill="none" stroke="#d5ad63" stroke-opacity=".32" stroke-width="2"/>
+  <circle cx="600" cy="182" r="76" fill="#d6ac5d" fill-opacity=".12" stroke="#d6ac5d" stroke-opacity=".65" stroke-width="2"/>
+  <path d="M600 126 650 145v39c0 39-21 68-50 83-29-15-50-44-50-83v-39l50-19Z" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linejoin="round"/>
+  <path d="m579 185 14 14 30-33" fill="none" stroke="#f6dfa9" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="600" y="330" fill="#dfbc76" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="6" text-anchor="middle">BLUE PAIR SIGNATURE</text>
+  <text x="600" y="410" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700" letter-spacing="1" text-anchor="middle">PAYMENT SAFETY NOTICE</text>
+  <rect x="482" y="445" width="236" height="4" rx="2" fill="url(#gold)"/>
+  <text x="600" y="532" fill="#f1d391" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" text-anchor="middle">Never pay money to a</text>
+  <text x="600" y="587" fill="#f1d391" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" text-anchor="middle">personal account.</text>
+  <text x="600" y="666" fill="#e3e8f0" font-family="Arial, Helvetica, sans-serif" font-size="25" text-anchor="middle">Before sending payment, confirm the account is an official</text>
+  <text x="600" y="704" fill="#e3e8f0" font-family="Arial, Helvetica, sans-serif" font-size="25" text-anchor="middle">Blue Pair Signature business account using the contact details</text>
+  <text x="600" y="742" fill="#e3e8f0" font-family="Arial, Helvetica, sans-serif" font-size="25" text-anchor="middle">listed on this website.</text>
+  <text x="600" y="824" fill="#aab4c5" font-family="Arial, Helvetica, sans-serif" font-size="18" letter-spacing="1" text-anchor="middle">If anything seems uncertain, contact us before you pay.</text>
+</svg>
