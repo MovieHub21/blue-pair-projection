@@ -34,11 +34,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/contact', priority: 0.6 }, 
     { path: '/blog', priority: 0.7 },
     { path: '/reviews', priority: 0.7 },
+    { path: '/privacy', priority: 0.2 },
+    { path: '/terms', priority: 0.2 },
   ]
+  // A database hiccup must never turn the whole sitemap into a 500 error,
+  // otherwise Google drops every URL listed in it. Fall back to the static routes.
+  const safe = async <T,>(read: () => Promise<T[]>): Promise<T[]> => { try { return await read() } catch (e) { console.error('[sitemap] source failed', e); return [] } }
   const [posts, roomTypes, shortLets] = await Promise.all([
-    getPublishedBlogPosts(),
-    getActiveRoomTypes(),
-    getPublicShortLets(),
+    safe(() => getPublishedBlogPosts()),
+    safe(() => getActiveRoomTypes()),
+    safe(() => getPublicShortLets()),
   ])
   const roomRoutes = roomTypes.map(r => ({ path: `/rooms/${r.slug}`, priority: 0.8 }))
   const shortletRoutes = shortLets.map(s => ({ path: `/annex/shortlets/${s.id}`, priority: 0.6 }))
@@ -55,5 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   return routes
-    .map(r => ({ url: `${SITE_URL}${r.path}`, ...(r.lastModified ? { lastModified: r.lastModified } : {}), priority: r.priority }))
+    .map(r => ({
+      url: `${SITE_URL}${r.path}`,
+      ...(r.lastModified ? { lastModified: r.lastModified } : {}),
+      changeFrequency: (r.path === '/' || r.path === '/blog' || r.path === '/events' || r.path === '/offers' ? 'weekly' : 'monthly') as 'weekly' | 'monthly',
+      priority: r.priority,
+    }))
 }

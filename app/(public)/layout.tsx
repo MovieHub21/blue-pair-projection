@@ -16,6 +16,8 @@ export default async function PublicRouteLayout({ children }: { children: React.
     '@type': 'Hotel',
     '@id': `${SITE_URL}#hotel`,
     name: SITE_NAME,
+    alternateName: ['Blue Pair Signature', 'Blue Pair Signature Hotel & Lodge, Uromi'],
+    description: 'Hotel and lodge in Uromi, Edo State, Nigeria with rooms and suites, indoor pool, gym, restaurant, club, VIP lounge, event hall and short-let apartments.',
     url: SITE_URL,
     image: DEFAULT_OG_IMAGE,
     telephone: content.hotel_phone?.trim() || SITE_PHONE,
@@ -44,6 +46,8 @@ export default async function PublicRouteLayout({ children }: { children: React.
       'Games room',
       'Parking',
     ].map(name => ({ '@type': 'LocationFeatureSpecification', name, value: true })),
+    areaServed: ['Uromi', 'Esan North-East', 'Edo State'],
+    knowsAbout: ['Lodge in Uromi', 'Hotel in Uromi', 'Lodging in Edo State'],
     sameAs,
   }
 

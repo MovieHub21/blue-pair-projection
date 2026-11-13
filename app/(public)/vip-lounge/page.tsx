@@ -23,6 +23,7 @@ export default async function VipLoungePage() {
     facilities: ['Private booth seating', 'Dedicated lounge host', 'Premium spirits list', 'Cigar terrace access', 'Live DJ Thursday–Saturday', 'Complimentary valet'],
     pricingNote: 'Free entry for hotel guests. ₦20,000 minimum spend for walk-ins.',
     ctaLabel: 'Reserve a table',
+    schemaType: 'BarOrPub', path: '/vip-lounge',
     breadcrumbs: [{name:'Home',path:'/'},{name:'VIP Bar',path:'/vip-lounge'}],
   })
   return <AmenityPage config={config} />

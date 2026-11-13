@@ -6,7 +6,7 @@ import { getGalleryImages } from '../../../lib/data'
 
 export const metadata = buildMetadata({
   title: 'Photo Gallery | Blue Pair Signature Uromi',
-  description: 'A visual tour of Blue Pair Signature, Uromi, Edo State — rooms, pool, dining and events.',
+  description: 'Photo gallery of Blue Pair Signature hotel and lodge in Uromi, Edo State: rooms and suites, indoor pool, gym, club, restaurant, VIP lounge and events.',
   keywords: 'Blue Pair Signature photos, hotel gallery uromi, hotel edo state pictures',
   path: '/gallery',
 })
@@ -19,8 +19,9 @@ export default async function GalleryPage() {
   const tiles = gallery.length ? [...gallery, ...gallery.slice(0, 4)] : []
   return (
     <div>
-      <JsonLd data={breadcrumbJsonLd(breadcrumbs, SITE_URL)} />
+      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), { '@context': 'https://schema.org', '@type': 'ImageGallery', name: 'Blue Pair Signature Photo Gallery', url: `${SITE_URL}/gallery`, about: { '@id': `${SITE_URL}#hotel` }, image: gallery.slice(0, 12).map(g => g.url) }]} />
       <PageHero image={heroImage} eyebrow="Visual tour" title="Gallery" crumbs="Home / Gallery" height="h-72" />
+      <section className="section pb-0"><div className="container-w"><p className="max-w-3xl text-sm leading-7 text-navy-600">Take a visual tour of Blue Pair Signature, a hotel and lodge in Uromi, Edo State. Browse photos of our rooms and suites, indoor swimming pool, fitness gym, restaurant, club, VIP lounge and event hall, then book your stay online.</p></div></section>
       <section className="section">
         <div className="container-w columns-2 md:columns-3 gap-3 [column-fill:_balance]">
           {tiles.map((g, i) => (

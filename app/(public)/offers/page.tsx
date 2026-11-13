@@ -23,7 +23,7 @@ export default async function OffersPage() {
         eyebrow="Save more" title="Offers & Promotions" crumbs="Home / Offers" height="h-72" />
       <section className="section">
         <div className="container-w">
-          <SectionHeading eyebrow="Current" title="Live offers" />
+          <SectionHeading eyebrow="Current" title="Live offers" subtitle="Current deals on rooms, dining and leisure at our hotel and lodge in Uromi, Edo State." />
           <div className="grid md:grid-cols-2 gap-6">
             {offers.map(o => (
               <div key={o.id} className="card p-7 flex flex-col gap-3">

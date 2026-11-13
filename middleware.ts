@@ -55,10 +55,19 @@ function rateLimit(request: NextRequest) {
   return null
 }
 
+// Short in-memory cache: public pages previously waited on a database query on every
+// request (including every Googlebot hit). Slow pages get crawled less and rank worse.
+const MAINTENANCE_CACHE_MS = 15_000
+const maintenanceCache = new Map<string, { value: boolean; expires: number }>()
+
 async function isMaintenanceMode(supabase: ReturnType<typeof createServerClient>, environment: string) {
+  const cached = maintenanceCache.get(environment)
+  if (cached && cached.expires > Date.now()) return cached.value
   const { data, error } = await supabase.from('site_settings').select('maintenance_mode').eq('environment', environment).maybeSingle()
-  if (error) return false
-  return !!data?.maintenance_mode
+  if (error) return cached?.value ?? false
+  const value = !!data?.maintenance_mode
+  maintenanceCache.set(environment, { value, expires: Date.now() + MAINTENANCE_CACHE_MS })
+  return value
 }
 
 function getEnvironment() {

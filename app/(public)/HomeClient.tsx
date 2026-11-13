@@ -61,7 +61,7 @@ export default function HomeClient({ roomTypes, rooms, offers, gallery, headline
         className="motion-fade-up eyebrow inline-block text-gold-300"
         style={{ animationDuration: '550ms' }}
       >
-        Hotel in Uromi, Edo State · Blue Pair Signature
+        Hotel &amp; Lodge in Uromi, Edo State · Blue Pair Signature
       </span>
 
       <h1

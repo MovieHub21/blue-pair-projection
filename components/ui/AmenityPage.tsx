@@ -2,7 +2,7 @@ import { ReactNode } from 'react'
 import PageHero from '../layout/PageHero'
 import SectionHeading from './SectionHeading'
 import JsonLd, { breadcrumbJsonLd, BreadcrumbItem } from '../JsonLd'
-import { SITE_URL } from '../../lib/siteConfig'
+import { SITE_URL, SITE_NAME, SITE_ADDRESS, SITE_GEO } from '../../lib/siteConfig'
 import { Clock, MapPin, CheckCircle2 } from 'lucide-react'
 import AmenityCarousel from '../../components/ui/AmenityCarousel'
 
@@ -20,6 +20,29 @@ export interface AmenityConfig {
   extra?: ReactNode
   heroVideo?: ReactNode
   breadcrumbs?: BreadcrumbItem[]
+  /** schema.org type for this page's facility, e.g. 'NightClub', 'HealthClub', 'BarOrPub'. */
+  schemaType?: string
+  /** Public path of the page (e.g. '/club'); used for the structured-data URL. */
+  path?: string
+}
+
+function facilityJsonLd(config: AmenityConfig) {
+  if (!config.schemaType || !config.path) return null
+  const image = config.heroImage?.startsWith('http') ? config.heroImage : `${SITE_URL}${config.heroImage?.startsWith('/') ? '' : '/'}${config.heroImage}`
+  return {
+    '@context': 'https://schema.org',
+    '@type': config.schemaType,
+    '@id': `${SITE_URL}${config.path}#facility`,
+    name: `${config.name} at ${SITE_NAME}`,
+    description: config.description,
+    url: `${SITE_URL}${config.path}`,
+    image,
+    openingHours: config.hours,
+    amenityFeature: (config.facilities ?? []).map(name => ({ '@type': 'LocationFeatureSpecification', name, value: true })),
+    address: { '@type': 'PostalAddress', streetAddress: SITE_ADDRESS.street, addressLocality: SITE_ADDRESS.locality, addressRegion: SITE_ADDRESS.region, postalCode: SITE_ADDRESS.postalCode, addressCountry: SITE_ADDRESS.country },
+    geo: { '@type': 'GeoCoordinates', latitude: SITE_GEO.lat, longitude: SITE_GEO.lng },
+    containedInPlace: { '@id': `${SITE_URL}#hotel` },
+  }
 }
 
 export default function AmenityPage({ config }: { config: AmenityConfig }) {
@@ -28,6 +51,7 @@ export default function AmenityPage({ config }: { config: AmenityConfig }) {
     {config.breadcrumbs && (
       <JsonLd data={breadcrumbJsonLd(config.breadcrumbs, SITE_URL)} />
     )}
+    {(() => { const ld = facilityJsonLd(config); return ld ? <JsonLd data={ld} /> : null })()}
 
     <PageHero
       image={config.heroImage}

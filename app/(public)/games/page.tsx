@@ -23,6 +23,7 @@ export default async function GamesPage() {
     facilities: ['2 pool tables', 'Table tennis', 'Board game library', 'Big-screen sports lounge', 'Snacks & drinks service', 'Console gaming corner'],
     pricingNote: 'Pool table: ₦3,000/hour. Table tennis: ₦2,000/hour. Free for VIP Suite guests.',
     ctaLabel: 'Reserve a table',
+    schemaType: 'EntertainmentBusiness', path: '/games',
     breadcrumbs: [{name:'Home',path:'/'},{name:'Games',path:'/games'}],
   })
   return <AmenityPage config={config} />

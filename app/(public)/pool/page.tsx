@@ -23,6 +23,7 @@ export default async function PoolPage() {
     facilities: ['Temperature-controlled water', 'Poolside towel service', 'Lifeguard on duty', 'Poolside food & drink menu', 'Sun loungers & cabanas'],
     pricingNote: '',
     ctaLabel: 'Enquire',
+    schemaType: 'SportsActivityLocation', path: '/pool',
     breadcrumbs: [{name:'Home',path:'/'},{name:'Indoor Pool',path:'/pool'}],
     extra: (
       <div className="mt-8 space-y-5 rounded-xl2 bg-cream-100 p-5 text-sm text-navy-600">

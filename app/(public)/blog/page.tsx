@@ -2,14 +2,16 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, CalendarDays, BookOpen } from 'lucide-react'
 import { getPublishedBlogPosts } from '../../../lib/blog'
-import { SITE_URL, SITE_NAME } from '../../../lib/siteConfig'
+import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from '../../../lib/siteConfig'
+import JsonLd, { breadcrumbJsonLd } from '../../../components/JsonLd'
 
 export const metadata: Metadata = {
   title: { absolute: 'Hotel News & Stories in Uromi | Blue Pair Signature' },
   description: `Read the latest stories, hotel news, travel ideas, dining highlights and experiences from ${SITE_NAME} in Uromi, Edo State.`,
   keywords: ['hotel news Uromi', 'Uromi travel stories', 'Blue Pair Signature events'],
   alternates: { canonical: `${SITE_URL}/blog` },
-  openGraph: { title: 'Hotel News & Stories in Uromi | Blue Pair Signature', description: `Stories and updates from ${SITE_NAME} in Uromi, Edo State.`, url: `${SITE_URL}/blog`, type: 'website' },
+  openGraph: { title: 'Hotel News & Stories in Uromi | Blue Pair Signature', description: `Stories and updates from ${SITE_NAME} in Uromi, Edo State.`, url: `${SITE_URL}/blog`, type: 'website', images: [{ url: DEFAULT_OG_IMAGE }] },
+  robots: { index: true, follow: true },
 }
 
 // Keep the post index current as the admin publishes new stories. The published
@@ -27,6 +29,7 @@ export default async function BlogPage() {
 
   return (
     <main>
+      <JsonLd data={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }], SITE_URL), { '@context': 'https://schema.org', '@type': 'Blog', name: 'Blue Pair Journal', url: `${SITE_URL}/blog`, publisher: { '@id': `${SITE_URL}#hotel` }, blogPost: posts.slice(0, 10).map(p => ({ '@type': 'BlogPosting', headline: p.title, url: `${SITE_URL}/blog/${p.slug}`, datePublished: p.published_at })) }]} />
       <section className="relative overflow-hidden bg-navy-950 text-white px-6 md:px-10 py-20 md:py-28">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_75%_25%,#d7b65d,transparent_34%)]" />
         <div className="container-w relative">

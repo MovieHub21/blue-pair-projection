@@ -22,16 +22,17 @@ export default async function ClubPage() {
   }))
   const config = await resolveAmenityConfig('club', {
     name: 'Club Lawson', eyebrow: 'Nightlife', mini: 'AN EXPERIENCE FOR THE SENSES',
-    heroImage: 'https://www.bluepairsignature.com/images/CLUB2.jpg',
+    heroImage: 'https://bluepairsignature.com/images/CLUB2.jpg',
     description: 'Edo State\u2019s after-dark address resident and guest DJs, bottle service, and a terrace that opens onto the pool deck.',
     gallery: [
-      'https://www.bluepairsignature.com/images/CLUB2.jpg',
-      'images/lawson.jpg',
+      'https://bluepairsignature.com/images/CLUB2.jpg',
+      'https://bluepairsignature.com/images/lawson.jpg',
     ],
     hours: 'Friday & Sunday, 10pm',
     facilities: ['Resident & guest DJs', 'Bottle service', 'VIP table booths', 'Outdoor terrace', 'Dedicated security & valet', 'Live performances on weekends'],
     pricingNote: 'Entry: ₦10,000 (redeemable at the bar). VIP tables from ₦150,000.',
     ctaLabel: 'Book a VIP table',
+    schemaType: 'NightClub', path: '/club',
     breadcrumbs: [{name:'Home',path:'/'},{name:'The Club',path:'/club'}],
     extra: (
       <div className="mt-8">
