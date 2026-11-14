@@ -72,7 +72,48 @@ export default function NewsletterPage() {
     syncEditor()
   }
 
-  function addButton() {\n    const label = window.prompt('What should the button say?', 'Explore Blue Pair')\n    if (!label) return\n    const rawUrl = window.prompt('Where should the button open?', 'https://bluepairsignature.com')\n    if (!rawUrl) return\n    const url = /^https?:\\/\\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`\n    format('insertHTML', `<p style=\"text-align:center;margin:24px 0\"><a href=\"${url}\" style=\"display:inline-block;padding:13px 24px;background:${safeColor(accent)};color:#fff;text-decoration:none;border-radius:8px;font-weight:bold\">${label.replace(/[&<>\"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[char]!)}</a></p><p><br></p>`)\n  }\n\n  function addLink() {
+  function addButton() {
+    const label = window.prompt('What should the button say?', 'Explore Blue Pair')
+    if (!label?.trim()) return
+
+    const rawUrl = window.prompt('Where should the button open?', 'https://bluepairsignature.com')
+    if (!rawUrl?.trim()) return
+
+    const enteredUrl = rawUrl.trim()
+    const normalizedUrl = /^https?:\/\//i.test(enteredUrl)
+      ? enteredUrl
+      : `https://${enteredUrl}`
+
+    let parsedUrl: URL
+    try {
+      parsedUrl = new URL(normalizedUrl)
+    } catch {
+      window.alert('Please enter a valid website address.')
+      return
+    }
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      window.alert('The button must link to a website using http or https.')
+      return
+    }
+
+    const escapedLabel = label.trim().replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char]!)
+
+    const escapedUrl = parsedUrl.href.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+
+    format(
+      'insertHTML',
+      `<p style="text-align:center;margin:24px 0"><a href="${escapedUrl}" style="display:inline-block;padding:13px 24px;background:${safeColor(accent)};color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">${escapedLabel}</a></p><p><br></p>`
+    )
+  }
+
+  function addLink() {
     const url = window.prompt('Paste the web address for this link')
     if (!url) return
     const safeUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`
@@ -190,7 +231,8 @@ export default function NewsletterPage() {
             <ToolButton label="Align left" onClick={() => format('justifyLeft')}><AlignLeft size={15} /></ToolButton>
             <ToolButton label="Align center" onClick={() => format('justifyCenter')}><AlignCenter size={15} /></ToolButton>
             <ToolButton label="Align right" onClick={() => format('justifyRight')}><AlignRight size={15} /></ToolButton>
-            <ToolButton label="Add link" onClick={addLink}><Link2 size={15} /></ToolButton>\n            <ToolButton label="Add button" onClick={addButton}><MousePointerClick size={15} /></ToolButton>
+            <ToolButton label="Add link" onClick={addLink}><Link2 size={15} /></ToolButton>
+            <ToolButton label="Add button" onClick={addButton}><MousePointerClick size={15} /></ToolButton>
             <ToolButton label="Undo" onClick={() => format('undo')}><Undo2 size={15} /></ToolButton>
             <ToolButton label="Redo" onClick={() => format('redo')}><Redo2 size={15} /></ToolButton>
           </div>
