@@ -12,23 +12,44 @@ export const revalidate = 0
 
 type Props = { params: { slug: string } }
 
+function getArticleKeywords(post: Awaited<ReturnType<typeof getPublishedBlogPost>>) {
+  if (!post) return []
+  const searchableText = `${post.title} ${post.description} ${post.content} ${post.category}`.toLowerCase()
+  const locationTerms = ['Uromi', 'Edo State', 'Esan North-East']
+    .filter(term => searchableText.includes(term.toLowerCase()))
+  return Array.from(new Set([post.category.trim(), ...locationTerms].filter(Boolean)))
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPublishedBlogPost(params.slug)
-  if (!post) return { title: { absolute: 'Story not found | Blue Pair Signature' } }
+  if (!post) {
+    return {
+      title: { absolute: 'Story not found | Blue Pair Signature' },
+      robots: { index: false, follow: false },
+    }
+  }
+
   const title = normalizeSeoBrand(post.title)
   const description = normalizeSeoBrand(post.description)
+  const canonical = `${SITE_URL}/blog/${post.slug}`
+  const keywords = getArticleKeywords(post)
+
   return {
     title: { absolute: `${title} | Blue Pair Signature` },
     description,
-    alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
+    alternates: { canonical },
     robots: { index: true, follow: true },
     openGraph: {
       type: 'article',
+      siteName: 'Blue Pair Signature',
       title,
       description,
-      url: `${SITE_URL}/blog/${post.slug}`,
+      url: canonical,
       publishedTime: post.published_at,
       modifiedTime: post.updated_at || post.published_at,
+      authors: ['Blue Pair Signature'],
+      section: post.category,
+      tags: keywords,
       images: post.image_url ? [{ url: post.image_url, alt: post.title }] : undefined,
     },
     twitter: {
@@ -44,25 +65,72 @@ function dateLabel(value: string) {
   return new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
 }
 
+function renderArticleContent(content: string) {
+  const blocks = content.split(/\n\s*\n/).map(block => block.trim()).filter(Boolean)
+
+  return blocks.map((block, index) => {
+    if (block.startsWith('### ')) {
+      return <h3 key={index} className="font-display text-2xl text-navy-950 leading-snug pt-3">{block.slice(4)}</h3>
+    }
+    if (block.startsWith('## ')) {
+      return <h2 key={index} className="font-display text-3xl text-navy-950 leading-snug pt-5">{block.slice(3)}</h2>
+    }
+
+    const lines = block.split('\n')
+    if (lines.every(line => /^[-*]\s+/.test(line))) {
+      return (
+        <ul key={index} className="list-disc pl-6 space-y-2">
+          {lines.map((line, lineIndex) => <li key={lineIndex}>{line.replace(/^[-*]\s+/, '')}</li>)}
+        </ul>
+      )
+    }
+
+    return <p key={index} className="whitespace-pre-line">{block}</p>
+  })
+}
+
 export default async function BlogStoryPage({ params }: Props) {
   const post = await getPublishedBlogPost(params.slug)
   if (!post) notFound()
+
   const title = normalizeSeoBrand(post.title)
   const description = normalizeSeoBrand(post.description)
-  const paragraphs = post.content.split(/\n\s*\n/)
+  const canonical = `${SITE_URL}/blog/${post.slug}`
+  const keywords = getArticleKeywords(post)
+  const wordCount = post.content.trim().split(/\s+/).filter(Boolean).length
+
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    '@id': `${SITE_URL}/blog/${post.slug}#article`,
+    '@id': `${canonical}#article`,
+    url: canonical,
     headline: title,
     description,
     image: post.image_url ? [post.image_url] : undefined,
     datePublished: post.published_at,
     dateModified: post.updated_at || post.published_at,
-    author: { '@type': 'Organization', name: 'Blue Pair Signature', url: SITE_URL },
-    publisher: { '@type': 'Organization', name: 'Blue Pair Signature', url: SITE_URL },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${post.slug}` },
+    inLanguage: 'en-NG',
+    articleSection: post.category,
+    keywords: keywords.length ? keywords.join(', ') : post.category,
+    wordCount,
+    author: {
+      '@type': 'Organization',
+      name: 'Blue Pair Signature',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Blue Pair Signature',
+      url: SITE_URL,
+    },
+    isPartOf: {
+      '@type': 'Blog',
+      name: 'Blue Pair Journal',
+      url: `${SITE_URL}/blog`,
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
   }
+
   const breadcrumbs = [
     { name: 'Home', path: '/' },
     { name: 'Blog', path: '/blog' },
@@ -70,7 +138,8 @@ export default async function BlogStoryPage({ params }: Props) {
   ]
 
   return (
-    <main className="bg-cream-50 min-h-screen">\n      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />
+    <main className="bg-cream-50 min-h-screen">
+      <JsonLd data={[breadcrumbJsonLd(breadcrumbs, SITE_URL), articleJsonLd]} />
       <article>
         <div className="relative h-[48vh] min-h-[360px] max-h-[620px] overflow-hidden bg-navy-950">
           <img src={post.image_url} alt={title} className="w-full h-full object-cover opacity-80" />
@@ -88,7 +157,7 @@ export default async function BlogStoryPage({ params }: Props) {
           <div>
             <p className="text-xl md:text-2xl text-navy-700 leading-9 font-display mb-8">{description}</p>
             <div className="space-y-6 text-[15px] md:text-base text-navy-600 leading-8">
-              {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+              {renderArticleContent(post.content)}
             </div>
             <div className="mt-12 pt-7 border-t border-black/10 flex items-center justify-between gap-4">
               <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-navy-800"><ArrowLeft size={15} />All stories</Link>
