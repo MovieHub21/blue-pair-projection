@@ -60,6 +60,7 @@ export default function NewsletterPage() {
   }, [])
 
   useEffect(() => { void loadCampaigns() }, [loadCampaigns])
+  useEffect(() => { if (editorRef.current) editorRef.current.innerHTML = content }, [editorVersion])
 
   function syncEditor() {
     if (editorRef.current) setContent(editorRef.current.innerHTML)
@@ -209,9 +210,8 @@ export default function NewsletterPage() {
               suppressContentEditableWarning
               onInput={syncEditor}
               onBlur={syncEditor}
-              className="newsletter-visual-editor min-h-[430px] px-6 py-8 text-base leading-7 text-navy-900 outline-none sm:px-8"
+              className="newsletter-visual-editor min-h-[430px] px-6 py-8 text-base leading-7 text-navy-900 outline-none sm:px-8 [&_h1]:my-5 [&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:my-4 [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:my-3 [&_h3]:text-xl [&_h3]:font-semibold [&_p]:mb-4 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-gold-700 [&_a]:underline [&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-xl"
               style={{ color: safeColor(textColor) }}
-              dangerouslySetInnerHTML={{ __html: content }}
             />
             <div className="border-t border-black/5 px-6 py-4 text-[11px] text-navy-400 sm:px-8">Blue Pair Signature Hotel Crown and Suite · Uromi, Edo State</div>
           </div>
