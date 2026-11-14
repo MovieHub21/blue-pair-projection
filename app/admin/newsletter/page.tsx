@@ -60,7 +60,7 @@ export default function NewsletterPage() {
   }, [])
 
   useEffect(() => { void loadCampaigns() }, [loadCampaigns])
-  useEffect(() => { if (editorRef.current) editorRef.current.innerHTML = content }, [editorVersion])
+  useEffect(() => { if (editorRef.current) editorRef.current.innerHTML = initialContent }, [editorVersion])
 
   function syncEditor() {
     if (editorRef.current) setContent(editorRef.current.innerHTML)
