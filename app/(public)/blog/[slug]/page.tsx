@@ -66,7 +66,7 @@ function dateLabel(value: string) {
 }
 
 function renderArticleContent(content: string) {
-  const blocks = content.split(/\\n\\s*\\n/).map(block => block.trim()).filter(Boolean)
+  const blocks = content.split(/\n\s*\n/).map(block => block.trim()).filter(Boolean)
 
   return blocks.map((block, index) => {
     if (block.startsWith('### ')) {
@@ -76,11 +76,11 @@ function renderArticleContent(content: string) {
       return <h2 key={index} className="font-display text-3xl text-navy-950 leading-snug pt-5">{block.slice(3)}</h2>
     }
 
-    const lines = block.split('\\n')
-    if (lines.every(line => /^[-*]\\s+/.test(line))) {
+    const lines = block.split('\n')
+    if (lines.every(line => /^[-*]\s+/.test(line))) {
       return (
         <ul key={index} className="list-disc pl-6 space-y-2">
-          {lines.map((line, lineIndex) => <li key={lineIndex}>{line.replace(/^[-*]\\s+/, '')}</li>)}
+          {lines.map((line, lineIndex) => <li key={lineIndex}>{line.replace(/^[-*]\s+/, '')}</li>)}
         </ul>
       )
     }
@@ -97,7 +97,7 @@ export default async function BlogStoryPage({ params }: Props) {
   const description = normalizeSeoBrand(post.description)
   const canonical = `${SITE_URL}/blog/${post.slug}`
   const keywords = getArticleKeywords(post)
-  const wordCount = post.content.trim().split(/\\s+/).filter(Boolean).length
+  const wordCount = post.content.trim().split(/\s+/).filter(Boolean).length
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
