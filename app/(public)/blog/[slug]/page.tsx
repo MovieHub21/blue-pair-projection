@@ -161,7 +161,7 @@ export default async function BlogStoryPage({ params }: Props) {
             </div>
             <div className="mt-12 pt-7 border-t border-black/10 flex items-center justify-between gap-4">
               <Link href="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-navy-800"><ArrowLeft size={15} />All stories</Link>
-              <Link href="/booking" className="btn-gold btn-sm">Plan your stay <ArrowRight size={14} /></Link>
+              <Link href="/rooms" className="btn-gold btn-sm">Plan your stay <ArrowRight size={14} /></Link>
             </div>
           </div>
           <aside className="hidden lg:block"><div className="glass-card rounded-2xl p-6 sticky top-28"><span className="eyebrow">Blue Pair Signature</span><h2 className="font-display text-2xl mt-2 text-navy-950">Make your next visit memorable.</h2><p className="text-sm text-navy-500 leading-6 mt-3">Rooms, dining, leisure and events — all in one welcoming destination in Uromi.</p><Link href="/booking" className="btn-primary btn-sm w-full mt-5">Book a room</Link></div></aside>
