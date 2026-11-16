@@ -32,6 +32,10 @@ function revenueSourceLabel(outlet: string | null | undefined) {
   return labels[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : 'Other')
 }
 
+function isRestaurantOrderReference(reference: unknown) {
+  return String(reference || '').startsWith('RS-')
+}
+
 export default function AdminDashboardPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -43,7 +47,7 @@ export default function AdminDashboardPage() {
   const [range, setRange] = useState<'week' | 'month' | 'year' | 'custom'>('week')
   const [customFrom, setCustomFrom] = useState(startOfWeekISO())
   const [customTo, setCustomTo] = useState(todayISO())
-  const [financialTransactions, setFinancialTransactions] = useState<Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string }>>([])
+  const [financialTransactions, setFinancialTransactions] = useState<Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string; metadata?: Record<string, unknown> | null }>>([])
   const today = todayISO()
   const weekStart = startOfWeekISO()
   const rangeStart = range === 'week' ? weekStart : range === 'month' ? `${today.slice(0, 7)}-01` : range === 'year' ? `${today.slice(0, 4)}-01-01` : customFrom
@@ -75,8 +79,8 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     let active = true
     const loadRevenue = async () => {
-      const { data } = await supabase.from('financial_transactions').select('amount,direction,status,outlet,occurred_at').eq('direction', 'credit').eq('status', 'posted').gte('occurred_at', `${rangeStart}T00:00:00`).lte('occurred_at', `${rangeEnd}T23:59:59.999`).order('occurred_at', { ascending: true })
-      if (active) setFinancialTransactions((data || []) as Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string }>)
+      const { data } = await supabase.from('financial_transactions').select('amount,direction,status,outlet,occurred_at,metadata').eq('direction', 'credit').eq('status', 'posted').gte('occurred_at', `${rangeStart}T00:00:00`).lte('occurred_at', `${rangeEnd}T23:59:59.999`).order('occurred_at', { ascending: true })
+      if (active) setFinancialTransactions((data || []) as Array<{ amount: number; direction: string; status: string; outlet: string | null; occurred_at: string; metadata?: Record<string, unknown> | null }>)
     }
     loadRevenue()
     return () => { active = false }
@@ -98,9 +102,15 @@ export default function AdminDashboardPage() {
     const openRequests = guestRequests.filter(r => !['resolved', 'completed', 'closed'].includes(String(r.status).toLowerCase())).length
     const sourceMap: Record<string, number> = {}
     if (financialTransactions.length) {
-      financialTransactions.forEach(t => { const source = revenueSourceLabel(t.outlet); sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0) })
+      financialTransactions.forEach(t => {
+        const source = isRestaurantOrderReference(t.metadata?.booking_ref) ? 'Restaurant' : revenueSourceLabel(t.outlet)
+        sourceMap[source] = (sourceMap[source] || 0) + Number(t.amount || 0)
+      })
     } else {
-      paid.forEach(p => { const source = 'Bookings'; sourceMap[source] = (sourceMap[source] || 0) + Number(p.amount || 0) })
+      paid.forEach(p => {
+        const source = isRestaurantOrderReference(p.bookingRef) ? 'Restaurant' : 'Bookings'
+        sourceMap[source] = (sourceMap[source] || 0) + Number(p.amount || 0)
+      })
     }
     return { revenue, periodBookings, checkIns, checkOuts, occupied, available, cleaning, pending, activeGuests, openMaintenance, openRequests, sourceMap }
   }, [payments, bookings, rooms, maintenanceTickets, guestRequests, financialTransactions, rangeStart, rangeEnd])
